@@ -1,0 +1,33 @@
+# MergenAI Lite - Core Dependencies
+
+# Streamlit - Web Framework
+streamlit>=1.28.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# HTTP Requests
+requests>=2.31.0
+
+# PDF Processing
+pdfplumber>=0.9.0
+
+# DOCX Processing
+python-docx>=0.8.11
+
+# RAG & Embeddings (Optional - for advanced features)
+sentence-transformers>=2.2.0
+
+# LLM Integration (Optional - for OpenAI)
+openai>=1.0.0
+
+# Logging
+python-json-logger>=2.0.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Testing (Optional)
+pytest>=7.0.0
+
