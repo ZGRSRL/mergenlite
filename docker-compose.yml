@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  mergenlite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mergenlite
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - SAM_API_KEY=${SAM_API_KEY:-}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/mergenlite}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Persist data directories
+      - ./opportunities:/app/opportunities
+      - ./downloads:/app/downloads
+      - ./samples:/app/samples
+      - ./hotel_database.json:/app/hotel_database.json
+      # Optional: Mount .env file
+      - ./.env:/app/.env:ro
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - mergenlite-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: mergenlite-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mergenlite
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - mergenlite-network
+
+volumes:
+  postgres_data:
+
+networks:
+  mergenlite-network:
+    driver: bridge
+
