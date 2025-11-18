@@ -1,0 +1,38 @@
+# SAM Document Management Module Requirements
+
+# Core dependencies
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Database
+psycopg2-binary>=2.9.0
+
+# HTTP requests
+requests>=2.31.0
+
+# File handling
+pathlib2>=2.3.0
+
+# Document processing
+pypdf>=3.0.0
+python-docx>=0.8.11
+openpyxl>=3.1.0
+
+# Web framework (for API server)
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Background processing
+apscheduler>=3.10.0
+
+# Optional: AutoGen (for advanced AI analysis)
+# pyautogen>=0.2.0
+
+# Optional: OpenAI (for AutoGen integration)
+# openai>=1.0.0
+
+# Development dependencies
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0

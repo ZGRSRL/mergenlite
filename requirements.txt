@@ -3,6 +3,9 @@
 # Streamlit - Web Framework
 streamlit>=1.28.0
 
+# NiceGUI - Modern Web Framework (Alternative to Streamlit)
+nicegui>=1.4.0
+
 # Data Processing
 pandas>=2.0.0
 numpy>=1.24.0
@@ -21,6 +24,15 @@ sentence-transformers>=2.2.0
 
 # LLM Integration (Optional - for OpenAI)
 openai>=1.0.0
+
+# AutoGen - Multi-Agent Framework (Optional - for opportunity pipeline)
+pyautogen>=0.2.0
+
+# PDF Generation (Optional - for report generation)
+reportlab>=4.0.0
+
+# Geocoding (for hotel recommendation agent)
+geopy>=2.4.0
 
 # Logging
 python-json-logger>=2.0.0

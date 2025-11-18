@@ -1,0 +1,7 @@
+Requirement Code,Requirement Text,Category,Priority,Status,Evidence,Score,Risk Level,Gap Analysis,Mitigation Strategy,Owner
+{% for item in compliance_matrix.items -%}
+{{ item.requirement.code }},{{ item.requirement.text|replace(',', ';') }},{{ item.requirement.category }},{{ item.requirement.priority }},{{ "Met" if item.risk_level in ["low", "medium"] else "Gap" }},{{ item.evidence|map(attribute='snippet')|join('; ') }},{{ "%.2f"|format(item.evidence|map(attribute='score')|list|sum / item.evidence|length if item.evidence else 0) }},{{ item.risk_level }},{{ item.gap_analysis|replace(',', ';') }},{{ item.mitigation|replace(',', ';') }},{{ item.requirement.code|replace('R-', 'PM') }}
+{% endfor %}
+
+
+

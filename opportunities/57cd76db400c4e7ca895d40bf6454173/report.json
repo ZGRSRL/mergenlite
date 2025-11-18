@@ -1,0 +1,194 @@
+{
+  "opportunity_info": {
+    "solicitation_number": "91995926Q0001",
+    "notice_id": "57cd76db400c4e7ca895d40bf6454173",
+    "title": "Request for Quotations for Conference Space and Lodging Services",
+    "agency": "National Assessment Governing Board",
+    "naics": "721110",
+    "set_aside": "Total Small Business",
+    "small_business_only": true,
+    "place_of_performance": "Houston, Texas metropolitan area",
+    "response_deadline": "2025-12-04T12:00:00Z"
+  },
+  "event_requirements": {
+    "location": "Houston, Texas metropolitan area",
+    "date_range": "March 3-6, 2026",
+    "participants_min": 2,
+    "participants_target": 80,
+    "room_block_plan": "5 rooms on March 3, 45 rooms on March 4, 45 rooms on March 5, 1 room on March 6",
+    "meeting_spaces": "Multiple meeting rooms with specific configurations for various events",
+    "av_requirements": "Microphones, projection equipment, technical run-through, AV support for hybrid meetings",
+    "fnb_requirements": "Light refreshments, coffee service, buffet lunch, box lunch",
+    "special_logistics": "Parking passes, ADA compliance, shipping/receiving, Wi-Fi access"
+  },
+  "commercial_terms": {},
+  "compliance": {
+    "far_52_212_4": true,
+    "far_52_212_5": true,
+    "far_52_204_24_25_26": true,
+    "security_telecom_restrictions": false,
+    "bytedance_restriction": false,
+    "other_mandatory_clauses": [
+      "EDAR 3452.201-70",
+      "EDAR 3452.224-70",
+      "EDAR 3452.233-70",
+      "EDAR 3452.237-71",
+      "EDAR 3452.239–71",
+      "EDAR 3452.242-73",
+      "FAR 32.202-1(b)",
+      "FAR 13.106-2(b)(3)",
+      "FAR 52.252-2"
+    ]
+  },
+  "recommended_hotels": [
+    {
+      "name": "The Royal Sonesta Houston Galleria",
+      "address": "",
+      "city": "Houston",
+      "state": "Texas",
+      "phone": "713-850-2828",
+      "email": "robin.taylor@sonesta.com",
+      "website": null,
+      "contact_person": "Robin Taylor",
+      "status": "Submitted",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "The Royal Sonesta Houston Galleria",
+        "Contact Email": "robin.taylor@sonesta.com",
+        "Contact Phone": "713-850-2828",
+        "First Name": "Robin",
+        "Last Name": "Taylor",
+        "Status": "Submitted",
+        "Date": "2024-06-17 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.771306",
+      "match_score": 5
+    },
+    {
+      "name": "The Westin Galleria Houston",
+      "address": "",
+      "city": "Houston",
+      "state": "Texas",
+      "phone": "210.559.8972",
+      "email": "kama.scheffel@marriott.com",
+      "website": null,
+      "contact_person": "Kama Scheffel",
+      "status": "Submitted",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "The Westin Galleria Houston",
+        "Contact Email": "kama.scheffel@marriott.com",
+        "Contact Phone": "210.559.8972",
+        "First Name": "Kama",
+        "Last Name": "Scheffel",
+        "Status": "Submitted",
+        "Date": "2024-06-14 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.771306",
+      "match_score": 5
+    },
+    {
+      "name": "Hilton Houston Post Oak by the Galleria",
+      "address": "",
+      "city": "Houston",
+      "state": "Texas",
+      "phone": "713-968-1345",
+      "email": "suzanne.trevino@hilton.com",
+      "website": null,
+      "contact_person": "Suzanne Trevino",
+      "status": "Submitted",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "Hilton Houston Post Oak by the Galleria",
+        "Contact Email": "suzanne.trevino@hilton.com",
+        "Contact Phone": "713-968-1345",
+        "First Name": "Suzanne",
+        "Last Name": "Trevino",
+        "Status": "Submitted",
+        "Date": "2024-06-14 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.771306",
+      "match_score": 5
+    },
+    {
+      "name": "Tru by Hilton Webster Houston NASA",
+      "address": "",
+      "city": "Houston",
+      "state": "Texas",
+      "phone": "9726632540",
+      "email": "Samantha.Ponce@Hilton.com",
+      "website": null,
+      "contact_person": "Samantha Ponce",
+      "status": "Submitted (Ancient)",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "Tru by Hilton Webster Houston NASA",
+        "Contact Email": "Samantha.Ponce@Hilton.com",
+        "Contact Phone": "9726632540",
+        "First Name": "Samantha",
+        "Last Name": "Ponce",
+        "Status": "Submitted (Ancient)",
+        "Date": "2020-07-15 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.824511",
+      "match_score": 5
+    },
+    {
+      "name": "Holiday Inn Houston-Webster",
+      "address": "",
+      "city": "Houston",
+      "state": "Texas",
+      "phone": "2813356272",
+      "email": "yvonne@websterhi.com",
+      "website": null,
+      "contact_person": "Yvonne Small",
+      "status": "Submitted (Ancient)",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "Holiday Inn Houston-Webster",
+        "Contact Email": "yvonne@websterhi.com",
+        "Contact Phone": "2813356272",
+        "First Name": "Yvonne",
+        "Last Name": "Small",
+        "Status": "Submitted (Ancient)",
+        "Date": "2020-07-15 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.825546",
+      "match_score": 5
+    }
+  ],
+  "fit_assessment": {
+    "overall_score": 85,
+    "strengths": [
+      "Strong compliance with FAR regulations",
+      "Comprehensive event requirements",
+      "Clear payment terms and cancellation policies"
+    ],
+    "risks": [
+      "Estimated value is unknown",
+      "Potential for high attrition penalties"
+    ],
+    "blocking_issues": [],
+    "summary": "The opportunity is well-defined with strong compliance and detailed requirements, making it a favorable option for small businesses. However, the unknown estimated value and potential penalties could pose risks."
+  }
+}

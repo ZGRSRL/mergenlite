@@ -1,0 +1,67 @@
+{
+  "type": "Combined Synopsis/Solicitation",
+  "award": null,
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=57cd76db400c4e7ca895d40bf6454173&limit=1"
+    }
+  ],
+  "title": "March 2026 National Assessment Governing Board Meeting - Houston, Texas",
+  "active": "Yes",
+  "uiLink": "https://sam.gov/workspace/contract/opp/57cd76db400c4e7ca895d40bf6454173/view",
+  "baseType": "Combined Synopsis/Solicitation",
+  "noticeId": "57cd76db400c4e7ca895d40bf6454173",
+  "naicsCode": "721110",
+  "naicsCodes": [
+    "721110"
+  ],
+  "postedDate": "2025-11-06",
+  "archiveDate": "2025-12-05",
+  "archiveType": "autocustom",
+  "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=57cd76db400c4e7ca895d40bf6454173",
+  "officeAddress": {
+    "city": "WASHINGTON",
+    "state": "DC",
+    "zipcode": "20202",
+    "countryCode": "USA"
+  },
+  "resourceLinks": [
+    "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/bf7599b243784e69a8aca258c82ea413/download",
+    "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/fc7f1f88f2ba499f8460469ecf1770f9/download",
+    "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/fe94860bf9a845f7ad1d3c33ac5d4d96/download"
+  ],
+  "pointOfContact": [
+    {
+      "fax": "",
+      "type": "primary",
+      "email": "tony.white@ed.gov",
+      "phone": "",
+      "title": null,
+      "fullName": "Tony White"
+    }
+  ],
+  "typeOfSetAside": "SBA",
+  "organizationType": "OFFICE",
+  "responseDeadLine": "2025-12-04T12:00:00-05:00",
+  "additionalInfoLink": null,
+  "classificationCode": "X1AB",
+  "fullParentPathCode": "091.9100.919959",
+  "fullParentPathName": "EDUCATION, DEPARTMENT OF.EDUCATION, DEPARTMENT OF.NATIONAL ASSESSMENT GOVERNING BOARD",
+  "placeOfPerformance": {
+    "city": {
+      "code": "35000",
+      "name": "Houston"
+    },
+    "state": {
+      "code": "TX",
+      "name": "Texas"
+    },
+    "country": {
+      "code": "USA",
+      "name": "UNITED STATES"
+    }
+  },
+  "solicitationNumber": "91995926Q0001",
+  "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)"
+}

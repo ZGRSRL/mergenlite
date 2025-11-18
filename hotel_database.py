@@ -243,7 +243,13 @@ class HotelDatabase:
         # Minimum oda sayısı hesapla (participants / 2, en az 10)
         min_rooms = None
         if participants:
-            min_rooms = max(int(participants / 2), 10)
+            try:
+                # participants string olabilir, int'e çevir
+                participants_int = int(participants) if isinstance(participants, (str, int, float)) else 0
+                if participants_int > 0:
+                    min_rooms = max(int(participants_int / 2), 10)
+            except (ValueError, TypeError):
+                min_rooms = 10  # Varsayılan
         
         # Otel ara
         hotels = self.search_hotels(

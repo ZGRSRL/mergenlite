@@ -13,6 +13,11 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 from document_processor import DocumentProcessor
 from llm_analyzer import LLMAnalyzer
+from llm_client import (
+    call_logged_llm,
+    extract_message_text,
+    LLMNotAvailableError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -209,28 +214,16 @@ IMPORTANT:
 """
     
     try:
-        # OpenAI API ile SOW oluştur
-        import os
-        import openai
-        
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            logger.warning("OpenAI API key not found, using fallback SOW")
-            return create_simple_sow(rfq_analysis, opportunity_info, vendor_profile)
-        
-        openai.api_key = api_key
-        
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
+        response = call_logged_llm(
+            agent_name="SOWGenerator",
             messages=[
                 {"role": "system", "content": system_message},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
             temperature=0.3,
-            max_tokens=4000
+            max_tokens=4000,
         )
-        
-        sow_text = response.choices[0].message.content.strip()
+        sow_text = extract_message_text(response).strip()
         
         # Markdown code block varsa temizle
         if sow_text.startswith("```"):
@@ -274,8 +267,8 @@ IMPORTANT:
             'pdf_path': str(sow_pdf_path) if sow_pdf_path else None
         }
         
-    except ImportError:
-        logger.warning("OpenAI not available, using fallback SOW")
+    except LLMNotAvailableError as exc:
+        logger.warning(f"LLM not available, using fallback SOW: {exc}")
         sow_text = create_simple_sow(rfq_analysis, opportunity_info, vendor_profile)
         return _save_sow_files(sow_text, output_folder)
     except Exception as e:

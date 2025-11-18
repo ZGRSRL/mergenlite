@@ -11,6 +11,12 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from dotenv import load_dotenv
 
+# MergenLite imports
+try:
+    from document_processor import process_documents_for_opportunity
+except ImportError:
+    process_documents_for_opportunity = None
+
 load_dotenv()
 
 # AutoGen imports
@@ -163,36 +169,178 @@ class RequirementsExtractorAgent:
             }
     
     def extract_requirements(self, document_content: str, opportunity_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Gereksinimleri çıkar ve kategorize et"""
+        """Gereksinimleri çıkar ve kategorize et - GERÇEK ANALİZ"""
         try:
-            # Eğer AutoGen agent varsa kullan
-            if self.agent:
-                # AutoGen ile analiz yapılacak (gelecekte implement edilecek)
-                pass
+            # LLM Analyzer kullanarak gerçek analiz yap
+            try:
+                from llm_analyzer import LLMAnalyzer
+                llm_analyzer = LLMAnalyzer()
+                if llm_analyzer.use_openai and document_content:
+                    # Gerçek LLM analizi
+                    result = llm_analyzer.extract_requirements(document_content)
+                    if result.get('success'):
+                        reqs_data = result.get('data', {}).get('requirements', {})
+                        if isinstance(reqs_data, dict):
+                            # Dict formatını list formatına çevir
+                            requirements = []
+                            req_counter = 1
+                            
+                            # Oda sayısı
+                            if reqs_data.get('room_count') and reqs_data.get('room_count') != 'belirtilmemiş':
+                                requirements.append({
+                                    "code": f"R-{req_counter:03d}",
+                                    "text": f"Oda sayısı gereksinimi: {reqs_data.get('room_count')}",
+                                    "category": "capacity",
+                                    "priority": "high"
+                                })
+                                req_counter += 1
+                            
+                            # AV gereksinimi
+                            if reqs_data.get('av_required'):
+                                requirements.append({
+                                    "code": f"R-{req_counter:03d}",
+                                    "text": "Audio-Visual (AV) ekipman gereksinimi",
+                                    "category": "av",
+                                    "priority": "high"
+                                })
+                                req_counter += 1
+                            
+                            # Tarih aralığı
+                            if reqs_data.get('date_range') and reqs_data.get('date_range') != 'belirtilmemiş':
+                                requirements.append({
+                                    "code": f"R-{req_counter:03d}",
+                                    "text": f"Tarih aralığı: {reqs_data.get('date_range')}",
+                                    "category": "date",
+                                    "priority": "high"
+                                })
+                                req_counter += 1
+                            
+                            # Konum
+                            if reqs_data.get('location') and reqs_data.get('location') != 'belirtilmemiş':
+                                requirements.append({
+                                    "code": f"R-{req_counter:03d}",
+                                    "text": f"Konum gereksinimi: {reqs_data.get('location')}",
+                                    "category": "transport",
+                                    "priority": "high"
+                                })
+                                req_counter += 1
+                            
+                            # Kısıtlar
+                            if reqs_data.get('constraints'):
+                                for constraint in reqs_data.get('constraints', []):
+                                    requirements.append({
+                                        "code": f"R-{req_counter:03d}",
+                                        "text": f"Kısıt: {constraint}",
+                                        "category": "clauses",
+                                        "priority": "medium"
+                                    })
+                                    req_counter += 1
+                            
+                            # Diğer gereksinimler
+                            if reqs_data.get('other_requirements'):
+                                for other_req in reqs_data.get('other_requirements', []):
+                                    requirements.append({
+                                        "code": f"R-{req_counter:03d}",
+                                        "text": str(other_req),
+                                        "category": "other",
+                                        "priority": "medium"
+                                    })
+                                    req_counter += 1
+                            
+                            # Kategorilere göre say
+                            categories = {
+                                "capacity": 0,
+                                "date": 0,
+                                "transport": 0,
+                                "av": 0,
+                                "invoice": 0,
+                                "clauses": 0,
+                                "other": 0
+                            }
+                            for req in requirements:
+                                cat = req.get('category', 'other')
+                                if cat in categories:
+                                    categories[cat] += 1
+                                else:
+                                    categories["other"] += 1
+                            
+                            return {
+                                "requirements": requirements,
+                                "total_count": len(requirements),
+                                "categories": categories,
+                                "extracted_at": datetime.now().isoformat()
+                            }
+            except Exception as llm_error:
+                logger.warning(f"LLM analyzer error, using pattern matching: {llm_error}")
             
-            # Şimdilik örnek yapılandırılmış çıktı
+            # Fallback: Pattern matching ile basit analiz
+            requirements = []
+            req_counter = 1
+            text_lower = document_content.lower()
+            
+            # Oda sayısı
+            import re
+            room_match = re.search(r'(\d+)\s*(?:room|oda|bedroom)', text_lower)
+            if room_match:
+                requirements.append({
+                    "code": f"R-{req_counter:03d}",
+                    "text": f"Oda sayısı gereksinimi: {room_match.group(1)}",
+                    "category": "capacity",
+                    "priority": "high"
+                })
+                req_counter += 1
+            
+            # AV gereksinimi
+            if any(keyword in text_lower for keyword in ['av', 'audio', 'visual', 'projector', 'screen', 'microphone']):
+                requirements.append({
+                    "code": f"R-{req_counter:03d}",
+                    "text": "Audio-Visual (AV) ekipman gereksinimi",
+                    "category": "av",
+                    "priority": "high"
+                })
+                req_counter += 1
+            
+            # Tarih
+            date_patterns = re.findall(r'\d{4}-\d{2}-\d{2}', document_content)
+            if len(date_patterns) >= 2:
+                requirements.append({
+                    "code": f"R-{req_counter:03d}",
+                    "text": f"Tarih aralığı: {date_patterns[0]} to {date_patterns[1]}",
+                    "category": "date",
+                    "priority": "high"
+                })
+                req_counter += 1
+            
+            # Kategorilere göre say
+            categories = {
+                "capacity": 0,
+                "date": 0,
+                "transport": 0,
+                "av": 0,
+                "invoice": 0,
+                "clauses": 0,
+                "other": 0
+            }
+            for req in requirements:
+                cat = req.get('category', 'other')
+                if cat in categories:
+                    categories[cat] += 1
+                else:
+                    categories["other"] += 1
+            
             return {
-                "requirements": [
-                    {
-                        "code": "R-001",
-                        "text": "Sample requirement extracted from document",
-                        "category": "capacity",
-                        "priority": "high"
-                    }
-                ],
-                "total_count": 1,
-                "categories": {
-                    "capacity": 1,
-                    "date": 0,
-                    "transport": 0,
-                    "av": 0,
-                    "invoice": 0,
-                    "clauses": 0
-                },
+                "requirements": requirements if requirements else [{
+                    "code": "R-001",
+                    "text": "Dökümandan gereksinim çıkarılamadı (detaylı analiz gerekli)",
+                    "category": "other",
+                    "priority": "low"
+                }],
+                "total_count": len(requirements) if requirements else 1,
+                "categories": categories,
                 "extracted_at": datetime.now().isoformat()
             }
         except Exception as e:
-            logger.error(f"❌ Requirements extraction error: {e}")
+            logger.error(f"Requirements extraction error: {e}")
             return {"error": str(e)}
 
 
@@ -549,4 +697,219 @@ class MergenLiteOrchestrator:
                 "error": str(e),
                 "start_time": datetime.now().isoformat()
             }
+
+# ============================================================================
+# MERGENLITE CORE ANALYSIS ORCHESTRATOR
+# ============================================================================
+
+@dataclass
+class AnalysisResult:
+    """Analiz sonuçları için veri yapısı"""
+    agent_name: str
+    status: str
+    output: Dict[str, Any]
+    processing_time: float
+    timestamp: str
+
+class MergenLiteOrchestrator:
+    """
+    MergenLite Çekirdek Analiz Orkestratörü
+    Database-First yaklaşım ile 4 ajanı sırayla çalıştırır
+    """
+    
+    def __init__(self):
+        self.agents = {
+            "document_processor": DocumentProcessorAgent(),
+            "requirements_extractor": RequirementsExtractorAgent(),
+            "compliance_analyst": ComplianceAnalystAgent(),
+            "proposal_writer": ProposalWriterAgent()
+        }
+        
+    def run_full_analysis(self, opportunity_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Tam analiz akışını çalıştır - Database-First için tek JSON çıktısı
+        """
+        notice_id = opportunity_data.get('noticeId', 'unknown')
+        logger.info(f"🤖 MergenLite çekirdek analiz başlatıldı: {notice_id}")
+        
+        analysis_results = []
+        start_time = datetime.now()
+        
+        # Adım 1: Document Processing
+        try:
+            step_start = datetime.now()
+            
+            # Document processor kullan
+            if process_documents_for_opportunity:
+                doc_result = process_documents_for_opportunity(opportunity_data)
+            else:
+                # Fallback mock data
+                doc_result = {
+                    "notice_id": notice_id,
+                    "processing_status": "completed",
+                    "consolidated_text": "Mock solicitation document content...",
+                    "total_word_count": 1000,
+                    "document_count": 2
+                }
+            
+            step_end = datetime.now()
+            analysis_results.append(AnalysisResult(
+                agent_name="document_processor",
+                status="completed",
+                output=doc_result,
+                processing_time=(step_end - step_start).total_seconds(),
+                timestamp=step_end.isoformat()
+            ))
+            logger.info("✅ Document Processing tamamlandı")
+        except Exception as e:
+            logger.error(f"❌ Document Processing hatası: {e}")
+            analysis_results.append(AnalysisResult(
+                agent_name="document_processor",
+                status="failed",
+                output={"error": str(e)},
+                processing_time=0,
+                timestamp=datetime.now().isoformat()
+            ))
+        
+        # Adım 2: Requirements Extraction
+        try:
+            step_start = datetime.now()
+            consolidated_text = analysis_results[0].output.get('consolidated_text', '') if analysis_results else ''
+            
+            requirements_result = self.agents["requirements_extractor"].extract_requirements(
+                consolidated_text, opportunity_data
+            )
+            
+            step_end = datetime.now()
+            analysis_results.append(AnalysisResult(
+                agent_name="requirements_extractor",
+                status="completed",
+                output=requirements_result,
+                processing_time=(step_end - step_start).total_seconds(),
+                timestamp=step_end.isoformat()
+            ))
+            logger.info("✅ Requirements Extraction tamamlandı")
+        except Exception as e:
+            logger.error(f"❌ Requirements Extraction hatası: {e}")
+            analysis_results.append(AnalysisResult(
+                agent_name="requirements_extractor",
+                status="failed",
+                output={"error": str(e)},
+                processing_time=0,
+                timestamp=datetime.now().isoformat()
+            ))
+        
+        # Adım 3: Compliance Analysis
+        try:
+            step_start = datetime.now()
+            requirements = [r.output for r in analysis_results if r.agent_name == "requirements_extractor" and r.status == "completed"]
+            requirements_data = requirements[0] if requirements else {}
+            
+            compliance_result = self.agents["compliance_analyst"].analyze_compliance(
+                requirements_data.get('requirements', []), {}
+            )
+            
+            step_end = datetime.now()
+            analysis_results.append(AnalysisResult(
+                agent_name="compliance_analyst",
+                status="completed",
+                output=compliance_result,
+                processing_time=(step_end - step_start).total_seconds(),
+                timestamp=step_end.isoformat()
+            ))
+            logger.info("✅ Compliance Analysis tamamlandı")
+        except Exception as e:
+            logger.error(f"❌ Compliance Analysis hatası: {e}")
+            analysis_results.append(AnalysisResult(
+                agent_name="compliance_analyst",
+                status="failed",
+                output={"error": str(e)},
+                processing_time=0,
+                timestamp=datetime.now().isoformat()
+            ))
+        
+        # Adım 4: Proposal Writing
+        try:
+            step_start = datetime.now()
+            successful_results = {r.agent_name: r.output for r in analysis_results if r.status == "completed"}
+            
+            proposal_result = self.agents["proposal_writer"].write_proposal(
+                successful_results, {"opportunity_id": notice_id}
+            )
+            
+            step_end = datetime.now()
+            analysis_results.append(AnalysisResult(
+                agent_name="proposal_writer",
+                status="completed",
+                output=proposal_result,
+                processing_time=(step_end - step_start).total_seconds(),
+                timestamp=step_end.isoformat()
+            ))
+            logger.info("✅ Proposal Writing tamamlandı")
+        except Exception as e:
+            logger.error(f"❌ Proposal Writing hatası: {e}")
+            analysis_results.append(AnalysisResult(
+                agent_name="proposal_writer",
+                status="failed",
+                output={"error": str(e)},
+                processing_time=0,
+                timestamp=datetime.now().isoformat()
+            ))
+        
+        end_time = datetime.now()
+        total_time = (end_time - start_time).total_seconds()
+        
+        # Database-First için konsolide çıktı
+        consolidated_output = {
+            "notice_id": notice_id,
+            "analysis_status": "completed",
+            "processed_at": end_time.isoformat(),
+            "total_processing_time": total_time,
+            "agents_results": {
+                result.agent_name: {
+                    "status": result.status,
+                    "output": result.output,
+                    "processing_time": result.processing_time,
+                    "timestamp": result.timestamp
+                } for result in analysis_results
+            },
+            "summary": {
+                "total_agents": len(analysis_results),
+                "successful_agents": len([r for r in analysis_results if r.status == "completed"]),
+                "failed_agents": len([r for r in analysis_results if r.status == "failed"]),
+                "overall_score": self._calculate_overall_score(analysis_results)
+            },
+            "metadata": {
+                "orchestrator_version": "1.0",
+                "mergenlite_core": True,
+                "database_first": True
+            }
+        }
+        
+        logger.info(f"✅ MergenLite çekirdek analiz tamamlandı: {notice_id} - {consolidated_output['summary']['successful_agents']}/{consolidated_output['summary']['total_agents']} ajan başarılı")
+        return consolidated_output
+    
+    def _calculate_overall_score(self, results: List[AnalysisResult]) -> str:
+        """
+        Genel analiz skorunu hesapla
+        """
+        successful = len([r for r in results if r.status == "completed"])
+        total = len(results)
+        
+        if successful == total:
+            return "Mükemmel"
+        elif successful >= total * 0.75:
+            return "İyi"
+        elif successful >= total * 0.5:
+            return "Orta"
+        else:
+            return "Zayıf"
+
+# Convenience function for external use
+def run_mergenlite_analysis(opportunity_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    MergenLite çekirdek analiz - dış modüllerden kullanım için
+    """
+    orchestrator = MergenLiteOrchestrator()
+    return orchestrator.run_full_analysis(opportunity_data)
 

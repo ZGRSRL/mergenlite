@@ -1,0 +1,187 @@
+{
+  "opportunity_info": {
+    "solicitation_number": "TBD",
+    "notice_id": "unknown",
+    "title": "Blanket Purchase Agreement for Commercial Lodging",
+    "agency": "482nd Fighter Wing Air Force Reserve",
+    "naics": "unknown",
+    "set_aside": "unknown",
+    "small_business_only": false,
+    "place_of_performance": "Homestead ARB, FL",
+    "response_deadline": "unknown"
+  },
+  "event_requirements": {
+    "location": "Homestead ARB, FL",
+    "date_range": "TBD",
+    "participants_min": 1,
+    "participants_target": "unknown",
+    "room_block_plan": "Single occupancy lodging accommodations for personnel in IDT, UTA, TPs, and RMPs.",
+    "meeting_spaces": "General Sessions Room (1), Conference Breakout Rooms (4), Registration Area (1), Logistics Room (1)",
+    "av_requirements": "Minimum 5,000 lumen projector, two 6' x 10' screens, high-speed Wi-Fi, audio equipment including handheld mics and podiums, various monitor cables and adapters.",
+    "fnb_requirements": "Light refreshments provided once in the morning and once during a PM break each meeting day. Charges for food and drinks are not authorized to be charged to the Government.",
+    "special_logistics": "Pre-conference meeting with hotel staff, logistics plan for refreshments, setup completion deadlines."
+  },
+  "commercial_terms": {},
+  "compliance": {
+    "far_52_212_4": true,
+    "far_52_212_5": true,
+    "far_52_204_24_25_26": true,
+    "security_telecom_restrictions": false,
+    "bytedance_restriction": false,
+    "other_mandatory_clauses": [
+      "System for Award Management (SAM) registration requirement",
+      "Tax exemption clause for federal government entity"
+    ]
+  },
+  "recommended_hotels": [
+    {
+      "name": "Marriott Orlando Downtown",
+      "address": "",
+      "city": "Orlando",
+      "state": "Florida",
+      "phone": "(407) 868-8643 x 5019",
+      "email": "haley.kane@marriott.com",
+      "website": null,
+      "contact_person": "Haley Kane",
+      "status": "Submitted",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "Marriott Orlando Downtown",
+        "Contact Email": "haley.kane@marriott.com",
+        "Contact Phone": "(407) 868-8643 x 5019",
+        "First Name": "Haley",
+        "Last Name": "Kane",
+        "Status": "Submitted",
+        "Date": "2024-12-17 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.746180",
+      "match_score": 5
+    },
+    {
+      "name": "Embassy Suites by Hilton Orlando Lake Buena Vista South",
+      "address": "",
+      "city": "Orlando",
+      "state": "Florida",
+      "phone": "407.597.4007",
+      "email": "warren.bingham@hilton.com",
+      "website": null,
+      "contact_person": "Warren Bindham",
+      "status": "Submitted",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "Embassy Suites by Hilton Orlando Lake Buena Vista South",
+        "Contact Email": "warren.bingham@hilton.com",
+        "Contact Phone": "407.597.4007",
+        "First Name": "Warren",
+        "Last Name": "Bindham",
+        "Status": "Submitted",
+        "Date": "2024-11-29 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.751167",
+      "match_score": 5
+    },
+    {
+      "name": "DoubleTree by Hilton Hotel Orlando Airport",
+      "address": "",
+      "city": "Orlando",
+      "state": "Florida",
+      "phone": "4072351912",
+      "email": "Rachel.Ostrander@hilton.com",
+      "website": null,
+      "contact_person": "Rachel Ostrander",
+      "status": "Submitted",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "DoubleTree by Hilton Hotel Orlando Airport",
+        "Contact Email": "Rachel.Ostrander@hilton.com",
+        "Contact Phone": "4072351912",
+        "First Name": "Rachel",
+        "Last Name": "Ostrander",
+        "Status": "Submitted",
+        "Date": "2024-11-27 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.752166",
+      "match_score": 5
+    },
+    {
+      "name": "Hilton Orlando/Altamonte Springs",
+      "address": "",
+      "city": "Orlando",
+      "state": "Florida",
+      "phone": "4072624506",
+      "email": "brianna.davey@hilton.com",
+      "website": null,
+      "contact_person": "Brianna Davey",
+      "status": "Submitted",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "Hilton Orlando/Altamonte Springs",
+        "Contact Email": "brianna.davey@hilton.com",
+        "Contact Phone": "4072624506",
+        "First Name": "Brianna",
+        "Last Name": "Davey",
+        "Status": "Submitted",
+        "Date": "2024-11-26 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.752166",
+      "match_score": 5
+    },
+    {
+      "name": "SpringHill Suites Orlando Theme Parks/Lake Buena Vista",
+      "address": "",
+      "city": "Orlando",
+      "state": "Florida",
+      "phone": "407-635-8507",
+      "email": "veronika.williams@hhmhotels.com",
+      "website": null,
+      "contact_person": "Veronika Williams",
+      "status": "Submitted",
+      "room_count": null,
+      "rating": null,
+      "raw_data": {
+        "Hotel Name": "SpringHill Suites Orlando Theme Parks/Lake Buena Vista",
+        "Contact Email": "veronika.williams@hhmhotels.com",
+        "Contact Phone": "407-635-8507",
+        "First Name": "Veronika",
+        "Last Name": "Williams",
+        "Status": "Submitted",
+        "Date": "2024-11-26 00:00:00",
+        "Unnamed: 7": "nan",
+        "Unnamed: 8": "nan"
+      },
+      "source": "excel",
+      "imported_at": "2025-11-09T19:54:57.752166",
+      "match_score": 5
+    }
+  ],
+  "fit_assessment": {
+    "overall_score": 85,
+    "strengths": [
+      "Comprehensive AV requirements that meet modern standards.",
+      "Clear logistics plan for refreshments and setup.",
+      "Tax exemption for federal government entity."
+    ],
+    "risks": [
+      "Unknown estimated value may lead to budget constraints.",
+      "Limited information on participant targets could affect planning."
+    ],
+    "blocking_issues": [],
+    "summary": "The opportunity presents a strong proposal with solid compliance and logistical planning, but the unknown estimated value and participant targets pose potential risks."
+  }
+}

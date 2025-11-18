@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: ankane/pgvector:pg17
+    container_name: zgrsam_postgres
+    environment:
+      POSTGRES_DB: zgrsam
+      POSTGRES_USER: zgr
+      POSTGRES_PASSWORD: zgrpw
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zgr -d zgrsam"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+
+

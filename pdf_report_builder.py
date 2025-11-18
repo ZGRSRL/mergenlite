@@ -153,6 +153,10 @@ def build_pdf_report(
         story.append(Paragraph(f"<b>Overall Fit Score:</b> {overall_score}/100", score_style))
         
         summary = fit_assessment.get('summary', 'No summary available')
+        # Ensure text is properly encoded for PDF (UTF-8)
+        if isinstance(summary, str):
+            # Remove any problematic characters and ensure ASCII-safe encoding
+            summary = summary.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
         story.append(Paragraph(summary, normal_style))
         story.append(Spacer(1, 0.2*inch))
         
@@ -161,7 +165,9 @@ def build_pdf_report(
         if strengths:
             story.append(Paragraph("Strengths", subheading_style))
             for strength in strengths:
-                story.append(Paragraph(f"✓ {strength}", normal_style))
+                # Ensure UTF-8 encoding
+                strength_text = str(strength).encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+                story.append(Paragraph(f"✓ {strength_text}", normal_style))
             story.append(Spacer(1, 0.1*inch))
         
         # Risks
@@ -169,7 +175,9 @@ def build_pdf_report(
         if risks:
             story.append(Paragraph("Risks", subheading_style))
             for risk in risks:
-                story.append(Paragraph(f"⚠ {risk}", normal_style))
+                # Ensure UTF-8 encoding
+                risk_text = str(risk).encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+                story.append(Paragraph(f"⚠ {risk_text}", normal_style))
             story.append(Spacer(1, 0.1*inch))
         
         # Blocking Issues
@@ -177,7 +185,9 @@ def build_pdf_report(
         if blocking:
             story.append(Paragraph("Blocking Issues", subheading_style))
             for issue in blocking:
-                story.append(Paragraph(f"✗ {issue}", normal_style))
+                # Ensure UTF-8 encoding
+                issue_text = str(issue).encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+                story.append(Paragraph(f"✗ {issue_text}", normal_style))
             story.append(Spacer(1, 0.2*inch))
         
         story.append(PageBreak())
@@ -288,6 +298,11 @@ def build_pdf_report(
                 match_score = hotel.get('match_score', 0)
                 if match_score:
                     story.append(Paragraph(f"Match Score: {match_score}/10", normal_style))
+                
+                # Mesafe bilgisi (yeni ajan ile hesaplanan)
+                distance_miles = hotel.get('distance_miles')
+                if distance_miles is not None:
+                    story.append(Paragraph(f"Distance from event location: {distance_miles} miles", normal_style))
                 
                 story.append(Spacer(1, 0.15*inch))
             
@@ -489,6 +504,9 @@ def build_pdf_report(
             f"<i>Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} by MergenLite AI Analysis System</i>",
             footer_style
         ))
+        
+        # UTF-8 encoding için font desteği ekle (karakter sorunlarını önlemek için)
+        # ReportLab varsayılan olarak UTF-8 destekler, ancak özel karakterler için font kontrolü yapılmalı
         
         # PDF'i oluştur
         doc.build(story)

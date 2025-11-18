@@ -1,0 +1,146 @@
+{
+  "SOW_Template": "Hotel Accommodations and Meeting Space",
+  "Version": "1.0",
+  "Format": "GPT/AutoGen Compatible",
+  "BACKGROUND": {
+    "Solicitation_Number": "{SOLICITATION_NUMBER}",
+    "Agency": "{AGENCY}",
+    "Event_Title": "{EVENT_TITLE}"
+  },
+  "MEETING_INFO": {
+    "MEETING_NAME": "{MEETING_NAME}",
+    "MEETING_DATES": "{MEETING_DATES}"
+  },
+  "SLEEPING_ROOM_REQUIREMENTS": {
+    "Date_Range": "{DATE_RANGE}",
+    "Room_Block": "{ROOM_BLOCK}",
+    "Total_Participants": "{TOTAL_PARTICIPANTS}",
+    "Table_Format": "Weekly",
+    "Days": [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ],
+    "Dates": {},
+    "Rooms_Booked_Night": {},
+    "Notes": "{ROOM_BLOCK_NOTES}"
+  },
+  "FUNCTION_SPACE_REQUIREMENTS": {
+    "Registration_Area": {
+      "Setup": "{REGISTRATION_SETUP}",
+      "WiFi": true
+    },
+    "General_Session": {
+      "Capacity": "{GENERAL_SESSION_CAPACITY}",
+      "Setup": "{GENERAL_SESSION_SETUP}",
+      "AV_Requirements": {
+        "Projector_Lumens": "{PROJECTOR_LUMENS}",
+        "Screens": "{SCREEN_COUNT}",
+        "Microphones": [
+          "{MICROPHONE_TYPES}"
+        ]
+      }
+    },
+    "Breakout_Rooms": {
+      "Count": "{BREAKOUT_ROOM_COUNT}",
+      "Capacity_Per_Room": "{BREAKOUT_CAPACITY}",
+      "Setup": "{BREAKOUT_SETUP}",
+      "AV_Requirements": {
+        "Projector_Lumens": "{BREAKOUT_PROJECTOR_LUMENS}",
+        "Screens": "{BREAKOUT_SCREEN_COUNT}",
+        "Microphones": [
+          "{BREAKOUT_MICROPHONE_TYPES}"
+        ]
+      }
+    },
+    "Logistics_Room": {
+      "Capacity": "{LOGISTICS_CAPACITY}",
+      "Setup": "{LOGISTICS_SETUP}",
+      "WiFi": true
+    },
+    "Table_Format": "Weekly",
+    "Days": [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday"
+    ],
+    "Dates": {},
+    "General_Sessions_Room": {},
+    "Conference_Breakout_Rooms": {},
+    "Detailed_AV_Requirements": {
+      "Registration_Area": {
+        "Setup": "- One rectangular-style table provided with chairs to seat 3 people located in front of general session room.\n- Table provided with a white tablecloth",
+        "WiFi": true
+      },
+      "General_Session": {
+        "Capacity": 120,
+        "Setup": "Classroom-style",
+        "AV_Requirements": {
+          "Projector_Lumens": 5000,
+          "Screens": 2,
+          "Screen_Size": "6' x 10'",
+          "Microphones": [
+            "Handheld",
+            "Podium"
+          ]
+        }
+      },
+      "Breakout_Rooms": {
+        "Count": 4,
+        "Capacity_Per_Room": 30,
+        "Setup": "Classroom-style",
+        "AV_Requirements": {
+          "Projector_Lumens": 5000,
+          "Screens": 1,
+          "Microphones": [
+            "Handheld",
+            "Podium"
+          ]
+        }
+      },
+      "Logistics_Room": {
+        "Capacity": 15,
+        "Setup": "Boardroom Style",
+        "WiFi": true
+      }
+    }
+  },
+  "REFRESHMENTS": {
+    "Standard_Service": "{STANDARD_REFRESHMENT_SERVICE}",
+    "AM_PM_Refreshments": "{AM_PM_REFRESHMENTS}",
+    "Timing_Agreement": "{REFRESHMENT_TIMING}",
+    "Breakout_Room_Logistics": "{BREAKOUT_ROOM_LOGISTICS}",
+    "Tax_Exemption": "{TAX_EXEMPTION_NOTE}"
+  },
+  "LOGISTICS": {
+    "Pre_con_Meeting": {
+      "Date_Time": "{PRE_CON_DATE_TIME}",
+      "Attendees": "{PRE_CON_ATTENDEES}",
+      "Agenda": "{PRE_CON_AGENDA}",
+      "Location": "{PRE_CON_LOCATION}",
+      "Additional_Request": "{PRE_CON_ADDITIONAL_REQUEST}"
+    }
+  },
+  "TERMS_AND_CONDITIONS": {
+    "Payment_Terms": "{PAYMENT_TERMS}",
+    "Tax_Exempt": "{TAX_EXEMPT}",
+    "E_Invoicing_IPP": "{E_INVOICING_IPP}",
+    "Cancellation_Penalties": "{CANCELLATION_PENALTIES}"
+  },
+  "COMPLIANCE_REQUIREMENTS": {
+    "FAR_52_212_4": "{FAR_52_212_4}",
+    "FAR_52_212_5": "{FAR_52_212_5}",
+    "FAR_52_204_24_25_26": "{FAR_52_204_24_25_26}",
+    "Security_Telecom_Restrictions": "{SECURITY_TELECOM_RESTRICTIONS}",
+    "Bytedance_Restriction": "{BYTEDANCE_RESTRICTION}",
+    "SAM_Registration": "{SAM_REGISTRATION}",
+    "Tax_Exemption_Clause": "{TAX_EXEMPTION_CLAUSE}"
+  }
+}

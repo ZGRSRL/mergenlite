@@ -144,9 +144,23 @@ def download_documents(
         İndirilen döküman bilgileri listesi
     """
     downloaded = []
+    seen_urls = set()  # Duplicate URL engelleme için
     
     for doc in documents:
         url = doc.get("url", "")
+        
+        # Duplicate URL kontrolü
+        if not url:
+            logger.warning(f"[Skip] Empty URL, skipping document: {doc.get('name', 'unknown')}")
+            continue
+        
+        # URL'yi normalize et (query string'leri kaldır, lowercase)
+        url_normalized = url.split('?')[0].lower().strip()
+        if url_normalized in seen_urls:
+            logger.info(f"[Skip] Duplicate URL detected, skipping: {url[:50]}...")
+            continue
+        seen_urls.add(url_normalized)
+        
         name = doc.get("name") or doc.get("filename") or url.split("/")[-1].split("?")[0]
         
         # Dosya uzantısını kontrol et
@@ -253,7 +267,7 @@ def download_from_database_raw_data(
         İndirilen döküman bilgileri listesi
     """
     try:
-        from app import get_db_session
+        from backend_utils import get_db_session
         from mergenlite_models import Opportunity
         import json
         
@@ -487,62 +501,75 @@ def analyze_opportunity(
     # 2. Dökümanları indir
     downloaded_docs = []
     
-    if download_from_sam_gov and (notice_id or opportunity_id):
-        logger.info(f"[Step 2] Downloading from SAM.gov...")
-        downloaded_docs = download_from_sam(
-            folder=folder,
-            notice_id=notice_id or opportunity_id or '',
-            opportunity_id=opportunity_id
-        )
-        # Eğer SAM.gov'dan indirme başarısız olduysa, mevcut dosyaları kullan
-        if not downloaded_docs:
-            logger.warning(f"[WARNING] SAM.gov download failed, trying existing files in folder...")
-            # Mevcut dosyaları kontrol et (PDF, TXT, DOCX, ZIP, XLS, XLSX)
-            existing_pdfs = list(folder.glob("*.pdf"))
-            existing_txts = list(folder.glob("*.txt"))
-            existing_docx = list(folder.glob("*.docx")) + list(folder.glob("*.doc"))
-            existing_zips = list(folder.glob("*.zip"))
-            existing_excel = list(folder.glob("*.xls")) + list(folder.glob("*.xlsx"))
-            # analysis_report.pdf'yi hariç tut (bu analiz sonucu)
-            existing_pdfs = [p for p in existing_pdfs if p.name != 'analysis_report.pdf']
-            existing_docs = existing_pdfs + existing_txts + existing_docx + existing_excel
-            
-            # ZIP dosyalarını ayıkla
-            for zip_file in existing_zips:
-                extracted = extract_zip_to_folder(zip_file, folder)
-                if extracted:
-                    logger.info(f"[ZIP] {len(extracted)} dosya ayıklandı: {zip_file.name}")
-                    existing_docs.extend(extracted)
-            
-            if existing_docs:
-                logger.info(f"[Step 2] Using {len(existing_docs)} existing document(s)...")
-                try:
-                    from document_processor import DocumentProcessor
-                    processor = DocumentProcessor()
-                    for doc_file in existing_docs:
-                        # Dosyayı işle
-                        result = processor.process_file_from_path(str(doc_file))
-                        if result.get('success'):
-                            text = result['data'].get('text', '')
-                            downloaded_docs.append({
-                                "name": doc_file.name,
-                                "path": str(doc_file),
-                                "document_type": detect_document_type(doc_file.name, text),
-                                "status": "existing",
-                                "text": text,
-                                "page_count": result['data'].get('page_count', 0)
-                            })
-                            logger.info(f"  ✅ Processed: {doc_file.name} ({len(text)} chars)")
-                except ImportError:
-                    # DocumentProcessor yoksa, sadece metadata ekle
-                    for doc_file in existing_docs:
-                        downloaded_docs.append({
-                            "name": doc_file.name,
-                            "path": str(doc_file),
-                            "document_type": detect_document_type(doc_file.name),
-                            "status": "existing"
-                        })
-                        logger.info(f"  ✅ Added: {doc_file.name}")
+    # ÖNCE mevcut dosyaları kontrol et (SAM.gov indirme başarısız olsa bile)
+    logger.info(f"[Step 2] Checking for existing documents in folder...")
+    existing_pdfs = list(folder.glob("*.pdf"))
+    existing_txts = list(folder.glob("*.txt"))
+    existing_docx = list(folder.glob("*.docx")) + list(folder.glob("*.doc"))
+    existing_zips = list(folder.glob("*.zip"))
+    existing_excel = list(folder.glob("*.xls")) + list(folder.glob("*.xlsx"))
+    # analysis_report.pdf'yi hariç tut (bu analiz sonucu)
+    existing_pdfs = [p for p in existing_pdfs if p.name != 'analysis_report.pdf' and p.name != 'sow.pdf']
+    existing_docs = existing_pdfs + existing_txts + existing_docx + existing_excel
+    
+    # ZIP dosyalarını ayıkla
+    for zip_file in existing_zips:
+        extracted = extract_zip_to_folder(zip_file, folder)
+        if extracted:
+            logger.info(f"[ZIP] {len(extracted)} dosya ayıklandı: {zip_file.name}")
+            existing_docs.extend(extracted)
+    
+    # Mevcut dosyaları işle
+    if existing_docs:
+        logger.info(f"[Step 2a] Found {len(existing_docs)} existing document(s) in folder, processing...")
+        try:
+            from document_processor import DocumentProcessor
+            processor = DocumentProcessor()
+            for doc_file in existing_docs:
+                # Dosyayı işle
+                result = processor.process_file_from_path(str(doc_file))
+                if result.get('success'):
+                    text = result['data'].get('text', '')
+                    downloaded_docs.append({
+                        "name": doc_file.name,
+                        "path": str(doc_file),
+                        "document_type": detect_document_type(doc_file.name, text),
+                        "status": "existing",
+                        "text": text,
+                        "page_count": result['data'].get('page_count', 0)
+                    })
+                    logger.info(f"  ✅ Processed: {doc_file.name} ({len(text)} chars)")
+        except ImportError:
+            # DocumentProcessor yoksa, sadece metadata ekle
+            for doc_file in existing_docs:
+                downloaded_docs.append({
+                    "name": doc_file.name,
+                    "path": str(doc_file),
+                    "document_type": detect_document_type(doc_file.name),
+                    "status": "existing"
+                })
+                logger.info(f"  ✅ Added: {doc_file.name}")
+    
+    # Eğer mevcut dosya yoksa ve SAM.gov indirme aktifse, SAM.gov'dan indir
+    if not downloaded_docs and download_from_sam_gov and (notice_id or opportunity_id):
+        logger.info(f"[Step 2b] No existing documents found, downloading from SAM.gov...")
+        # Önce notice_id ile dene (eğer varsa)
+        if notice_id:
+            logger.info(f"[Step 2b-1] Trying with Notice ID: {notice_id}")
+            downloaded_docs = download_from_sam(
+                folder=folder,
+                notice_id=notice_id,
+                opportunity_id=opportunity_id
+            )
+        
+        # Notice ID ile başarısız olduysa ve opportunity_id farklıysa, opportunity_id ile dene
+        if not downloaded_docs and opportunity_id and opportunity_id != notice_id:
+            logger.info(f"[Step 2b-2] Notice ID failed, trying with Opportunity ID: {opportunity_id}")
+            downloaded_docs = download_from_sam(
+                folder=folder,
+                notice_id=opportunity_id,  # opportunity_id'yi notice_id olarak kullan
+                opportunity_id=opportunity_id
+            )
     elif documents:
         logger.info(f"[Step 2] Downloading {len(documents)} document(s)...")
         downloaded_docs = download_documents(folder, documents)
@@ -597,9 +624,25 @@ def analyze_opportunity(
             logger.warning(f"[WARNING] No documents found in {folder}")
     
     if not downloaded_docs:
-        logger.error(f"❌ No documents available for analysis in {folder}")
-        logger.info("💡 İpucu: SAM.gov API quota limiti aşılmış olabilir. Yarın tekrar deneyin veya manuel olarak PDF'leri klasöre ekleyin.")
-        raise ValueError(f"No documents available for analysis in {folder}")
+        error_msg = f"No documents available for analysis in {folder}"
+        if notice_id or opportunity_id:
+            error_msg += f"\n\nTried downloading from SAM.gov with:"
+            if notice_id:
+                error_msg += f"\n  - Notice ID: {notice_id}"
+            if opportunity_id and opportunity_id != notice_id:
+                error_msg += f"\n  - Opportunity ID: {opportunity_id}"
+            error_msg += f"\n\nPossible reasons:"
+            error_msg += f"\n  1. SAM.gov API quota limit exceeded (try again tomorrow)"
+            error_msg += f"\n  2. No documents attached to this opportunity"
+            error_msg += f"\n  3. Documents are not publicly available"
+            error_msg += f"\n\nSolution:"
+            error_msg += f"\n  - Manually download PDFs from SAM.gov and place them in: {folder}"
+            error_msg += f"\n  - Or visit: https://sam.gov/opp/{opportunity_id or notice_id}/view"
+        else:
+            error_msg += f"\n\n💡 İpucu: SAM.gov API quota limiti aşılmış olabilir. Yarın tekrar deneyin veya manuel olarak PDF'leri klasöre ekleyin."
+        
+        logger.error(f"❌ {error_msg}")
+        raise ValueError(error_msg)
     
     logger.info(f"[OK] {len(downloaded_docs)} document(s) ready for analysis")
     
@@ -644,6 +687,61 @@ def analyze_opportunity(
     logger.info(f"[Summary] {folder / 'summary.md'}")
     if pdf_path.exists():
         logger.info(f"[PDF] {pdf_path}")
+    
+    # 5. Veritabanına kaydet
+    try:
+        from backend_utils import get_db_session
+        from mergenlite_models import AIAnalysisResult
+        import json
+        
+        db = get_db_session()
+        if db:
+            try:
+                # Report JSON'dan skor hesapla
+                report_json_path = folder / 'report.json'
+                overall_score = 0
+                confidence = 0.5
+                
+                if report_json_path.exists():
+                    try:
+                        with open(report_json_path, 'r', encoding='utf-8') as f:
+                            report_data = json.load(f)
+                            
+                        # Skor hesapla
+                        fit_assessment = report_data.get('fit_assessment', {})
+                        if fit_assessment and fit_assessment.get('overall_score'):
+                            overall_score = float(fit_assessment.get('overall_score', 0))
+                        elif report_data.get('compliance', {}).get('score'):
+                            overall_score = float(report_data.get('compliance', {}).get('score', 0))
+                        
+                        confidence = overall_score / 100.0 if overall_score > 0 else 0.5
+                    except Exception as json_error:
+                        logger.warning(f"Report JSON okuma hatası: {json_error}")
+                
+                # AIAnalysisResult kaydet
+                ai_result = AIAnalysisResult(
+                    opportunity_id=notice_id or opportunity_id or opportunity_code,
+                    analysis_type='FULL_ANALYSIS',
+                    result=result,  # Full result dict
+                    confidence=confidence,
+                    timestamp=datetime.now(),
+                    agent_name='MergenLite Opportunity Runner'
+                )
+                
+                db.add(ai_result)
+                db.commit()
+                
+                logger.info(f"✅ Analiz sonucu veritabanına kaydedildi: {ai_result.id} (opportunity_id: {ai_result.opportunity_id})")
+            except Exception as db_error:
+                logger.error(f"❌ Veritabanı kayıt hatası: {db_error}", exc_info=True)
+                if db:
+                    db.rollback()
+            finally:
+                db.close()
+    except ImportError:
+        logger.warning("Backend utils veya models import edilemedi, veritabanı kaydı atlandı")
+    except Exception as save_error:
+        logger.error(f"Veritabanı kayıt hatası: {save_error}", exc_info=True)
     
     return result
 

@@ -11,6 +11,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from document_processor import DocumentProcessor
 from llm_analyzer import LLMAnalyzer
+from llm_client import (
+    call_logged_llm,
+    extract_message_text,
+    LLMNotAvailableError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,28 +90,16 @@ Extract vendor profile information from the PDF content below:
 """
     
     try:
-        # OpenAI API ile direkt çağrı
-        import os
-        import openai
-        
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            logger.warning("OpenAI API key not found, using fallback")
-            return _get_fallback_vendor_profile()
-        
-        openai.api_key = api_key
-        
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
+        response = call_logged_llm(
+            agent_name="VendorProfileExtractor",
             messages=[
                 {"role": "system", "content": system_message},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
             temperature=0.2,
-            max_tokens=2000
+            max_tokens=2000,
         )
-        
-        result_text = response.choices[0].message.content.strip()
+        result_text = extract_message_text(response).strip()
         
         # JSON parse et
         try:
@@ -129,8 +122,8 @@ Extract vendor profile information from the PDF content below:
         logger.info(f"[Vendor Profile] Extracted vendor profile: {extracted_data.get('company_name', 'N/A')}")
         return extracted_data
         
-    except ImportError:
-        logger.warning("OpenAI not available, using fallback vendor profile")
+    except LLMNotAvailableError as exc:
+        logger.warning(f"LLM not available, using fallback vendor profile: {exc}")
         return _get_fallback_vendor_profile()
     except Exception as e:
         logger.error(f"[Vendor Profile] Extraction error: {e}", exc_info=True)

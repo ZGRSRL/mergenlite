@@ -18,6 +18,16 @@ import time
 import asyncio
 import threading
 
+# Logging konfigürasyonu - detaylı loglar için
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('app.log', encoding='utf-8', mode='a')
+    ]
+)
+
 # Backend fonksiyonlarını import et - streamlit bağımlılığı olmadan
 try:
     from sam_integration import SAMIntegration
@@ -1842,9 +1852,14 @@ def analysis_page():
                                         status_label = ui.label('Hazırlanıyor...').classes('text-sm text-gray-600')
                                         progress_bar = ui.linear_progress(value=0).classes('w-full mt-2')
                                 
+                                # Hata mesajını saklamak için değişken (run_analysis'tan önce tanımla)
+                                analysis_error = [None]  # List kullanarak mutable yapıyoruz
+                                opportunity_code_var = [sanitize_code(nid or oid2 or 'unknown')]  # Code'u sakla
+                                
                                 def run_analysis():
                                     try:
                                         code = sanitize_code(nid or oid2 or 'unknown')
+                                        opportunity_code_var[0] = code  # Code'u güncelle
                                         if analyze_opportunity:
                                             result = analyze_opportunity(
                                                 base_dir='.',
@@ -1856,7 +1871,11 @@ def analysis_page():
                                             return bool(result)
                                         return False
                                     except Exception as e:
-                                        logger.error(f'Analysis error: {e}', exc_info=True)
+                                        error_msg = str(e)
+                                        analysis_error[0] = error_msg  # Hata mesajını sakla
+                                        logger.error(f'Analysis error: {error_msg}', exc_info=True)
+                                        import traceback
+                                        logger.error(f'Analysis traceback: {traceback.format_exc()}')
                                         return None
                                 
                                 def thread_worker():
@@ -1904,20 +1923,50 @@ def analysis_page():
                                                                 ui.label('⚠️ Analiz sonuç üretmedi').classes('text-amber-700 font-semibold')
                                                         else:
                                                             with ui.card().classes('w-full bg-red-50 border border-red-200 p-4'):
-                                                                ui.label('❌ Analiz hatası oluştu').classes('text-red-700 font-semibold')
+                                                                ui.label('❌ Analiz hatası oluştu').classes('text-red-700 font-semibold mb-2')
+                                                                # Hata detaylarını göster
+                                                                error_msg = analysis_error[0] or 'Bilinmeyen hata'
+                                                                error_str = str(error_msg)
+                                                                
+                                                                # "No documents available" hatası için özel mesaj
+                                                                if 'No documents available' in error_str:
+                                                                    ui.label('Döküman bulunamadı').classes('text-sm font-semibold text-red-700 mb-2')
+                                                                    ui.label('Bu opportunity için SAM.gov\'dan döküman indirilemedi.').classes('text-sm text-red-600 mb-2')
+                                                                    
+                                                                    # Çözüm önerileri
+                                                                    with ui.column().classes('mt-3'):
+                                                                        ui.label('Çözüm:').classes('text-sm font-semibold text-gray-700 mb-1')
+                                                                        ui.label('1. SAM.gov sayfasından manuel olarak PDF\'leri indirin').classes('text-sm text-gray-600 mb-1')
+                                                                        ui.label('2. PDF\'leri şu klasöre kopyalayın:').classes('text-sm text-gray-600 mb-1')
+                                                                        code_display = opportunity_code_var[0] if opportunity_code_var else (sanitize_code(nid or oid2 or 'unknown'))
+                                                                        ui.label(f'   opportunities/{code_display}').classes('text-xs font-mono bg-gray-100 p-2 rounded mb-2')
+                                                                        ui.label('3. Analizi tekrar başlatın').classes('text-sm text-gray-600 mb-2')
+                                                                        
+                                                                        # SAM.gov linki
+                                                                        if nid or oid2:
+                                                                            sam_url = f"https://sam.gov/opp/{oid2 or nid}/view"
+                                                                            ui.link('SAM.gov\'da Görüntüle', sam_url, new_tab=True).classes('text-blue-600 hover:text-blue-800 text-sm')
+                                                                else:
+                                                                    ui.label(f'Hata: {error_str[:300]}').classes('text-sm text-red-600')
                                             except Exception as e:
                                                 logger.error(f'Result display error: {e}')
                                     except Exception as e:
-                                        logger.error(f'Thread worker error: {e}', exc_info=True)
+                                        error_msg = str(e)
+                                        analysis_error[0] = error_msg
+                                        logger.error(f'Thread worker error: {error_msg}', exc_info=True)
                                         if client:
                                             try:
                                                 with client:
                                                     status_cont.clear()
                                                     with status_cont:
                                                         with ui.card().classes('w-full bg-red-50 border border-red-200 p-4'):
-                                                            ui.label(f'❌ Hata: {str(e)[:100]}').classes('text-red-700 font-semibold')
-                                            except:
-                                                pass
+                                                            ui.label('❌ Analiz hatası oluştu').classes('text-red-700 font-semibold mb-2')
+                                                            ui.label(f'Hata: {error_msg[:300]}').classes('text-sm text-red-600 mb-2')
+                                                            # Stack trace'i log'a yaz ama kullanıcıya gösterme
+                                                            import traceback
+                                                            logger.error(f'Full traceback: {traceback.format_exc()}')
+                                            except Exception as display_error:
+                                                logger.error(f'Error display error: {display_error}')
                                 
                                 thread = threading.Thread(target=thread_worker, daemon=True)
                                 thread.start()
@@ -2284,9 +2333,41 @@ def results_page():
                 ui.button("📄 JSON Export", icon='code', on_click=export_json).classes('bg-gray-600 text-white hover:bg-gray-700 px-4 py-2 rounded-lg')
                 
                 # Mail gönderme butonu
-                with ui.dialog() as email_dialog, ui.card().classes('w-full max-w-md p-6'):
+                with ui.dialog() as email_dialog, ui.card().classes('w-full max-w-lg p-6'):
                     ui.label('📧 Send Analysis Report via Email').classes('text-xl font-bold text-gray-900 mb-4')
-                    email_input = ui.input(label='Recipient Email', placeholder='example@domain.com').classes('w-full mb-4')
+                    
+                    # Email adresi - Daha belirgin ve büyük
+                    ui.label('Recipient Email Address').classes('text-base font-semibold text-gray-700 mb-2')
+                    email_input = ui.input(
+                        label='', 
+                        placeholder='Enter recipient email address (e.g., example@domain.com)'
+                    ).classes('w-full mb-4 text-lg').props('autofocus')
+                    email_input.style('font-size: 16px; padding: 12px;')
+                    
+                    # SMTP Ayarları (Gmail varsayılan, .env'den oku)
+                    try:
+                        from dotenv import load_dotenv
+                        load_dotenv()
+                    except ImportError:
+                        pass
+                    
+                    # .env'den SMTP ayarlarını oku
+                    default_smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+                    default_smtp_port = int(os.getenv('SMTP_PORT', '587'))
+                    default_smtp_username = os.getenv('SMTP_USERNAME', '')
+                    default_smtp_password = os.getenv('SMTP_PASSWORD', '')
+                    default_from_email = os.getenv('SMTP_FROM_EMAIL', default_smtp_username)
+                    default_use_tls = os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
+                    
+                    with ui.expansion('⚙️ SMTP Settings', icon='settings').classes('w-full mb-4'):
+                        smtp_host_input = ui.input(label='SMTP Host', value=default_smtp_host, placeholder='smtp.gmail.com').classes('w-full mb-2')
+                        with ui.row().classes('w-full gap-2 mb-2'):
+                            smtp_port_input = ui.number(label='SMTP Port', value=default_smtp_port, format='%d').classes('flex-1')
+                            smtp_tls_checkbox = ui.checkbox('Use TLS', value=default_use_tls).classes('flex-1 items-center')
+                        smtp_username_input = ui.input(label='SMTP Username (Gmail)', value=default_smtp_username, placeholder='your-email@gmail.com').classes('w-full mb-2')
+                        smtp_password_input = ui.input(label='SMTP Password (App Password)', password=True, value=default_smtp_password, placeholder='••••••••').classes('w-full mb-2')
+                        ui.label('💡 Gmail için: Google Account > Security > App Passwords').classes('text-xs text-gray-500 mb-2')
+                        from_email_input = ui.input(label='From Email', value=default_from_email, placeholder='sender@gmail.com').classes('w-full mb-2')
                     
                     with ui.row().classes('w-full gap-2'):
                         ui.button('Cancel', on_click=email_dialog.close).classes('flex-1 bg-gray-300 text-gray-700 hover:bg-gray-400')
@@ -2297,8 +2378,19 @@ def results_page():
                                 ui.notify('Please enter a valid email address', type='negative')
                                 return
                             
+                            # SMTP ayarlarını kontrol et
+                            smtp_host = smtp_host_input.value.strip()
+                            smtp_port = int(smtp_port_input.value) if smtp_port_input.value else 587
+                            smtp_username = smtp_username_input.value.strip()
+                            smtp_password = smtp_password_input.value.strip()
+                            from_email = from_email_input.value.strip() or smtp_username
+                            
+                            if not smtp_host or not smtp_username or not smtp_password:
+                                ui.notify('Please configure SMTP settings', type='negative')
+                                return
+                            
                             try:
-                                from mail_package import build_mail_package
+                                from mail_package import build_mail_package, send_email_via_smtp
                                 from pathlib import Path
                                 
                                 # Mail paketi oluştur
@@ -2312,22 +2404,621 @@ def results_page():
                                 package = build_mail_package(
                                     opportunity_code=opp_id,
                                     folder_path=str(folder_path),
-                                    to_email=email
+                                    to_email=email,
+                                    from_email=from_email
                                 )
                                 
-                                # SMTP ayarları (basit - kullanıcı daha sonra yapılandırabilir)
-                                ui.notify(f'Email package prepared for {email}. Configure SMTP settings to send.', type='info')
-                                logger.info(f"Email package created for {email}: {package.get('subject', 'N/A')}")
+                                # SMTP config
+                                smtp_config = {
+                                    'host': smtp_host,
+                                    'port': smtp_port,
+                                    'username': smtp_username,
+                                    'password': smtp_password,
+                                    'use_tls': smtp_tls_checkbox.value
+                                }
                                 
-                                email_dialog.close()
+                                # Mail gönder
+                                ui.notify('Sending email...', type='info')
+                                if send_email_via_smtp(package, smtp_config):
+                                    ui.notify(f'✅ Email sent successfully to {email}', type='positive')
+                                    logger.info(f"Email sent successfully to {email}")
+                                    email_dialog.close()
+                                else:
+                                    ui.notify('❌ Failed to send email. Please check SMTP settings.', type='negative')
                                 
                             except Exception as e:
                                 logger.error(f"Email send error: {e}", exc_info=True)
-                                ui.notify(f'Error preparing email: {str(e)}', type='negative')
+                                ui.notify(f'Error sending email: {str(e)[:100]}', type='negative')
                         
                         ui.button('Send Email', icon='send', on_click=send_email).classes('flex-1 bg-blue-600 text-white hover:bg-blue-700')
                 
                 ui.button("📧 Send Email", icon='email', on_click=email_dialog.open).classes('bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-lg')
+                
+                # Mail dialog'u generate_sow içinde oluşturulacak (sow_result, report_data vb. erişimi için)
+                mail_dialog_sow = None  # Placeholder, generate_sow içinde tanımlanacak
+                
+                # SOW oluşturma ve önizleme butonu
+                def generate_sow():
+                    try:
+                        from agents.sow_mail_agent import make_sow_mail_agent
+                        from pathlib import Path
+                        import json
+                        
+                        opp_id = selected_analysis.get('opportunity_id', '')
+                        folder_path = Path('opportunities') / opp_id
+                        
+                        if not folder_path.exists():
+                            ui.notify('Analysis folder not found', type='negative')
+                            return
+                        
+                        # Report JSON'u yükle
+                        report_json_path = folder_path / 'report.json'
+                        if not report_json_path.exists():
+                            ui.notify('Report JSON not found', type='negative')
+                            return
+                        
+                        with open(report_json_path, 'r', encoding='utf-8') as f:
+                            report_data = json.load(f)
+                        
+                        # SOW agent oluştur
+                        sow_agent = make_sow_mail_agent()
+                        
+                        # SOW oluştur
+                        ui.notify('Generating SOW...', type='info')
+                        sow_result = sow_agent.generate_sow(
+                            report_data=report_data,
+                            opportunity_info=report_data.get('opportunity_info', {}),
+                            vendor_profile=None
+                        )
+                        
+                        # PDF'leri oluştur
+                        ui.notify('Generating PDFs...', type='info')
+                        pdfs = sow_agent.generate_sow_pdfs(
+                            sow_result=sow_result,
+                            output_folder=str(folder_path),
+                            opportunity_code=opp_id,
+                            report_data=report_data  # GPT formatı PDF için analiz verileri
+                        )
+                        sow_result['sow_pdf_hotel_path'] = pdfs.get('hotel_pdf')
+                        sow_result['sow_pdf_internal_path'] = pdfs.get('internal_pdf')
+                        sow_result['sow_pdf_hotel_gpt_path'] = pdfs.get('hotel_gpt_pdf')
+                        
+                        # Email dialog'u oluştur (SOW oluşturulduktan sonra, tüm değişkenler hazır)
+                        email_dialog_sow = ui.dialog()
+                        with email_dialog_sow, ui.card().classes('w-full max-w-md p-6'):
+                            ui.label('📧 Send SOW via Email').classes('text-xl font-bold text-gray-900 mb-4')
+                            
+                            # Email adresi
+                            ui.label('Recipient Email Address').classes('text-base font-semibold text-gray-700 mb-2')
+                            recipient_email_input = ui.input(
+                                label='', 
+                                placeholder='Enter recipient email address (e.g., hotel@example.com)'
+                            ).classes('w-full mb-4 text-lg').props('autofocus')
+                            recipient_email_input.style('font-size: 16px; padding: 12px;')
+                            
+                            # SMTP Ayarları (Gmail varsayılan, .env'den oku)
+                            try:
+                                from dotenv import load_dotenv
+                                load_dotenv()
+                            except ImportError:
+                                pass
+                            
+                            # .env'den SMTP ayarlarını oku
+                            default_smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+                            default_smtp_port = int(os.getenv('SMTP_PORT', '587'))
+                            default_smtp_username = os.getenv('SMTP_USERNAME', '')
+                            default_smtp_password = os.getenv('SMTP_PASSWORD', '')
+                            default_from_email = os.getenv('SMTP_FROM_EMAIL', default_smtp_username)
+                            default_use_tls = os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
+                            
+                            with ui.expansion('⚙️ SMTP Settings', icon='settings').classes('w-full mb-4'):
+                                smtp_host_input = ui.input(label='SMTP Host', value=default_smtp_host, placeholder='smtp.gmail.com').classes('w-full mb-2')
+                                with ui.row().classes('w-full gap-2 mb-2'):
+                                    smtp_port_input = ui.number(label='SMTP Port', value=default_smtp_port, format='%d').classes('flex-1')
+                                    smtp_tls_checkbox = ui.checkbox('Use TLS', value=default_use_tls).classes('flex-1 items-center')
+                                smtp_username_input = ui.input(label='SMTP Username (Gmail)', value=default_smtp_username, placeholder='your-email@gmail.com').classes('w-full mb-2')
+                                smtp_password_input = ui.input(label='SMTP Password (App Password)', password=True, value=default_smtp_password, placeholder='••••••••').classes('w-full mb-2')
+                                ui.label('💡 Gmail için: Google Account > Security > App Passwords').classes('text-xs text-gray-500 mb-2')
+                                from_email_input = ui.input(label='From Email', value=default_from_email, placeholder='sender@gmail.com').classes('w-full mb-2')
+                            
+                            with ui.row().classes('w-full gap-2'):
+                                ui.button('Cancel', on_click=email_dialog_sow.close).classes('flex-1 bg-gray-300 text-gray-700 hover:bg-gray-400')
+                                
+                                def send_email_now():
+                                    # Closure'dan değişkenleri yakala
+                                    local_folder_path = folder_path
+                                    local_sow_result = sow_result
+                                    local_sow_agent = sow_agent
+                                    local_report_data = report_data
+                                    local_opp_id = opp_id
+                                    
+                                    email = recipient_email_input.value.strip()
+                                    if not email or '@' not in email:
+                                        ui.notify('Please enter a valid email address', type='negative')
+                                        return
+                                    
+                                    # SMTP ayarlarını kontrol et
+                                    smtp_host = smtp_host_input.value.strip()
+                                    smtp_port = int(smtp_port_input.value) if smtp_port_input.value else 587
+                                    smtp_username = smtp_username_input.value.strip()
+                                    smtp_password = smtp_password_input.value.strip()
+                                    from_email = from_email_input.value.strip() or smtp_username
+                                    
+                                    if not smtp_host or not smtp_username or not smtp_password:
+                                        ui.notify('Please configure SMTP settings', type='negative')
+                                        return
+                                    
+                                    try:
+                                        from mail_package import send_email_via_smtp
+                                        
+                                        # SOW'u kaydet ve PDF'leri oluştur (eğer yoksa)
+                                        sow_md_path = local_folder_path / 'sow.md'
+                                        if not sow_md_path.exists():
+                                            sow_md_path.write_text(local_sow_result.get('sow_text', ''), encoding='utf-8')
+                                        
+                                        # PDF'leri oluştur (eğer yoksa) - GPT formatı dahil
+                                        if not local_sow_result.get('sow_pdf_hotel_gpt_path') or not Path(local_sow_result.get('sow_pdf_hotel_gpt_path', '')).exists():
+                                            pdfs = local_sow_agent.generate_sow_pdfs(
+                                                sow_result=local_sow_result,
+                                                output_folder=str(local_folder_path),
+                                                opportunity_code=local_opp_id,
+                                                report_data=local_report_data  # GPT formatı PDF için analiz verileri
+                                            )
+                                            local_sow_result['sow_pdf_hotel_path'] = pdfs.get('hotel_pdf')
+                                            local_sow_result['sow_pdf_internal_path'] = pdfs.get('internal_pdf')
+                                            local_sow_result['sow_pdf_hotel_gpt_path'] = pdfs.get('hotel_gpt_pdf')
+                                        
+                                        # Mail paketi oluştur
+                                        mail_package = local_sow_agent.generate_mail_package(
+                                            sow_result=local_sow_result,
+                                            report_data=local_report_data,
+                                            opportunity_code=local_opp_id,
+                                            to_email=email,
+                                            from_email=from_email
+                                        )
+                                        
+                                        # 3 PDF ekle:
+                                        # 1. Analysis Report PDF
+                                        analysis_pdf_path = local_folder_path / 'analysis_report.pdf'
+                                        if analysis_pdf_path.exists():
+                                            if 'attachments' not in mail_package:
+                                                mail_package['attachments'] = []
+                                            mail_package['attachments'].append({
+                                                'path': str(analysis_pdf_path),
+                                                'filename': f"analysis_report_{local_opp_id}.pdf",
+                                                'mime_type': 'application/pdf'
+                                            })
+                                            logger.info(f"[SOW Email] Added Analysis Report PDF to attachments")
+                                        
+                                        # 2. GPT formatında Hotel SOW PDF (Sample SOW formatında, analiz verileriyle doldurulmuş)
+                                        hotel_gpt_pdf_path = local_sow_result.get('sow_pdf_hotel_gpt_path')
+                                        if hotel_gpt_pdf_path and Path(hotel_gpt_pdf_path).exists():
+                                            if 'attachments' not in mail_package:
+                                                mail_package['attachments'] = []
+                                            mail_package['attachments'].append({
+                                                'path': hotel_gpt_pdf_path,
+                                                'filename': 'Hotel_Sow_V.pdf',  # GPT formatında, analiz verileriyle doldurulmuş
+                                                'mime_type': 'application/pdf'
+                                            })
+                                            logger.info(f"[SOW Email] Added GPT format Hotel_Sow_V.pdf to attachments")
+                                        else:
+                                            logger.warning(f"[SOW Email] GPT format Hotel SOW PDF not found: {hotel_gpt_pdf_path}")
+                                        
+                                        # 3. Markdown'dan oluşturulan Hotel SOW PDF (güzelleştirilmiş format)
+                                        hotel_pdf_path = local_sow_result.get('sow_pdf_hotel_path')
+                                        if hotel_pdf_path and Path(hotel_pdf_path).exists():
+                                            if 'attachments' not in mail_package:
+                                                mail_package['attachments'] = []
+                                            mail_package['attachments'].append({
+                                                'path': hotel_pdf_path,
+                                                'filename': 'Hotel_Sow.pdf',  # Güzelleştirilmiş markdown formatı
+                                                'mime_type': 'application/pdf'
+                                            })
+                                            logger.info(f"[SOW Email] Added Hotel_Sow.pdf (markdown format) to attachments")
+                                        else:
+                                            logger.warning(f"[SOW Email] Hotel SOW PDF (markdown) not found: {hotel_pdf_path}")
+                                        
+                                        # SMTP config
+                                        smtp_config = {
+                                            'host': smtp_host,
+                                            'port': smtp_port,
+                                            'username': smtp_username,
+                                            'password': smtp_password,
+                                            'use_tls': smtp_tls_checkbox.value
+                                        }
+                                        
+                                        # Mail gönder
+                                        ui.notify('Sending email with all attachments...', type='info')
+                                        
+                                        # PDF'lerin varlığını kontrol et ve logla
+                                        logger.info(f"[SOW Email] Preparing to send email to {email}")
+                                        logger.info(f"[SOW Email] Attachments count: {len(mail_package.get('attachments', []))}")
+                                        for i, att in enumerate(mail_package.get('attachments', []), 1):
+                                            att_path = Path(att['path'])
+                                            logger.info(f"[SOW Email] Attachment {i}: {att['filename']} - Exists: {att_path.exists()}, Path: {att_path}")
+                                        
+                                        email_dialog_sow.close()
+                                        sow_preview_dialog.close()
+                                        
+                                        try:
+                                            success = send_email_via_smtp(mail_package, smtp_config)
+                                            if success:
+                                                ui.notify(f'✅ Email sent successfully to {email} with {len(mail_package.get("attachments", []))} attachments!', type='positive')
+                                                logger.info(f"[SOW Email] ✅ Email sent successfully to {email} with {len(mail_package.get('attachments', []))} attachments")
+                                            else:
+                                                ui.notify('❌ Failed to send email. Please check SMTP settings and logs.', type='negative')
+                                                logger.error(f"[SOW Email] ❌ Email send failed - check SMTP settings")
+                                        except Exception as send_error:
+                                            logger.error(f"[SOW Email] ❌ Exception during email send: {send_error}", exc_info=True)
+                                            ui.notify(f'❌ Error sending email: {str(send_error)[:150]}', type='negative')
+                                        
+                                    except Exception as e:
+                                        logger.error(f"SOW email error: {e}", exc_info=True)
+                                        ui.notify(f'Error sending email: {str(e)[:100]}', type='negative')
+                                
+                                ui.button('Send Email', icon='send', on_click=send_email_now).classes('flex-1 bg-blue-600 text-white hover:bg-blue-700')
+                        
+                        # Mail dialog'u burada oluştur (sow_result, report_data, folder_path, opp_id, sow_agent erişimi için)
+                        nonlocal mail_dialog_sow
+                        mail_dialog_sow = ui.dialog()
+                        with mail_dialog_sow, ui.card().classes('w-full max-w-4xl p-6'):
+                            ui.label('📧 Send SOW via Email').classes('text-xl font-bold text-gray-900 mb-4')
+                            
+                            # Email adresi - Daha belirgin ve büyük
+                            ui.label('Recipient Email Address').classes('text-base font-semibold text-gray-700 mb-2')
+                            email_input_sow = ui.input(
+                                label='', 
+                                placeholder='Enter recipient email address (e.g., hotel@example.com)'
+                            ).classes('w-full mb-4 text-lg').props('autofocus')
+                            email_input_sow.style('font-size: 16px; padding: 12px;')
+                            
+                            # Email içeriği - Düzenlenebilir
+                            ui.label('Email Content (Editable)').classes('text-base font-semibold text-gray-700 mb-2')
+                            email_content_textarea = ui.textarea(
+                                label='',
+                                placeholder='Email content will be generated here. You can edit it before sending.'
+                            ).classes('w-full mb-4').style('min-height: 300px; font-family: monospace; font-size: 14px;')
+                            
+                            # GPT Format JSON gösterimi
+                            gpt_format_container = ui.column().classes('w-full mb-4')
+                            gpt_format_visible = False
+                            
+                            def toggle_gpt_format():
+                                nonlocal gpt_format_visible
+                                gpt_format_visible = not gpt_format_visible
+                                gpt_format_container.set_visibility(gpt_format_visible)
+                            
+                            with gpt_format_container:
+                                ui.label('GPT Format JSON (for reference)').classes('text-base font-semibold text-gray-700 mb-2')
+                                gpt_format_textarea = ui.textarea(
+                                    label='',
+                                    placeholder='GPT format JSON will be loaded here...'
+                                ).classes('w-full mb-2').style('min-height: 200px; font-family: monospace; font-size: 12px;')
+                                
+                                def load_gpt_format():
+                                    try:
+                                        # Closure'dan değişkenleri yakala
+                                        local_folder_path = folder_path
+                                        local_opp_id = opp_id
+                                        
+                                        # Önce mevcut SOW'dan GPT formatını oluştur
+                                        hotel_sow_path = local_folder_path / f"sow_hotel_{local_opp_id}.pdf"
+                                        if not hotel_sow_path.exists():
+                                            # Markdown'dan oluştur
+                                            hotel_sow_path = local_folder_path / 'sow.md'
+                                        
+                                        sample_sow_path = Path("samples/SAMPLE SOW FOR CHTGPT.pdf")
+                                        gpt_json_path = local_folder_path / f"hotel_sow_for_gpt_{local_opp_id}.json"
+                                        
+                                        # Eğer JSON yoksa, oluştur
+                                        if not gpt_json_path.exists():
+                                            from convert_sow_to_gpt_format import convert_to_gpt_format
+                                            if hotel_sow_path.exists() and sample_sow_path.exists():
+                                                convert_to_gpt_format(
+                                                    hotel_sow_path=hotel_sow_path,
+                                                    sample_sow_path=sample_sow_path,
+                                                    output_path=gpt_json_path
+                                                )
+                                        
+                                        # JSON'u yükle
+                                        if gpt_json_path.exists():
+                                            with open(gpt_json_path, 'r', encoding='utf-8') as f:
+                                                gpt_data = json.load(f)
+                                            gpt_format_textarea.value = json.dumps(gpt_data, indent=2, ensure_ascii=False)
+                                            ui.notify('GPT format JSON loaded', type='info')
+                                        else:
+                                            ui.notify('GPT format JSON not found. Generating...', type='warning')
+                                    except Exception as e:
+                                        logger.error(f"Error loading GPT format: {e}", exc_info=True)
+                                        ui.notify(f'Error loading GPT format: {str(e)[:100]}', type='negative')
+                                
+                                ui.button('Load GPT Format JSON', icon='code', on_click=load_gpt_format).classes('bg-purple-500 text-white hover:bg-purple-600 mb-2')
+                            
+                            # GPT format container başlangıçta gizli, "Show/Hide GPT Format" butonu ile gösterilebilir
+                            gpt_format_container.set_visibility(False)
+                            
+                            # Email içeriğini oluştur (başlangıçta)
+                            def generate_email_content():
+                                try:
+                                    # Closure'dan değişkenleri yakala
+                                    local_sow_agent = sow_agent
+                                    local_sow_result = sow_result
+                                    local_report_data = report_data
+                                    local_opp_id = opp_id
+                                    local_folder_path = folder_path
+                                    
+                                    # Mail paketi oluştur (sadece içerik için)
+                                    mail_package = local_sow_agent.generate_mail_package(
+                                        sow_result=local_sow_result,
+                                        report_data=local_report_data,
+                                        opportunity_code=local_opp_id,
+                                        to_email=email_input_sow.value.strip() or 'hotel@example.com',
+                                        from_email=os.getenv('SMTP_FROM_EMAIL', os.getenv('SMTP_USERNAME', ''))
+                                    )
+                                    
+                                    # HTML içeriğini textarea'ya koy (HTML olarak göster)
+                                    email_content = mail_package.get('html_body', mail_package.get('text_body', ''))
+                                    
+                                    # SAMPLE SOW FOR CHTGPT.pdf formatını email içeriğine ekle
+                                    try:
+                                        sample_sow_path = Path("samples/SAMPLE SOW FOR CHTGPT.pdf")
+                                        if sample_sow_path.exists():
+                                            # Sample SOW metnini çıkar
+                                            from document_processor import DocumentProcessor
+                                            processor = DocumentProcessor()
+                                            result = processor.process_file_from_path(str(sample_sow_path))
+                                            
+                                            if result.get('success'):
+                                                sample_sow_text = result['data'].get('text', '')
+                                                if sample_sow_text:
+                                                    # Email içeriğine SAMPLE SOW FOR CHTGPT.pdf formatını ekle
+                                                    email_content += "\n\n---\n\n**SAMPLE SOW FOR CHTGPT Format (Reference):**\n\n```\n" + sample_sow_text[:5000] + "\n```"
+                                                    ui.notify('Email content with SAMPLE SOW FOR CHTGPT format generated.', type='info')
+                                                else:
+                                                    ui.notify('Email content generated. Could not extract SAMPLE SOW text.', type='warning')
+                                            else:
+                                                ui.notify('Email content generated. Could not read SAMPLE SOW PDF.', type='warning')
+                                        else:
+                                            ui.notify('Email content generated. SAMPLE SOW FOR CHTGPT.pdf not found.', type='warning')
+                                        
+                                        # GPT format JSON'u da yükle (gpt_format_textarea için)
+                                        try:
+                                            gpt_json_path = local_folder_path / f"hotel_sow_for_gpt_{local_opp_id}.json"
+                                            if not gpt_json_path.exists():
+                                                # Eğer JSON yoksa, oluştur
+                                                hotel_sow_path = local_folder_path / f"sow_hotel_{local_opp_id}.pdf"
+                                                if not hotel_sow_path.exists():
+                                                    hotel_sow_path = local_folder_path / 'sow.md'
+                                                
+                                                if hotel_sow_path.exists() and sample_sow_path.exists():
+                                                    from convert_sow_to_gpt_format import convert_to_gpt_format
+                                                    convert_to_gpt_format(
+                                                        hotel_sow_path=hotel_sow_path,
+                                                        sample_sow_path=sample_sow_path,
+                                                        output_path=gpt_json_path
+                                                    )
+                                            
+                                            # JSON'u yükle ve textarea'ya ekle
+                                            if gpt_json_path.exists():
+                                                with open(gpt_json_path, 'r', encoding='utf-8') as f:
+                                                    gpt_data = json.load(f)
+                                                gpt_format_textarea.value = json.dumps(gpt_data, indent=2, ensure_ascii=False)
+                                        except Exception as json_error:
+                                            logger.error(f"Error loading GPT format JSON: {json_error}", exc_info=True)
+                                            
+                                    except Exception as gpt_error:
+                                        logger.error(f"Error loading SAMPLE SOW format in email content: {gpt_error}", exc_info=True)
+                                        ui.notify('Email content generated. Could not load SAMPLE SOW FOR CHTGPT format.', type='warning')
+                                    
+                                    email_content_textarea.value = email_content
+                                    
+                                except Exception as e:
+                                    logger.error(f"Error generating email content: {e}", exc_info=True)
+                                    ui.notify(f'Error generating email content: {str(e)[:100]}', type='negative')
+                            
+                            with ui.row().classes('w-full mb-4 gap-2'):
+                                ui.button('Generate Email Content', icon='refresh', on_click=generate_email_content).classes('bg-blue-500 text-white hover:bg-blue-600')
+                                ui.button('Show/Hide GPT Format', icon='code', on_click=toggle_gpt_format).classes('bg-purple-500 text-white hover:bg-purple-600')
+                                ui.label('(Email content auto-generates when dialog opens)').classes('text-sm text-gray-500 self-center')
+                            
+                            # SMTP Ayarları (Gmail varsayılan, .env'den oku)
+                            try:
+                                from dotenv import load_dotenv
+                                load_dotenv()
+                            except ImportError:
+                                pass
+                            
+                            # .env'den SMTP ayarlarını oku
+                            default_smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+                            default_smtp_port = int(os.getenv('SMTP_PORT', '587'))
+                            default_smtp_username = os.getenv('SMTP_USERNAME', '')
+                            default_smtp_password = os.getenv('SMTP_PASSWORD', '')
+                            default_from_email = os.getenv('SMTP_FROM_EMAIL', default_smtp_username)
+                            default_use_tls = os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
+                            
+                            with ui.expansion('⚙️ SMTP Settings', icon='settings').classes('w-full mb-4'):
+                                smtp_host_input_sow = ui.input(label='SMTP Host', value=default_smtp_host, placeholder='smtp.gmail.com').classes('w-full mb-2')
+                                with ui.row().classes('w-full gap-2 mb-2'):
+                                    smtp_port_input_sow = ui.number(label='SMTP Port', value=default_smtp_port, format='%d').classes('flex-1')
+                                    smtp_tls_checkbox_sow = ui.checkbox('Use TLS', value=default_use_tls).classes('flex-1 items-center')
+                                smtp_username_input_sow = ui.input(label='SMTP Username (Gmail)', value=default_smtp_username, placeholder='your-email@gmail.com').classes('w-full mb-2')
+                                smtp_password_input_sow = ui.input(label='SMTP Password (App Password)', password=True, value=default_smtp_password, placeholder='••••••••').classes('w-full mb-2')
+                                ui.label('💡 Gmail için: Google Account > Security > App Passwords').classes('text-xs text-gray-500 mb-2')
+                                from_email_input_sow = ui.input(label='From Email', value=default_from_email, placeholder='sender@gmail.com').classes('w-full mb-2')
+                            
+                            with ui.row().classes('w-full gap-2'):
+                                ui.button('Cancel', on_click=mail_dialog_sow.close).classes('flex-1 bg-gray-300 text-gray-700 hover:bg-gray-400')
+                                
+                                def send_sow_email():
+                                    # Closure'dan değişkenleri yakala
+                                    local_folder_path = folder_path
+                                    local_sow_result = sow_result
+                                    local_sow_agent = sow_agent
+                                    local_report_data = report_data
+                                    local_opp_id = opp_id
+                                    
+                                    email = email_input_sow.value.strip()
+                                    if not email or '@' not in email:
+                                        ui.notify('Please enter a valid email address', type='negative')
+                                        return
+                                    
+                                    # Email içeriği kontrolü
+                                    email_content = email_content_textarea.value.strip()
+                                    if not email_content:
+                                        ui.notify('Please generate or enter email content', type='negative')
+                                        return
+                                    
+                                    # SMTP ayarlarını kontrol et
+                                    smtp_host = smtp_host_input_sow.value.strip()
+                                    smtp_port = int(smtp_port_input_sow.value) if smtp_port_input_sow.value else 587
+                                    smtp_username = smtp_username_input_sow.value.strip()
+                                    smtp_password = smtp_password_input_sow.value.strip()
+                                    from_email = from_email_input_sow.value.strip() or smtp_username
+                                    
+                                    if not smtp_host or not smtp_username or not smtp_password:
+                                        ui.notify('Please configure SMTP settings', type='negative')
+                                        return
+                                    
+                                    try:
+                                        from mail_package import send_email_via_smtp
+                                        
+                                        # SOW'u kaydet ve PDF'leri oluştur
+                                        sow_md_path = local_folder_path / 'sow.md'
+                                        sow_md_path.write_text(local_sow_result.get('sow_text', ''), encoding='utf-8')
+                                        
+                                        # PDF'leri oluştur (hotel PDF mail'de eklenecek)
+                                        pdfs = local_sow_agent.generate_sow_pdfs(
+                                            sow_result=local_sow_result,
+                                            output_folder=str(local_folder_path),
+                                            opportunity_code=local_opp_id,
+                                            report_data=local_report_data  # GPT formatı PDF için analiz verileri
+                                        )
+                                        
+                                        # SOW result'a PDF yollarını ekle
+                                        local_sow_result['sow_pdf_hotel_path'] = pdfs.get('hotel_pdf')
+                                        local_sow_result['sow_pdf_hotel_gpt_path'] = pdfs.get('hotel_gpt_pdf')
+                                        local_sow_result['sow_pdf_internal_path'] = pdfs.get('internal_pdf')
+                                        
+                                        # Mail paketi oluştur (hotel PDF eklenecek)
+                                        mail_package = local_sow_agent.generate_mail_package(
+                                            sow_result=local_sow_result,
+                                            report_data=local_report_data,
+                                            opportunity_code=local_opp_id,
+                                            to_email=email,
+                                            from_email=from_email
+                                        )
+                                        
+                                        # SAMPLE SOW FOR CHTGPT.pdf dosyasını email ekine ekle
+                                        sample_sow_path = Path("samples/SAMPLE SOW FOR CHTGPT.pdf")
+                                        if sample_sow_path.exists():
+                                            # attachments listesi yoksa oluştur
+                                            if 'attachments' not in mail_package:
+                                                mail_package['attachments'] = []
+                                            
+                                            mail_package['attachments'].append({
+                                                'path': str(sample_sow_path),
+                                                'filename': 'SAMPLE_SOW_FOR_CHTGPT.pdf',
+                                                'mime_type': 'application/pdf'
+                                            })
+                                            logger.info(f"[SOW Email] Added SAMPLE SOW FOR CHTGPT.pdf to attachments")
+                                        
+                                        # Kullanıcının düzenlediği içeriği kullan
+                                        email_content = email_content_textarea.value.strip()
+                                        if email_content:
+                                            mail_package['html_body'] = email_content
+                                            # HTML'den text çıkar (basit)
+                                            import re
+                                            text_body = re.sub(r'<[^>]+>', '', email_content)
+                                            text_body = re.sub(r'\s+', ' ', text_body).strip()
+                                            mail_package['text_body'] = text_body
+                                        
+                                        # SMTP config
+                                        smtp_config = {
+                                            'host': smtp_host,
+                                            'port': smtp_port,
+                                            'username': smtp_username,
+                                            'password': smtp_password,
+                                            'use_tls': smtp_tls_checkbox_sow.value
+                                        }
+                                        
+                                        # Mail gönder
+                                        ui.notify('Sending email...', type='info')
+                                        if send_email_via_smtp(mail_package, smtp_config):
+                                            ui.notify(f'✅ SOW email sent successfully to {email}', type='positive')
+                                            logger.info(f"SOW email sent successfully to {email}")
+                                            mail_dialog_sow.close()
+                                        else:
+                                            ui.notify('❌ Failed to send email. Please check SMTP settings.', type='negative')
+                                        
+                                    except Exception as e:
+                                        logger.error(f"SOW email error: {e}", exc_info=True)
+                                        ui.notify(f'Error sending email: {str(e)[:100]}', type='negative')
+                                
+                                ui.button('Send Email', icon='send', on_click=send_sow_email).classes('flex-1 bg-blue-600 text-white hover:bg-blue-700')
+                        
+                        # Önizleme dialogu
+                        with ui.dialog() as sow_preview_dialog, ui.card().classes('w-full max-w-4xl p-6'):
+                            ui.label('📄 SOW Preview').classes('text-2xl font-bold text-gray-900 mb-4')
+                            
+                            # SOW içeriği
+                            with ui.scroll_area().classes('w-full h-96 border border-gray-300 rounded-lg p-4'):
+                                ui.html(sow_result.get('sow_html', ''), sanitize=False).classes('w-full')
+                            
+                            # Butonlar
+                            with ui.row().classes('w-full gap-2 mt-4'):
+                                def save_sow():
+                                    try:
+                                        # SOW'u kaydet
+                                        sow_md_path = folder_path / 'sow.md'
+                                        sow_md_path.write_text(sow_result.get('sow_text', ''), encoding='utf-8')
+                                        
+                                        # PDF'leri oluştur
+                                        ui.notify('Generating PDFs...', type='info')
+                                        pdfs = sow_agent.generate_sow_pdfs(
+                                            sow_result=sow_result,
+                                            output_folder=str(folder_path),
+                                            opportunity_code=opp_id,
+                                            report_data=report_data  # GPT formatı PDF için analiz verileri
+                                        )
+                                        
+                                        messages = [f'SOW saved to {sow_md_path}']
+                                        if pdfs.get('internal_pdf'):
+                                            messages.append(f'Internal PDF: {pdfs["internal_pdf"]}')
+                                        if pdfs.get('hotel_pdf'):
+                                            messages.append(f'Hotel PDF: {pdfs["hotel_pdf"]}')
+                                        
+                                        ui.notify('\n'.join(messages), type='positive')
+                                        sow_preview_dialog.close()
+                                    except Exception as e:
+                                        logger.error(f"Error saving SOW/PDFs: {e}", exc_info=True)
+                                        ui.notify(f'Error saving SOW: {str(e)[:100]}', type='negative')
+                                
+                                def send_email_directly():
+                                    """Direkt email gönder - SOW otomatik oluşturulmuş, tüm ekleri ekle ve gönder"""
+                                    try:
+                                        logger.info("[SOW Email] Send Email button clicked")
+                                        # SOW preview'ı kapat
+                                        sow_preview_dialog.close()
+                                        logger.info("[SOW Email] SOW preview dialog closed")
+                                        # Email dialog'u aç (küçük bir gecikme ile)
+                                        ui.timer(0.3, lambda: email_dialog_sow.open(), once=True)
+                                        logger.info("[SOW Email] Email dialog opening scheduled")
+                                    except Exception as e:
+                                        logger.error(f"Error opening email dialog: {e}", exc_info=True)
+                                        ui.notify(f'Error opening email dialog: {str(e)[:100]}', type='negative')
+                                
+                                ui.button('💾 Save SOW', icon='save', on_click=save_sow).classes('flex-1 bg-green-600 text-white hover:bg-green-700')
+                                ui.button('📧 Send Email', icon='send', on_click=send_email_directly).classes('flex-1 bg-blue-600 text-white hover:bg-blue-700')
+                                ui.button('Close', on_click=sow_preview_dialog.close).classes('flex-1 bg-gray-300 text-gray-700 hover:bg-gray-400')
+                        
+                        sow_preview_dialog.open()
+                        ui.notify('SOW generated successfully!', type='positive')
+                        
+                    except Exception as e:
+                        logger.error(f"SOW generation error: {e}", exc_info=True)
+                        ui.notify(f'Error generating SOW: {str(e)}', type='negative')
+                
+                ui.button("📝 Generate SOW", icon='description', on_click=generate_sow).classes('bg-purple-600 text-white hover:bg-purple-700 px-4 py-2 rounded-lg')
             
             # PDF Önizleme ve Sekmeler - Yan yana layout
             with ui.row().classes('w-full gap-4 items-start'):
@@ -2368,7 +3059,7 @@ def results_page():
                         tab_docs = ui.tab('📄 Processed Documents')
                         tab_req = ui.tab('📋 Requirements')
                         tab_comp = ui.tab('🛡️ Compliance')
-                        tab_prop = ui.tab('✍️ Proposal Draft')
+                        tab_prop = ui.tab('✍️ Proposal')
                     
                     consolidated = selected_analysis.get('consolidated_output', {})
                     
@@ -2527,24 +3218,36 @@ def results_page():
                                     ui.label("No compliance information found.").classes('text-gray-500')
                         
                         with ui.tab_panel(tab_prop):
-                            ui.label('✍️ Proposal Draft Summary').classes('text-lg font-semibold text-gray-900 mb-4')
+                            ui.label('✍️ Proposal Summary').classes('text-lg font-semibold text-gray-900 mb-4')
                             
+                            # Proposal agent çıktısını bul
                             proposal = consolidated.get('data', {}).get('proposal', {}) or consolidated.get('proposal', {})
                             commercial = consolidated.get('commercial_terms', {}) or consolidated.get('data', {}).get('commercial_terms', {})
                             
+                            # Proposal agent çıktısını farklı yerlerden ara
+                            if not proposal:
+                                # Agents çıktısından ara
+                                agents_output = consolidated.get('agents', {}) or consolidated.get('data', {}).get('agents', {})
+                                if isinstance(agents_output, dict):
+                                    proposal = agents_output.get('proposal_generator', {}) or agents_output.get('proposal', {})
+                            
                             with ui.card().classes('w-full bg-white border border-gray-200 p-4'):
-                                if proposal:
-                                    if isinstance(proposal, dict):
-                                        ui.label('Proposal Details:').classes('text-sm font-semibold text-gray-900 mb-3')
-                                        for key, value in list(proposal.items())[:15]:
-                                            if value and not isinstance(value, (dict, list)):
-                                                ui.label(f"{key.replace('_', ' ').title()}: {value}").classes('text-gray-700 text-sm mb-2')
-                                            elif isinstance(value, list) and len(value) > 0:
-                                                ui.label(f"{key.replace('_', ' ').title()}:").classes('text-sm font-semibold text-gray-900 mt-2 mb-1')
-                                                for item in value[:5]:
-                                                    item_str = str(item) if not isinstance(item, dict) else ', '.join([f"{k}: {v}" for k, v in list(item.items())[:3]])
-                                                    ui.label(f"  • {item_str}").classes('text-gray-600 text-sm mb-1 ml-4')
-                                elif commercial:
+                                if proposal and isinstance(proposal, dict) and len(proposal) > 0:
+                                    ui.label('Proposal Details:').classes('text-sm font-semibold text-gray-900 mb-3')
+                                    for key, value in list(proposal.items())[:20]:
+                                        if value and not isinstance(value, (dict, list)):
+                                            ui.label(f"{key.replace('_', ' ').title()}: {value}").classes('text-gray-700 text-sm mb-2')
+                                        elif isinstance(value, list) and len(value) > 0:
+                                            ui.label(f"{key.replace('_', ' ').title()}:").classes('text-sm font-semibold text-gray-900 mt-2 mb-1')
+                                            for item in value[:5]:
+                                                item_str = str(item) if not isinstance(item, dict) else ', '.join([f"{k}: {v}" for k, v in list(item.items())[:3]])
+                                                ui.label(f"  • {item_str}").classes('text-gray-600 text-sm mb-1 ml-4')
+                                        elif isinstance(value, dict):
+                                            ui.label(f"{key.replace('_', ' ').title()}:").classes('text-sm font-semibold text-gray-900 mt-2 mb-1')
+                                            for sub_key, sub_value in list(value.items())[:5]:
+                                                if sub_value and not isinstance(sub_value, (dict, list)):
+                                                    ui.label(f"  • {sub_key.replace('_', ' ').title()}: {sub_value}").classes('text-gray-600 text-sm mb-1 ml-4')
+                                elif commercial and isinstance(commercial, dict) and len(commercial) > 0:
                                     ui.label('Commercial Terms:').classes('text-sm font-semibold text-gray-900 mb-3')
                                     for key, value in commercial.items():
                                         if value and not isinstance(value, (dict, list)):
@@ -2554,7 +3257,8 @@ def results_page():
                                             for item in value[:5]:
                                                 ui.label(f"  • {item}").classes('text-gray-600 text-sm mb-1 ml-4')
                                 else:
-                                    ui.label("No proposal draft found.").classes('text-gray-500')
+                                    ui.label("No proposal draft found.").classes('text-gray-500 mb-2')
+                                    ui.label("Proposal generator agent output will appear here once analysis is complete.").classes('text-gray-400 text-sm')
         
         # İlk yüklemede detaylı görünümü göster
         if analysis_history:
@@ -2576,6 +3280,32 @@ def results_page():
         render_nav()
         with ui.column().classes('w-full max-w-7xl mx-auto p-6'):
             render_results_content()
+
+# API Endpoints - NiceGUI app (FastAPI) kullanarak
+@app.get('/api/health')
+def health_check():
+    """Health check endpoint"""
+    return {
+        'status': 'ok',
+        'message': 'MergenLite API is running',
+        'timestamp': datetime.now().isoformat(),
+        'version': '1.0.0'
+    }
+
+@app.get('/api/status')
+def api_status():
+    """API status endpoint"""
+    return {
+        'app': 'MergenLite',
+        'framework': 'NiceGUI',
+        'status': 'running',
+        'port': 8081,
+        'endpoints': [
+            '/api/health',
+            '/api/status',
+            '/download/pdf/{opportunity_id}'
+        ]
+    }
 
 # PDF indirme endpoint'i - NiceGUI app kullanarak
 @app.get('/download/pdf/{opportunity_id}')
@@ -2615,8 +3345,14 @@ if __name__ in {"__main__", "__mp_main__"}:
     print("   - /opportunities (Ilan Merkezi)")
     print("   - /analysis (AI Analiz)")
     print("   - /results (Sonuclar)")
+    print("")
+    print("API Endpoints:")
+    print("   - GET /api/health (Health check)")
+    print("   - GET /api/status (API status)")
+    print("   - GET /download/pdf/{opportunity_id} (PDF download)")
     print("=" * 60)
     print(f"Sunucu baslatiliyor: http://127.0.0.1:8081")
+    print(f"API Health: http://127.0.0.1:8081/api/health")
     print("=" * 60)
     print("NOT: Port 8080 kullanimda, 8081 kullaniliyor")
     print("=" * 60)

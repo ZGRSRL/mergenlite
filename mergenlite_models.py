@@ -16,10 +16,13 @@ Base = declarative_base()
 class Opportunity(Base):
     """
     opportunities tablosu: SAM.gov Fırsatları
+    GSA API'ye göre: Opportunity ID (unique) ve Notice ID (solicitation number) farklı şeyler
     """
     __tablename__ = "opportunities"
     
-    opportunity_id = Column(String(50), primary_key=True)
+    opportunity_id = Column(String(50), primary_key=True)  # GSA Opportunity ID (32 hex chars)
+    notice_id = Column(String(100), nullable=True, index=True)  # Notice ID / Solicitation Number
+    solicitation_number = Column(String(100), nullable=True, index=True)  # Solicitation Number (alternatif)
     title = Column(String(512), nullable=False)
     notice_type = Column(String(100))
     naics_code = Column(String(10))
@@ -31,9 +34,9 @@ class Opportunity(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
     
-    # Relationships
-    documents = relationship("ManualDocument", back_populates="opportunity", cascade="all, delete-orphan")
-    analyses = relationship("AIAnalysisResult", back_populates="opportunity", cascade="all, delete-orphan")
+    # Relationships - lazy loading ile (tablo yapısı uyumsuz olabilir)
+    documents = relationship("ManualDocument", back_populates="opportunity", cascade="all, delete-orphan", lazy='select')
+    # analyses relationship kaldırıldı - ai_analysis_results tablosunda FK yok, manuel join yapılıyor
     
     def __repr__(self):
         return f"<Opportunity(opportunity_id='{self.opportunity_id}', title='{self.title[:50]}...')>"
@@ -63,24 +66,25 @@ class ManualDocument(Base):
 class AIAnalysisResult(Base):
     """
     ai_analysis_results tablosu: Konsolide AI Analiz Sonuçları
-    Tüm ajan çıktıları bu tabloya, fırsat ID'si ile bağlanarak JSONB olarak kaydedilecektir.
+    ZGR_AI veritabanı şemasına uygun (id SERIAL, farklı kolon yapısı)
     """
     __tablename__ = "ai_analysis_results"
     
-    analysis_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    opportunity_id = Column(String(50), ForeignKey("opportunities.opportunity_id"), nullable=False)
-    analysis_status = Column(String(50), nullable=False, default="IN_PROGRESS")  # IN_PROGRESS, COMPLETED, FAILED
-    analysis_version = Column(String(20), default="1.0")
-    consolidated_output = Column(JSONB)  # Tüm ajan çıktıları burada birleştirilir
-    start_time = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    end_time = Column(TIMESTAMP(timezone=True))
-    analysis_duration_seconds = Column(Numeric)
+    # Veritabanındaki gerçek şema
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    opportunity_id = Column(String(255), nullable=False)  # Foreign key olarak tanımlanmamış (veritabanında FK yok)
+    analysis_type = Column(String(100), nullable=False)
+    result = Column(JSONB, nullable=False)  # consolidated_output yerine result
+    confidence = Column(Numeric)  # DOUBLE PRECISION -> Numeric
+    timestamp = Column(TIMESTAMP, nullable=False)
+    agent_name = Column(String(100), nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
     
-    # Relationships
-    opportunity = relationship("Opportunity", back_populates="analyses")
+    # Relationships - opportunity_id FK değil, manuel join yapılacak
+    # opportunity = relationship("Opportunity", back_populates="analyses", foreign_keys=[opportunity_id])
     
     def __repr__(self):
-        return f"<AIAnalysisResult(analysis_id='{self.analysis_id}', opportunity_id='{self.opportunity_id}', status='{self.analysis_status}')>"
+        return f"<AIAnalysisResult(id={self.id}, opportunity_id='{self.opportunity_id}', analysis_type='{self.analysis_type}')>"
 
 
 class SystemSession(Base):

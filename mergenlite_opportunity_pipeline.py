@@ -24,6 +24,7 @@ load_dotenv(dotenv_path='mergen/.env')
 
 # Document processor
 from document_processor import DocumentProcessor
+from decision_cache_client import DecisionCacheClient, build_decision_context
 
 # SAM.gov integration
 try:
@@ -564,10 +565,19 @@ Be THOROUGH and COMPLETE. Extract all commercial information."""
         except:
             comm_data = {}
         
-        # Otel önerilerini ekle
+        # Otel önerilerini ekle (yeni ajan ile - adres bazlı mesafe hesaplama)
         recommended_hotels = []
+        decision_cache_client = DecisionCacheClient()
+        decision_context = build_decision_context(
+            req_data.get("event_requirements"),
+            req_data.get("opportunity_info"),
+            notice_id=notice_id or opportunity_id,
+        )
+        decision_cache_hit = None
         try:
             from hotel_database import HotelDatabase
+            from agents.hotel_recommendation_agent import make_hotel_recommendation_agent
+            
             hotel_db = HotelDatabase()
             
             # Excel'den yükle (ilk seferde)
@@ -578,11 +588,57 @@ Be THOROUGH and COMPLETE. Extract all commercial information."""
             
             # Event gereksinimlerine göre otel öner
             event_req = req_data.get("event_requirements", {})
-            if event_req:
-                recommended_hotels = hotel_db.get_recommended_hotels(event_req, limit=5)
-                logger.info(f"[Hotel DB] Found {len(recommended_hotels)} recommended hotels")
+            opp_info = req_data.get("opportunity_info", {})
+            
+            if event_req or opp_info:
+                # İlan adresini bul (place_of_performance veya location)
+                opportunity_address = (
+                    opp_info.get("place_of_performance", "") or 
+                    event_req.get("location", "") or
+                    ""
+                )
+                
+                if decision_cache_client.enabled() and decision_context:
+                    decision_cache_hit = decision_cache_client.lookup(decision_context)
+                    if decision_cache_hit and decision_cache_hit.get("matched"):
+                        pattern = decision_cache_hit.get("pattern") or {}
+                        recommended_hotels = pattern.get("recommended_hotels") or []
+                        if recommended_hotels:
+                            logger.info(
+                                "[Decision Cache] Reused %d cached hotel recommendations (key=%s)",
+                                len(recommended_hotels),
+                                decision_cache_hit.get("key_hash"),
+                            )
+
+                if not recommended_hotels and opportunity_address:
+                    # Yeni ajan ile mesafe bazlı öneri
+                    logger.info(f"[Hotel Agent] Using address-based recommendation for: {opportunity_address}")
+                    hotel_agent = make_hotel_recommendation_agent(hotel_db=hotel_db)
+                    recommended_hotels = hotel_agent.recommend_hotels_by_distance(
+                        opportunity_address=opportunity_address,
+                        event_requirements=event_req,
+                        limit=5
+                    )
+                    logger.info(f"[Hotel Agent] Found {len(recommended_hotels)} hotels with distance calculation")
+                elif not recommended_hotels:
+                    # Fallback: Eski yöntem (sadece şehir bazlı)
+                    logger.info("[Hotel DB] No address found, using city-based recommendation")
+                    recommended_hotels = hotel_db.get_recommended_hotels(event_req, limit=5)
+                    logger.info(f"[Hotel DB] Found {len(recommended_hotels)} recommended hotels")
+
+                if (
+                    decision_cache_client.enabled()
+                    and recommended_hotels
+                    and not (decision_cache_hit and decision_cache_hit.get("matched"))
+                ):
+                    pattern_desc = decision_context.get("location") or decision_context.get("city") or "hotel_pattern"
+                    decision_cache_client.save(
+                        decision_context,
+                        recommended_hotels,
+                        pattern_desc=f"{pattern_desc} · {decision_context.get('participants', 'n/a')} pax",
+                    )
         except Exception as e:
-            logger.warning(f"[Hotel DB] Error getting hotel recommendations: {e}", exc_info=True)
+            logger.warning(f"[Hotel Agent] Error getting hotel recommendations: {e}", exc_info=True)
         
         # Manuel birleştirme
         consolidated_report = {
@@ -896,4 +952,3 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"❌ Analysis failed: {e}", exc_info=True)
         sys.exit(1)
-

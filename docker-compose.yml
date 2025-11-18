@@ -1,51 +1,45 @@
-version: '3.8'
-
 services:
-  mergenlite:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: mergenlite
-    ports:
-      - "8501:8501"
+  db:
+    image: postgres:15
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - SAM_API_KEY=${SAM_API_KEY:-}
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/mergenlite}
-      - PYTHONUNBUFFERED=1
+      POSTGRES_DB: ${POSTGRES_DB:-ZGR_AI}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      # Persist data directories
-      - ./opportunities:/app/opportunities
-      - ./downloads:/app/downloads
-      - ./samples:/app/samples
-      - ./hotel_database.json:/app/hotel_database.json
-      # Optional: Mount .env file
-      - ./.env:/app/.env:ro
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  backend:
+    build:
+      context: ./mergen/api
+      dockerfile: Dockerfile
     depends_on:
       - db
-    restart: unless-stopped
-    networks:
-      - mergenlite-network
-
-  db:
-    image: postgres:15-alpine
-    container_name: mergenlite-db
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=mergenlite
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ZGR_AI}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ZGR_AI}
+      SAM_API_KEY: ${SAM_API_KEY:-}
+      AMADEUS_API_KEY: ${AMADEUS_API_KEY:-jFX3VcDIO9m5iaXGGuzuPnIbORceF1MU}
+      AMADEUS_API_SECRET: ${AMADEUS_API_SECRET:-DLiQnZ0PJQj2cdDY}
+      AMADEUS_ENV: ${AMADEUS_ENV:-production}
     ports:
-      - "5432:5432"
-    restart: unless-stopped
-    networks:
-      - mergenlite-network
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
 
 volumes:
-  postgres_data:
-
-networks:
-  mergenlite-network:
-    driver: bridge
-
+  db_data:

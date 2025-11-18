@@ -1,0 +1,49 @@
+{
+  "opportunity_info": {
+    "solicitation_number": "",
+    "notice_id": "",
+    "title": "",
+    "agency": "",
+    "naics": "",
+    "set_aside": "",
+    "small_business_only": false,
+    "place_of_performance": "",
+    "response_deadline": ""
+  },
+  "event_requirements": {
+    "location": "",
+    "date_range": "",
+    "participants_min": null,
+    "participants_target": null,
+    "room_block_plan": "",
+    "meeting_spaces": "",
+    "av_requirements": "",
+    "fnb_requirements": "",
+    "special_logistics": ""
+  },
+  "commercial_terms": {
+    "estimated_value": "",
+    "per_diem_limited": false,
+    "payment_terms": "",
+    "e_invoicing_ipp": false,
+    "tax_exempt": false,
+    "cancellation_penalties": "",
+    "other_key_terms": ""
+  },
+  "compliance": {
+    "far_52_212_4": false,
+    "far_52_212_5": false,
+    "far_52_204_24_25_26": false,
+    "security_telecom_restrictions": false,
+    "bytedance_restriction": false,
+    "other_mandatory_clauses": []
+  },
+  "fit_assessment": {
+    "overall_score": 0,
+    "strengths": [],
+    "risks": [],
+    "blocking_issues": [],
+    "summary": ""
+  }
+}
+

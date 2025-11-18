@@ -1,0 +1,664 @@
+{
+  "opportunity_id": "57cd76db400c4e7ca895d40bf6454173",
+  "opportunity_data": {
+    "type": "Combined Synopsis/Solicitation",
+    "award": null,
+    "links": [
+      {
+        "rel": "self",
+        "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=57cd76db400c4e7ca895d40bf6454173&limit=1"
+      }
+    ],
+    "title": "March 2026 National Assessment Governing Board Meeting - Houston, Texas",
+    "active": "Yes",
+    "uiLink": "https://sam.gov/workspace/contract/opp/57cd76db400c4e7ca895d40bf6454173/view",
+    "baseType": "Combined Synopsis/Solicitation",
+    "noticeId": "57cd76db400c4e7ca895d40bf6454173",
+    "naicsCode": "721110",
+    "naicsCodes": [
+      "721110"
+    ],
+    "postedDate": "2025-11-06",
+    "archiveDate": "2025-12-05",
+    "archiveType": "autocustom",
+    "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=57cd76db400c4e7ca895d40bf6454173",
+    "officeAddress": {
+      "city": "WASHINGTON",
+      "state": "DC",
+      "zipcode": "20202",
+      "countryCode": "USA"
+    },
+    "resourceLinks": [
+      "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/bf7599b243784e69a8aca258c82ea413/download",
+      "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/fc7f1f88f2ba499f8460469ecf1770f9/download",
+      "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/fe94860bf9a845f7ad1d3c33ac5d4d96/download"
+    ],
+    "pointOfContact": [
+      {
+        "fax": "",
+        "type": "primary",
+        "email": "tony.white@ed.gov",
+        "phone": "",
+        "title": null,
+        "fullName": "Tony White"
+      }
+    ],
+    "typeOfSetAside": "SBA",
+    "organizationType": "OFFICE",
+    "responseDeadLine": "2025-12-04T12:00:00-05:00",
+    "additionalInfoLink": null,
+    "classificationCode": "X1AB",
+    "fullParentPathCode": "091.9100.919959",
+    "fullParentPathName": "EDUCATION, DEPARTMENT OF.EDUCATION, DEPARTMENT OF.NATIONAL ASSESSMENT GOVERNING BOARD",
+    "placeOfPerformance": {
+      "city": {
+        "code": "35000",
+        "name": "Houston"
+      },
+      "state": {
+        "code": "TX",
+        "name": "Texas"
+      },
+      "country": {
+        "code": "USA",
+        "name": "UNITED STATES"
+      }
+    },
+    "solicitationNumber": "91995926Q0001",
+    "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)"
+  },
+  "analysis_start": "2025-11-16T13:38:54.243544",
+  "agents": {
+    "document_processor": {
+      "status": "completed",
+      "duration_seconds": 3.9682,
+      "documents_processed": 3,
+      "results": [
+        {
+          "document_name": "Document_1.pdf",
+          "processed_data": {
+            "document_path": "Document_1.pdf",
+            "content_length": 27945,
+            "extracted_metadata": {
+              "key_dates": [],
+              "contact_info": {},
+              "tables": [],
+              "lists": []
+            },
+            "processed_at": "2025-11-16T13:38:54.243544"
+          }
+        },
+        {
+          "document_name": "Document_3.pdf",
+          "processed_data": {
+            "document_path": "Document_3.pdf",
+            "content_length": 1099,
+            "extracted_metadata": {
+              "key_dates": [],
+              "contact_info": {},
+              "tables": [],
+              "lists": []
+            },
+            "processed_at": "2025-11-16T13:38:54.243544"
+          }
+        },
+        {
+          "document_name": "LLM_Analysis",
+          "processed_data": {
+            "requirements": {
+              "room_count": "96",
+              "av_required": true,
+              "date_range": "2026-03-03 to 2026-03-06",
+              "location": "Houston, Texas",
+              "constraints": [
+                "Guest Rooms and Conference Facilities must be on the same property",
+                "Meeting dates and geographic area are fixed and non-negotiable"
+              ],
+              "other_requirements": [
+                "Guest Rooms quoted at prevailing per diem rates for Houston, TX area",
+                "Specific setups required for different events",
+                "Invoices must be submitted electronically via IPP",
+                "Invoice Number Format specified",
+                "IPP account creation and management details provided"
+              ],
+              "compliance_score": 85,
+              "matched_criteria": [
+                "Guest Rooms",
+                "Meeting Space Set Up Requirements",
+                "Invoice Submission",
+                "IPP Account Creation"
+              ],
+              "missing_or_conflicting": [
+                "Specific AV requirements not clearly defined",
+                "Detailed food and beverage requirements not provided"
+              ]
+            }
+          }
+        }
+      ],
+      "timestamp": "2025-11-16T13:38:58.211744"
+    },
+    "requirements_extractor": {
+      "status": "completed",
+      "duration_seconds": 18.210576,
+      "total_requirements": 53,
+      "requirements": [
+        {
+          "code": "R-001",
+          "text": "Oda sayısı gereksinimi: 96",
+          "category": "capacity",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-002",
+          "text": "Audio-Visual (AV) ekipman gereksinimi",
+          "category": "av",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-003",
+          "text": "Tarih aralığı: 2026-03-03 to 2026-03-06",
+          "category": "date",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-004",
+          "text": "Konum gereksinimi: Houston, Texas",
+          "category": "transport",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-005",
+          "text": "Kısıt: Alcohol service restriction",
+          "category": "clauses",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-006",
+          "text": "Kısıt: Smoking prohibition",
+          "category": "clauses",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-007",
+          "text": "Guest Rooms must be quoted at prevailing per diem rates for Houston, TX area",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-008",
+          "text": "Both the guest rooms and the conference facilities must be located within the same general property",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-009",
+          "text": "Meeting space set up, food and beverage, and AV requirements are detailed",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-010",
+          "text": "Venues must be able to accommodate the lodging and meeting space requirements",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-011",
+          "text": "Meeting dates and geographic area are fixed and non-negotiable",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-012",
+          "text": "Payments shall be rendered in accordance with the identified payment schedule(s)",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-013",
+          "text": "Contractor shall submit invoices electronically via IPP",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "R-014",
+          "text": "Invoice number format must follow specific guidelines",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "is_rfq": true
+        },
+        {
+          "code": "RFQ-001",
+          "text": "Oda sayısı (tam sayı) | Detaylar: 5 single oda, 45 double oda, 1 suite oda",
+          "category": "capacity",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "lodging_requirements"
+        },
+        {
+          "code": "RFQ-002",
+          "text": "Oda tipi gereksinimleri | Detaylar: Single, double, suite (King Rooms Preferred)",
+          "category": "capacity",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "lodging_requirements"
+        },
+        {
+          "code": "RFQ-003",
+          "text": "Oda özellikleri | Detaylar: WiFi, TV, mini-bar",
+          "category": "capacity",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "lodging_requirements"
+        },
+        {
+          "code": "RFQ-004",
+          "text": "Check-in/check-out saatleri | Detaylar: Check-in: 3 Mart 2026, Check-out: 6 Mart 2026",
+          "category": "capacity",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "lodging_requirements"
+        },
+        {
+          "code": "RFQ-005",
+          "text": "Cancellation policy | Detaylar: 80% or less attrition and cancellation clauses",
+          "category": "capacity",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "lodging_requirements"
+        },
+        {
+          "code": "RFQ-006",
+          "text": "Per diem rate gereksinimleri | Detaylar: Prevailing per diem rates for Houston, TX area",
+          "category": "capacity",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "lodging_requirements"
+        },
+        {
+          "code": "RFQ-007",
+          "text": "Salon sayısı ve kapasiteleri | Detaylar: Plenary Room (60 pp), Breakout Rooms (25 pp each)",
+          "category": "capacity",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "conference_requirements"
+        },
+        {
+          "code": "RFQ-008",
+          "text": "Salon düzeni gereksinimleri | Detaylar: Hollow square, classroom style, theater-style seating",
+          "category": "capacity",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "conference_requirements"
+        },
+        {
+          "code": "RFQ-009",
+          "text": "Salon özellikleri | Detaylar: Pencereler, doğal ışık, AV ekipmanları",
+          "category": "capacity",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "conference_requirements"
+        },
+        {
+          "code": "RFQ-010",
+          "text": "Salon ekipmanları | Detaylar: Projection equipment, microphones, AV system",
+          "category": "capacity",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "conference_requirements"
+        },
+        {
+          "code": "RFQ-011",
+          "text": "Projektör gereksinimleri | Detaylar: 1 screen, LCD projector provided by NAGB",
+          "category": "av",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "av_requirements"
+        },
+        {
+          "code": "RFQ-012",
+          "text": "Mikrofon gereksinimleri | Detaylar: Podium, lavalier, handheld microphones",
+          "category": "av",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "av_requirements"
+        },
+        {
+          "code": "RFQ-013",
+          "text": "Ses sistemi gereksinimleri | Detaylar: AV audio and video technical assistance",
+          "category": "av",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "av_requirements"
+        },
+        {
+          "code": "RFQ-014",
+          "text": "Kahvaltı gereksinimleri | Detaylar: Coffee service, light refreshments, working lunch",
+          "category": "other",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "food_beverage_requirements"
+        },
+        {
+          "code": "RFQ-015",
+          "text": "Öğle yemeği gereksinimleri | Detaylar: 3-course hot buffet lunch, box lunch",
+          "category": "other",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "food_beverage_requirements"
+        },
+        {
+          "code": "RFQ-016",
+          "text": "Akşam yemeği gereksinimleri | Detaylar: Assorted appetizers, beverages, assorted sandwiches, chips, cookies",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "food_beverage_requirements"
+        },
+        {
+          "code": "RFQ-017",
+          "text": "Check-in tarihi | Detaylar: 3 Mart 2026",
+          "category": "date",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "schedule_requirements"
+        },
+        {
+          "code": "RFQ-018",
+          "text": "Check-out tarihi | Detaylar: 6 Mart 2026",
+          "category": "date",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "schedule_requirements"
+        },
+        {
+          "code": "RFQ-019",
+          "text": "Meeting tarihleri | Detaylar: 5-6 Mart 2026",
+          "category": "date",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "schedule_requirements"
+        },
+        {
+          "code": "RFQ-020",
+          "text": "Invoice format gereksinimleri | Detaylar: IPP submission, specific format",
+          "category": "invoice",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "invoicing_requirements"
+        },
+        {
+          "code": "RFQ-021",
+          "text": "Invoice submission yöntemi | Detaylar: IPP platform",
+          "category": "invoice",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "invoicing_requirements"
+        },
+        {
+          "code": "RFQ-022",
+          "text": "Invoice number format | Detaylar: Contract number followed by invoice number",
+          "category": "invoice",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "invoicing_requirements"
+        },
+        {
+          "code": "RFQ-023",
+          "text": "FAR 52.212-4 gereksinimleri | Detaylar: Contract Terms and Conditions – Commercial Items",
+          "category": "clauses",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "far_clauses"
+        },
+        {
+          "code": "RFQ-024",
+          "text": "FAR 52.212-5 gereksinimleri | Detaylar: Contract Terms and Conditions Required to Implement Statutes or Executive Orders – Commercial Items",
+          "category": "clauses",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "far_clauses"
+        },
+        {
+          "code": "RFQ-025",
+          "text": "Parking gereksinimleri | Detaylar: Complimentary day parking passes, discounted parking rates",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "other_requirements"
+        },
+        {
+          "code": "RFQ-026",
+          "text": "Accessibility gereksinimleri | Detaylar: ADA compliant facility",
+          "category": "other",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "other_requirements"
+        },
+        {
+          "code": "RFQ-027",
+          "text": "Security gereksinimleri | Detaylar: Security deposit, insurance requirements",
+          "category": "other",
+          "priority": "high",
+          "source_document": "Document_1.pdf",
+          "source": "RFQ_Detailed_Analysis",
+          "rfq_category": "other_requirements"
+        },
+        {
+          "code": "R-001",
+          "text": "Audio-Visual (AV) ekipman gereksinimi",
+          "category": "av",
+          "priority": "high",
+          "source_document": "Document_3.pdf",
+          "is_rfq": false
+        },
+        {
+          "code": "R-002",
+          "text": "Power strip near every Board seat on all tables.",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_3.pdf",
+          "is_rfq": false
+        },
+        {
+          "code": "R-003",
+          "text": "Water station and charging station near entrance to room.",
+          "category": "other",
+          "priority": "medium",
+          "source_document": "Document_3.pdf",
+          "is_rfq": false
+        },
+        {
+          "code": "LLM-ROOM_COUNT",
+          "text": "96",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        },
+        {
+          "code": "LLM-AV_REQUIRED",
+          "text": "True",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        },
+        {
+          "code": "LLM-DATE_RANGE",
+          "text": "2026-03-03 to 2026-03-06",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        },
+        {
+          "code": "LLM-LOCATION",
+          "text": "Houston, Texas",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        },
+        {
+          "code": "LLM-CONSTRAINTS",
+          "text": "['Guest Rooms and Conference Facilities must be in the same property', 'Fixed and non-negotiable meeting dates and geographic area']",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        },
+        {
+          "code": "LLM-OTHER_REQUIREMENTS",
+          "text": "['Guest Rooms quoted at prevailing per diem rates for Houston, TX area', 'Specific meeting space set up requirements for different events', 'Submission of electronic invoices via Invoice Processing Platform (IPP)', 'Invoice number format requirements', 'Establishment and management of IPP account for invoicing']",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        },
+        {
+          "code": "LLM-COMPLIANCE_SCORE",
+          "text": "85",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        },
+        {
+          "code": "LLM-MATCHED_CRITERIA",
+          "text": "['Guest Rooms must be quoted at prevailing per diem rates for Houston, TX area', 'Meeting space set up requirements detailed for different events', 'Submission of electronic invoices via Invoice Processing Platform (IPP)']",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        },
+        {
+          "code": "LLM-MISSING_OR_CONFLICTING",
+          "text": "['Specific room dimensions for meeting spaces are not provided', 'Details about food and beverage requirements are missing', 'Information about cancellation policy is not included']",
+          "category": "llm_extracted",
+          "priority": "high",
+          "source": "LLM_Analyzer"
+        }
+      ],
+      "categories": {
+        "capacity": 11,
+        "date": 4,
+        "transport": 1,
+        "av": 5,
+        "invoice": 3,
+        "clauses": 4,
+        "other": 25
+      },
+      "timestamp": "2025-11-16T13:39:16.422320"
+    },
+    "compliance_analyst": {
+      "status": "completed",
+      "duration_seconds": 0.0,
+      "results": {
+        "compliance_matrix": [
+          {
+            "requirement_code": "R-001",
+            "compliance_score": 0.95,
+            "risk_level": "low",
+            "evidence": "Facility meets requirement",
+            "gaps": []
+          }
+        ],
+        "overall_risk": "low",
+        "met_count": 1,
+        "gap_count": 0,
+        "analyzed_at": "2025-11-16T13:39:16.422320"
+      },
+      "timestamp": "2025-11-16T13:39:16.422320"
+    },
+    "proposal_writer": {
+      "status": "completed",
+      "duration_seconds": 0.0,
+      "results": {
+        "executive_summary": "Sample executive summary...",
+        "technical_approach": "Sample technical approach...",
+        "past_performance": "Sample past performance...",
+        "compliance_matrix": [],
+        "proposal_sections": {
+          "section_1": "Content...",
+          "section_2": "Content..."
+        },
+        "written_at": "2025-11-16T13:39:16.422320"
+      },
+      "timestamp": "2025-11-16T13:39:16.422320"
+    },
+    "quality_assurance": {
+      "status": "completed",
+      "duration_seconds": 0.0,
+      "results": {
+        "quality_score": 0.85,
+        "completeness": 0.9,
+        "format_compliance": 0.95,
+        "requirement_coverage": 0.8,
+        "recommendations": [
+          "Add more detail to technical approach",
+          "Include additional past performance examples"
+        ],
+        "reviewed_at": "2025-11-16T13:39:16.422320"
+      },
+      "timestamp": "2025-11-16T13:39:16.422320"
+    }
+  },
+  "analysis_end": "2025-11-16T13:39:16.423287",
+  "total_duration_seconds": 22.179743,
+  "summary": {
+    "total_agents": 5,
+    "successful_agents": 5,
+    "failed_agents": 0,
+    "total_requirements": 53,
+    "compliance_score": "low",
+    "quality_score": 0.85,
+    "overall_status": "completed"
+  }
+}

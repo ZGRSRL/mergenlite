@@ -1,0 +1,23 @@
+Item Name,Description,Quantity,Unit,Unit Price,Total Price,Category
+Room Block - 4 nights,Accommodation for 100 participants 4 nights,100,room_night,135.00,54000.00,lodging
+Main Room AV Setup,Audio-visual equipment for main conference room,1,setup,2500.00,2500.00,av
+Breakout Room AV,Audio-visual equipment for 2 breakout rooms,2,room,500.00,1000.00,av
+Boardroom AV,Audio-visual equipment for boardroom,1,room,750.00,750.00,av
+Airport Shuttle Service,Shuttle service for airport transfers,1,service,1500.00,1500.00,transportation
+Local Transportation,Local transportation for off-site activities,1,service,800.00,800.00,transportation
+Project Management,Full project management and coordination,1,project,5000.00,5000.00,management
+Event Coordinator,On-site event coordination,4,day,500.00,2000.00,management
+Technical Support,AV technical support during event,4,day,400.00,1600.00,av
+Setup and Breakdown,Event setup and breakdown services,2,day,1000.00,2000.00,management
+Contingency,10% contingency for unforeseen costs,1,project,1000.00,1000.00,other
+Breakfast,Continental breakfast for 4 days,400,person,15.00,6000.00,food
+Lunch,Buffet lunch for 4 days,400,person,25.00,10000.00,food
+Coffee Breaks,Coffee and refreshments for 4 days,400,person,8.00,3200.00,food
+Welcome Reception,Welcome reception with light appetizers,100,person,35.00,3500.00,food
+Farewell Dinner,Farewell dinner for all participants,100,person,45.00,4500.00,food
+Materials and Supplies,Event materials and supplies,1,project,2000.00,2000.00,other
+Insurance,Event insurance coverage,1,project,500.00,500.00,other
+Permits and Licenses,Required permits and licenses,1,project,300.00,300.00,other
+
+
+

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 MergenLite - Sadeleştirilmiş İlan Analiz Platformu
 Tek birleşik Streamlit uygulaması - Tüm özellikler tek dosyada
@@ -6,27 +7,57 @@ Tek birleşik Streamlit uygulaması - Tüm özellikler tek dosyada
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import sys
 import os
 import json
 import time
+import logging
 from typing import Dict, Any, List, Optional
 from uuid import uuid4
+import requests
+
+# Encoding fix for Windows
+if sys.platform == 'win32':
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+
+logger = logging.getLogger(__name__)
 
 # .env dosyasını yükle (mergen klasöründen öncelikli) - Cache bypass
 try:
     from dotenv import load_dotenv
     
     # Önce mergen klasöründeki .env dosyasını yükle (force reload)
-    mergen_env = '.env'
-    if os.path.exists(mergen_env):
-        load_dotenv(mergen_env, override=True, verbose=False)
-    else:
+    # Container içinde /app/mergen/.env veya /app/.env olabilir
+    env_paths = [
+        'mergen/.env',  # Root'tan çalıştırıldığında
+        '/app/mergen/.env',  # Container içinde
+        '.env',  # Root'ta
+        '/app/.env'  # Container içinde root
+    ]
+    
+    env_loaded = False
+    for env_path in env_paths:
+        if os.path.exists(env_path):
+            load_dotenv(env_path, override=True, verbose=False)
+            env_loaded = True
+            logger.info(f"✅ .env dosyası yüklendi: {env_path}")
+            break
+    
+    # Hiçbir dosya bulunamazsa, environment variable'lardan yükle (Docker Compose env_file)
+    if not env_loaded:
         load_dotenv(override=True, verbose=False)
+        # Environment variable'dan kontrol et
+        if os.getenv('SAM_API_KEY'):
+            logger.info("✅ SAM_API_KEY environment variable'dan yüklendi")
+        else:
+            logger.warning("⚠️ .env dosyası bulunamadı ve SAM_API_KEY environment variable'da yok")
 except ImportError:
     pass
+except Exception as e:
+    logger.error(f"❌ .env yükleme hatası: {e}")
 
 # MergenLite imports - Root'tan import et
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -51,62 +82,148 @@ st.set_page_config(
     page_title="MergenLite",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"  # Menüleri görmek için expanded
 )
 
-# Custom CSS - Minimal ve odaklı tasarım
-st.markdown("""
+# Tema yükleme - theme_loader.py kullan
+try:
+    from theme_loader import load_css
+    load_css("theme.css")
+except (ImportError, FileNotFoundError):
+    # Fallback: Eski inline CSS (theme.css bulunamazsa)
+    st.warning("⚠️ theme.css bulunamadı, varsayılan tema kullanılıyor.")
+    st.markdown("""
 <style>
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
-        text-align: center;
-        margin-bottom: 2rem;
+    /* Dark Theme Base */
+    .stApp {
+        background-color: #0b1220;
     }
+    .main .block-container {
+        background-color: #0b1220;
+        color: #e5e7eb;
+    }
+    
+    /* Typography */
+    .main-header {
+        font-size: 24px;
+        font-weight: 600;
+        color: #e5e7eb;
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    h1, h2, h3 {
+        color: #e5e7eb;
+    }
+    p, div, small {
+        color: #d1d5db;
+        font-size: 14px;
+    }
+    
+    /* Opportunity Cards - Compact & Modern */
     .opportunity-card {
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #1f77b4;
-        margin-bottom: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
+        background: #131a2a;
+        border: 1px solid #1f2a44;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .opportunity-card:hover {
-        background-color: #e9ecef;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-color: #7c3aed;
+        box-shadow: 0 6px 20px rgba(124,58,237,0.15);
+        transform: translateY(-2px);
     }
-    .analysis-step {
-        background-color: #fff;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        border: 2px solid #e9ecef;
-        margin-bottom: 1.5rem;
+    .opportunity-card h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #e5e7eb;
     }
-    .step-complete {
-        border-color: #28a745;
-        background-color: #d4edda;
+    .opportunity-card p {
+        font-size: 13px;
+        color: #9ca3af;
+        margin: 4px 0;
+        line-height: 1.5;
     }
-    .step-active {
-        border-color: #1f77b4;
-        background-color: #e7f3ff;
+    .opportunity-card p strong {
+        color: #d1d5db;
+        font-weight: 600;
     }
+
+    /* Alert/Toast Components */
+    .stAlert {
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+        margin-bottom: 12px;
+        border: 1px solid;
+    }
+    .st-emotion-cache-1wmy9hl { /* Success Alert */
+        background: #0b2e26;
+        border-color: #164e3f;
+        color: #86efac;
+    }
+    .st-emotion-cache-ocqkz7 { /* Info Alert */
+        background: #0b2030;
+        border-color: #1b3a57;
+        color: #7dd3fc;
+    }
+    .st-emotion-cache-l9i5vr { /* Warning Alert */
+        background: #3d2817;
+        border-color: #78350f;
+        color: #fbbf24;
+    }
+    .st-emotion-cache-4z1n4g { /* Danger/Error Alert */
+        background: #3d1a1a;
+        border-color: #7f1d1d;
+        color: #f87171;
+    }
+
+    /* Buttons */
     .stButton>button {
-        width: 100%;
-        background-color: #1f77b4;
+        background: #7c3aed;
         color: white;
-        font-weight: bold;
+        font-weight: 600;
+        border: 1px solid #8b5cf6;
+        border-radius: 6px;
+        padding: 10px 16px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        width: 100%;
     }
     .stButton>button:hover {
-        background-color: #155a8a;
+        background: #6d28d9;
+        border-color: #7c3aed;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+    }
+
+    /* Form Elements */
+    .stTextInput>div>div>input, .stSelectbox>div>div>select {
+        background-color: #131a2a;
+        border: 1px solid #1f2a44;
+        color: #e5e7eb;
+        border-radius: 6px;
+    }
+    .stSlider>div>div>div {
+        background-color: #131a2a;
+    }
+
+    /* Selected Opp Box */
+    .selected-opp-box {
+        background-color: #131a2a;
+        border: 1px solid #1f2a44;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # Initialize session state
 if 'current_page' not in st.session_state:
-    st.session_state.current_page = 'OPPORTUNITY_CENTER'
+    st.session_state.current_page = 'DASHBOARD'  # DASHBOARD, OPPORTUNITY_CENTER, GUIDED_ANALYSIS
 
 if 'selected_opportunity' not in st.session_state:
     st.session_state.selected_opportunity = None
@@ -116,6 +233,12 @@ if 'analysis_data' not in st.session_state:
 
 if 'analysis_stage' not in st.session_state:
     st.session_state.analysis_stage = 1
+
+if 'last_saved_count' not in st.session_state:
+    st.session_state.last_saved_count = 0
+
+if 'last_sync_at' not in st.session_state:
+    st.session_state.last_sync_at = '-'
 
 # Database connection helper
 @st.cache_resource
@@ -139,6 +262,114 @@ def get_db_session():
         return None
 
 # ============================================================================
+# DASHBOARD - Ana Dashboard
+# ============================================================================
+
+def render_dashboard():
+    """Ana Dashboard - KPI'lar, hızlı aksiyonlar ve özet"""
+    st.markdown('<h1 class="main-header">🚀 MergenLite - Dashboard</h1>', unsafe_allow_html=True)
+
+    # KPI'lar
+    total_cnt = len(st.session_state.get('opportunities', []) or [])
+    saved_cnt = st.session_state.get('last_saved_count', 0) or 0
+    last_sync = st.session_state.get('last_sync_at', '-')
+    try:
+        sam = SAMIntegration()
+        api_key_ok = bool(sam.api_key)
+    except Exception:
+        api_key_ok = False
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown(f"""
+        <div class="kpi-card kpi-blue">
+          <div style="font-size:12px;opacity:.8">Toplam Sonuç</div>
+          <div style="font-size:28px;font-weight:700">{total_cnt}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"""
+        <div class="kpi-card kpi-emerald">
+          <div style="font-size:12px;opacity:.8">DB'ye Kaydedilen</div>
+          <div style="font-size:28px;font-weight:700">{saved_cnt}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"""
+        <div class="kpi-card kpi-orange">
+          <div style="font-size:12px;opacity:.8">Son Senkron</div>
+          <div style="font-size:20px;font-weight:700">{last_sync}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c4:
+        badge = '<span class="badge badge-success">API Key OK</span>' if api_key_ok else '<span class="badge badge-danger">API Key Yok</span>'
+        st.markdown(f"""
+        <div class="kpi-card" style="background:rgba(17,24,39,.5)">
+          <div style="font-size:12px;opacity:.8">SAM.gov</div>
+          <div style="margin-top:6px;">{badge}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    left, right = st.columns([2, 3])
+    with left:
+        st.markdown("### 🤖 AI Ajan Durumu")
+        st.markdown(
+            """
+            <div class="op-card">
+              <div class="meta">Hazır ➜ İlan analizi, doküman indirme, teklif özeti</div>
+              <div style="margin-top:8px">Öncelik: <span class="badge badge-info">721110 Hotels</span></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("### ⚡ Hızlı Başlangıç")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("🔄 721110 Senkronize Et", use_container_width=True, key="quick_sync_721110"):
+                try:
+                    api_url = os.getenv('PROXY_API_URL', 'http://localhost:8000')
+                    resp = requests.get(
+                        f"{api_url}/api/proxy/opportunities/search",
+                        params={
+                            'naics': '721110',
+                            'days_back': 30,
+                            'limit': 100,
+                            'keyword': ''
+                        },
+                        timeout=30
+                    )
+                    if resp.ok:
+                        data = resp.json()
+                        st.session_state.opportunities = data.get('results', [])
+                        st.session_state.last_saved_count = int(data.get('saved') or 0)
+                        st.session_state.last_sync_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        st.success(f"✅ Senkron tamam: {len(st.session_state.opportunities)} sonuç · Kaydedilen: {st.session_state.last_saved_count}")
+                    else:
+                        st.error(f"❌ Proxy hata: {resp.status_code}")
+                except Exception as e:
+                    st.error(f"❌ Hata: {e}")
+        with col_b:
+            if st.button("📋 İlan Merkezine Git", use_container_width=True, key="go_to_center"):
+                st.session_state.current_page = 'OPPORTUNITY_CENTER'
+                st.rerun()
+
+    with right:
+        st.markdown("### 📝 Son Aktiviteler")
+        st.markdown(
+            f"""
+            <div class="op-card">
+              <div class="meta">Son Senkron: <strong>{last_sync}</strong></div>
+              <div class="meta">Toplam Sonuç: <strong>{total_cnt}</strong></div>
+              <div class="meta">DB'ye Kaydedilen: <strong>{saved_cnt}</strong></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+# ============================================================================
 # OPPORTUNITY CENTER - İlan Merkezi
 # ============================================================================
 
@@ -146,6 +377,21 @@ def render_opportunity_center():
     """İlan Merkezi - Fırsatları listele ve analiz için seç"""
     
     st.markdown('<h1 class="main-header">🚀 MergenLite - İlan Merkezi</h1>', unsafe_allow_html=True)
+    
+    # Metrikler - Son arama istatistikleri
+    if 'last_search_metrics' in st.session_state and st.session_state.last_search_metrics:
+        metrics = st.session_state.last_search_metrics
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Toplam Sonuç", metrics.get('total', 0))
+        with col2:
+            st.metric("Gösterilen", metrics.get('returned', 0))
+        with col3:
+            st.metric("DB'ye Kaydedilen", metrics.get('saved', 0))
+        with col4:
+            cache_label = "✅ Cache" if metrics.get('cache') == 'HIT' else "🌐 Canlı"
+            st.metric("Kaynak", cache_label)
+        st.markdown("---")
     
     # SAM API entegrasyonu
     try:
@@ -181,13 +427,8 @@ def render_opportunity_center():
                     opportunities = sam.search_by_any_id(id_search.strip())
                     
                     if opportunities:
-                        real_opportunities = [opp for opp in opportunities if not opp.get('opportunityId', '').startswith('DEMO-')]
-                        
-                        if real_opportunities:
-                            st.session_state.opportunities = real_opportunities
-                            st.success(f"✅ {len(real_opportunities)} fırsat bulundu!")
-                        else:
-                            st.warning("⚠️ Fırsat bulunamadı. Demo modu kullanılabilir.")
+                        st.session_state.opportunities = opportunities
+                        st.success(f"✅ {len(opportunities)} fırsat bulundu!")
                     else:
                         st.error(f"❌ {id_search} bulunamadı.")
                 except Exception as e:
@@ -213,18 +454,67 @@ def render_opportunity_center():
     if st.button("🔍 Fırsatları Getir", use_container_width=True, type="primary", key="fetch_opportunities"):
         with st.spinner("Fırsatlar getiriliyor..."):
             try:
-                opportunities = sam.fetch_opportunities(
-                    keywords=search_query if search_query else None,
-                    naics_codes=[naics_code] if naics_code else None,
-                    days_back=days_back,
-                    limit=50
-                )
+                opportunities = []
+                saved_count = None
+                total_count = None
+                cache_status = None
+                
+                # Önce proxy/gateway üzerinden dene (DB kayıt + cache için)
+                try:
+                    api_url = os.getenv('PROXY_API_URL', 'http://localhost:8000')
+                    resp = requests.get(
+                        f"{api_url}/api/proxy/opportunities/search",
+                        params={
+                            'naics': naics_code or '721110',
+                            'days_back': days_back or 30,
+                            'limit': 100,
+                            'keyword': (search_query or '').strip()
+                        },
+                        timeout=30
+                    )
+                    if resp.ok:
+                        data = resp.json()
+                        opportunities = data.get('results', [])
+                        saved_count = data.get('saved', 0)
+                        total_count = data.get('total', len(opportunities))
+                        cache_status = resp.headers.get('X-Cache', 'MISS')
+                        
+                        # Başarı mesajı
+                        if saved_count and saved_count > 0:
+                            st.success(f"✅ {len(opportunities)} fırsat bulundu ({total_count} toplam) - {saved_count} kayıt DB'ye kaydedildi")
+                        else:
+                            st.success(f"✅ {len(opportunities)} fırsat bulundu ({total_count} toplam)")
+                        
+                        if cache_status == 'HIT':
+                            st.info("📦 Cache'den yüklendi (Redis)")
+                except Exception as api_error:
+                    # Fallback: Direkt SAM client kullan
+                    st.warning(f"⚠️ Proxy API kullanılamadı, direkt SAM client kullanılıyor: {str(api_error)[:50]}")
+                    opportunities = sam.fetch_opportunities(
+                        keywords=search_query if search_query else None,
+                        naics_codes=[naics_code] if naics_code else None,
+                        days_back=days_back,
+                        limit=100
+                    )
+                    
+                    if opportunities:
+                        st.session_state.opportunities = opportunities
+                        st.success(f"✅ {len(opportunities)} fırsat bulundu (direkt SAM)")
+                    else:
+                        st.warning("Fırsat bulunamadı.")
                 
                 if opportunities:
                     st.session_state.opportunities = opportunities
-                    st.success(f"✅ {len(opportunities)} fırsat bulundu!")
-                else:
-                    st.warning("Fırsat bulunamadı.")
+                    # Metrikleri session state'e kaydet
+                    if saved_count is not None:
+                        st.session_state.last_saved_count = int(saved_count)
+                        st.session_state.last_sync_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        st.session_state.last_search_metrics = {
+                            'total': total_count or len(opportunities),
+                            'returned': len(opportunities),
+                            'saved': saved_count,
+                            'cache': cache_status
+                        }
             except Exception as e:
                 st.error(f"❌ Hata: {str(e)}")
     
@@ -245,12 +535,12 @@ def render_opportunity_center():
                     deadline = opp.get('responseDeadLine', 'N/A')
                     
                     st.markdown(f"""
-                    <div class="opportunity-card">
+                    <div class="opportunity-card" id="card-{i}">
                         <h3>{title}</h3>
-                        <p><strong>Notice ID:</strong> {notice_id}</p>
-                        <p><strong>Organizasyon:</strong> {org}</p>
-                        <p><strong>Yayın Tarihi:</strong> {posted_date}</p>
-                        <p><strong>Son Teslim:</strong> {deadline}</p>
+                        <p><strong>Notice ID:</strong> {notice_id} · <strong>Organizasyon:</strong> {org}</p>
+                        <p>
+                            <strong>Yayın Tarihi:</strong> {posted_date} · <strong>Son Teslim:</strong> {deadline}
+                        </p>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -261,21 +551,6 @@ def render_opportunity_center():
                         st.session_state.current_page = 'GUIDED_ANALYSIS'
                         st.rerun()
     
-    # Demo modu
-    with st.expander("🧪 Demo Modu"):
-        if st.button("Demo İlan ile Devam Et"):
-            demo_opportunity = {
-                'opportunityId': 'a81c7ad026c74b7799b0e28e735aeeb7',
-                'noticeId': 'W50S7526QA010',
-                'title': 'Demo: Konaklama ve Etkinlik Hizmetleri',
-                'fullParentPathName': 'Demo Organization',
-                'postedDate': '2024-01-15',
-                'responseDeadLine': '2024-02-15',
-                'naicsCode': '721110'
-            }
-            st.session_state.selected_opportunity = demo_opportunity
-            st.session_state.current_page = 'GUIDED_ANALYSIS'
-            st.rerun()
 
 # ============================================================================
 # GUIDED ANALYSIS - Rehberli Analiz (4 Aşamalı)
@@ -290,7 +565,7 @@ def render_guided_analysis_page(opportunity: Dict[str, Any]):
     title = opportunity.get('title', 'Başlık Yok')
     
     st.markdown(f"""
-    <div style="background-color: #e7f3ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem;">
+    <div class="selected-opp-box">
         <h3>📋 Seçilen İlan</h3>
         <p><strong>Notice ID:</strong> {notice_id}</p>
         <p><strong>Başlık:</strong> {title}</p>
@@ -476,8 +751,8 @@ def render_stage_4_final_report(opportunity: Dict[str, Any]):
                         document_paths = [doc.get('file_path', '') for doc in documents if doc.get('file_path')]
                         
                         if not document_paths:
-                            st.warning("⚠️ İşlenmiş doküman bulunamadı. Demo analiz yapılıyor.")
-                            document_paths = ["demo_document.pdf"]
+                            st.warning("⚠️ İşlenmiş doküman bulunamadı.")
+                            document_paths = []
                         
                         # Tam analiz çalıştır
                         analysis_result = orchestrator.run_full_analysis(
@@ -517,7 +792,7 @@ def render_stage_4_final_report(opportunity: Dict[str, Any]):
                         
                         st.session_state.analysis_data['mergenlite_analysis'] = analysis_result
                     else:
-                        st.warning("⚠️ MergenLite veritabanı kullanılamıyor. Demo analiz yapılıyor.")
+                        st.warning("⚠️ MergenLite veritabanı kullanılamıyor.")
                 except Exception as e:
                     st.error(f"❌ Hata: {str(e)}")
         
@@ -547,20 +822,113 @@ def render_stage_4_final_report(opportunity: Dict[str, Any]):
 def main():
     """Ana uygulama fonksiyonu"""
     
+    # Sidebar Navigation (menüler için)
+    with st.sidebar:
+        st.markdown("## 🚀 MergenLite")
+        st.markdown("---")
+        
+        # Sayfa seçimi
+        page_options = {
+            "🏠 Dashboard": "DASHBOARD",
+            "📋 İlan Merkezi": "OPPORTUNITY_CENTER",
+            "🧭 Rehberli Analiz": "GUIDED_ANALYSIS"
+        }
+
+        labels = list(page_options.keys())
+        values = list(page_options.values())
+        current_val = st.session_state.current_page
+        try:
+            current_index = values.index(current_val)
+        except ValueError:
+            current_index = 0
+
+        selected_page = st.radio(
+            "Sayfa Seçin",
+            options=labels,
+            index=current_index,
+            key="sidebar_page_select"
+        )
+        
+        # Sayfa değişikliğini uygula
+        if page_options[selected_page] != st.session_state.current_page:
+            st.session_state.current_page = page_options[selected_page]
+            st.rerun()
+        
+        st.markdown("---")
+        st.markdown("### ⚙️ Sistem Durumu")
+        
+        # API Key durumu
+        try:
+            sam = SAMIntegration()
+            if sam.api_key:
+                st.success(f"✅ API Key: {sam.api_key[:20]}...")
+            else:
+                st.error("❌ API Key bulunamadı")
+                st.info("💡 `.env` dosyasında `SAM_API_KEY` tanımlı olmalı")
+        except Exception as e:
+            st.error(f"❌ Hata: {str(e)}")
+    
     # Sayfa yönlendirmesi
-    if st.session_state.current_page == 'OPPORTUNITY_CENTER':
+    if st.session_state.current_page == 'DASHBOARD':
+        render_dashboard()
+    elif st.session_state.current_page == 'OPPORTUNITY_CENTER':
         render_opportunity_center()
     elif st.session_state.current_page == 'GUIDED_ANALYSIS':
         if st.session_state.selected_opportunity:
             render_guided_analysis_page(st.session_state.selected_opportunity)
         else:
-            st.error("Lütfen önce bir ilan seçin.")
-            if st.button("← İlan Merkezine Dön"):
+            st.warning("⚠️ Lütfen önce bir ilan seçin.")
+            if st.button("← İlan Merkezine Dön", use_container_width=True):
                 st.session_state.current_page = 'OPPORTUNITY_CENTER'
                 st.rerun()
     else:
-        render_opportunity_center()
+        render_dashboard()
     
+    # Global Debug Panel (opportunity results present)
+    try:
+        if 'opportunities' in st.session_state and st.session_state.opportunities:
+            st.markdown("---")
+            show_dbg_footer = st.checkbox("🔎 Debug: Parametreleri ve sayıları göster", value=False, key="debug_toggle_footer")
+            if show_dbg_footer:
+                gs = (st.session_state.get('general_search') or '').strip()
+                ns = (st.session_state.get('naics_search') or '721110').strip()
+                db_val = st.session_state.get('days_back') or 7
+                eff_naics = ns or '721110'
+                eff_keyword = gs or eff_naics
+                eff_limit = 100
+                eff_is_active = True
+                eff_dates = None
+                if isinstance(db_val, int) and db_val >= 60:
+                    from datetime import datetime, timedelta
+                    eff_dates = {
+                        "postedFrom": (datetime.now() - timedelta(days=db_val)).strftime('%m/%d/%Y'),
+                        "postedTo": datetime.now().strftime('%m/%d/%Y')
+                    }
+
+                src_counts = {}
+                for opp in st.session_state.opportunities:
+                    src = opp.get('source') or 'sam_live'
+                    src_counts[src] = src_counts.get(src, 0) + 1
+
+                dbg = {
+                    "effective_params": {
+                        "naicsCodes": eff_naics,
+                        "keyword": eff_keyword,
+                        "keywordRadio": "ALL",
+                        "limit": eff_limit,
+                        "is_active": eff_is_active,
+                        **({} if not eff_dates else eff_dates)
+                    },
+                    "result_stats": {
+                        "total_returned": len(st.session_state.opportunities),
+                        "by_source": src_counts
+                    }
+                }
+                st.markdown("#### Debug Bilgisi")
+                st.json(dbg)
+    except Exception:
+        pass
+
     # Geri dön butonu
     if st.session_state.current_page == 'GUIDED_ANALYSIS':
         st.markdown("---")
@@ -573,4 +941,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
