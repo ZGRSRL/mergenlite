@@ -16,7 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from .db import Base
+from app.db import Base
 
 
 class Opportunity(Base):

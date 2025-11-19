@@ -15,8 +15,11 @@ from app.config import settings
 from app.models import (
     Opportunity,
     OpportunityAttachment,
-    # AnalysisLog - commented out until ai_analysis_results table exists
-    # Add other models as needed
+    OpportunityHistory,
+    AIAnalysisResult,
+    AnalysisLog,
+    AgentRun,
+    AgentMessage,
 )
 
 # this is the Alembic Config object, which provides
