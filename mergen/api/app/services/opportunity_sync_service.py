@@ -9,7 +9,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from typing import Dict, Any, List, Optional
 
-from .sam_service import fetch_opportunities_from_sam
+from .sam_service import fetch_opportunities_from_sam, SAMFetchError
 from .sam_mapper import map_sam_record_to_opportunity, extract_attachments_from_sam_record
 from ..crud.opportunities import upsert_opportunity, create_attachment, get_opportunity_by_notice_id
 from ..models import SyncJob, SyncLog
@@ -78,7 +78,17 @@ async def sync_from_sam(db: Session, params: Dict[str, Any], job_id: Optional[st
     try:
         # Fetch from SAM
         _log_sync(db, job_id, 'INFO', "Fetching opportunities from SAM.gov", step='fetch')
-        records = await fetch_opportunities_from_sam(params)
+        try:
+            records = await fetch_opportunities_from_sam(params)
+        except SAMFetchError as fetch_error:
+            message = f"SAM fetch failed: {fetch_error}"
+            _log_sync(db, job_id, 'ERROR', message, step='fetch')
+            logger.error(f"[Job {job_id}] {message}")
+            job.status = 'failed'
+            job.completed_at = datetime.now()
+            job.error_message = str(fetch_error)
+            db.commit()
+            raise
         
         if not records:
             _log_sync(db, job_id, 'WARNING', "No records fetched from SAM", step='fetch')
@@ -124,6 +134,10 @@ async def sync_from_sam(db: Session, params: Dict[str, Any], job_id: Optional[st
                 # Extract and save attachments
                 attachments_data = extract_attachments_from_sam_record(record, opportunity.id)
                 
+                if attachments_data:
+                    logger.info(f"[Job {job_id}] Found {len(attachments_data)} attachments for opportunity {opportunity.id} (notice_id: {opportunity.notice_id})")
+                    _log_sync(db, job_id, 'INFO', f"Found {len(attachments_data)} attachments", step='attachments', extra_metadata={"count": len(attachments_data), "opportunity_id": opportunity.id})
+                
                 for att_data in attachments_data:
                     try:
                         # Check if attachment already exists (by source_url)
@@ -136,6 +150,9 @@ async def sync_from_sam(db: Session, params: Dict[str, Any], job_id: Optional[st
                         if not existing_att:
                             create_attachment(db, att_data)
                             count_attachments += 1
+                            logger.debug(f"[Job {job_id}] Created attachment: {att_data.get('name')} (URL: {att_data.get('source_url')})")
+                        else:
+                            logger.debug(f"[Job {job_id}] Attachment already exists: {att_data.get('name')}")
                     except Exception as att_error:
                         logger.warning(f"[Job {job_id}] Error creating attachment {att_data.get('name')}: {att_error}")
                         _log_sync(db, job_id, 'WARNING', f"Error creating attachment: {att_error}", step='attachments', extra_metadata={"attachment_name": att_data.get('name')})

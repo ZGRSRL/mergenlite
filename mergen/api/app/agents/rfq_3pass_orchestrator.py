@@ -36,8 +36,12 @@ try:
         from autogen import AssistantAgent, UserProxyAgent
         AUTOGEN_AVAILABLE = True
     except ImportError:
-        from pyautogen import AssistantAgent, UserProxyAgent
-        AUTOGEN_AVAILABLE = True
+        try:
+            from pyautogen import AssistantAgent, UserProxyAgent
+            AUTOGEN_AVAILABLE = True
+        except ImportError:
+            from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+            AUTOGEN_AVAILABLE = True
 except ImportError:
     AUTOGEN_AVAILABLE = False
 
@@ -207,12 +211,17 @@ def run_3pass_rfq_analysis(
     if not api_key:
         logger.warning("No API key provided, AutoGen may not work")
     
-    user = UserProxyAgent(
-        name="RFQAnalysisUser",
-        code_execution_config=False,
-        human_input_mode="NEVER",
-        max_consecutive_auto_reply=5,
-    )
+    # New autogen_agentchat API uses different parameters
+    try:
+        user = UserProxyAgent(
+            name="RFQAnalysisUser",
+            code_execution_config=False,
+            human_input_mode="NEVER",
+            max_consecutive_auto_reply=5,
+        )
+    except TypeError:
+        # New API (autogen_agentchat) - simplified parameters
+        user = UserProxyAgent(name="RFQAnalysisUser")
     
     results = {
         "pass1_output": None,

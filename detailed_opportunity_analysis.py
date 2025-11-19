@@ -92,13 +92,21 @@ except ImportError:
 
 # AutoGen imports
 try:
-    import autogen
-    from mergen.autogen_config import get_agent_configs, create_autogen_agents
+    from mergen.autogen_config import (
+        get_agent_configs,
+        create_autogen_agents,
+        AUTOGEN_AVAILABLE as AUTOGEN_CONFIG_AVAILABLE,
+        ASSISTANT_AGENT_MODULE,
+    )
     from mergen.autogen_implementation import ZgrBidAutoGenOrchestrator
-    AUTOGEN_AVAILABLE = True
-except ImportError:
+    AUTOGEN_AVAILABLE = AUTOGEN_CONFIG_AVAILABLE
+    if AUTOGEN_AVAILABLE:
+        logger.info(f"AutoGen support enabled via {ASSISTANT_AGENT_MODULE}")
+    else:
+        logger.warning("AutoGen configuration loaded but no AssistantAgent implementation is available.")
+except ImportError as e:
     AUTOGEN_AVAILABLE = False
-    logger.warning("AutoGen not available - using standard agents only")
+    logger.warning("AutoGen not available - using standard agents only (%s)", e)
 
 # RFQ-SOW Orchestrator imports
 # NOTE: Using built-in 3-pass orchestrator from mergen/api/app/agents/rfq_3pass_orchestrator.py

@@ -202,6 +202,14 @@ def generate_analysis_pdf(
         story = []
         styles = getSampleStyleSheet()
         
+        # Merge opportunity details from arguments and analysis payload
+        opp_data = {}
+        if opportunity:
+            opp_data.update(opportunity)
+        analysis_opp = analysis_result.get("opportunity") or {}
+        opp_data.update(analysis_opp)
+        sow_analysis = analysis_result.get("sow_analysis", {})
+        
         # Header with Event Name and Solicitation Number
         from reportlab.platypus import Table, TableStyle
         header_data = [
@@ -242,9 +250,7 @@ def generate_analysis_pdf(
         story.append(title)
         story.append(Spacer(1, 0.3*inch))
         
-        # Get SOW analysis data
-        sow_analysis = analysis_result.get("sow_analysis", {})
-        opp_data = analysis_result.get("opportunity", {})
+        # Get SOW analysis data (already loaded as sow_analysis)
         
         # 1. Event Details
         _add_section_header(story, "Event Details", styles)

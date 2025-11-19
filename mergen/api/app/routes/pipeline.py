@@ -54,7 +54,21 @@ async def run_pipeline(
 
     payload = request.model_dump()
     payload["agent_run_id"] = agent_run_id
-    background_tasks.add_task(run_pipeline_job, analysis_result.id, payload)
+    
+    # Log that we're starting the background task
+    logger.info(f"[Pipeline {analysis_result.id}] Adding background task")
+    
+    # Wrap the sync function to ensure it runs properly
+    def run_pipeline_sync():
+        try:
+            logger.info(f"[Pipeline {analysis_result.id}] Background task wrapper started")
+            run_pipeline_job(analysis_result.id, payload)
+            logger.info(f"[Pipeline {analysis_result.id}] Background task wrapper completed")
+        except Exception as e:
+            logger.exception(f"[Pipeline {analysis_result.id}] Background task wrapper failed: {e}")
+    
+    background_tasks.add_task(run_pipeline_sync)
+    logger.info(f"[Pipeline {analysis_result.id}] Background task added")
 
     return PipelineRunResponse(
         analysis_result_id=analysis_result.id,

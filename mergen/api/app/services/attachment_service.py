@@ -9,6 +9,7 @@ import uuid
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 import httpx
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from sqlalchemy.orm import Session
 from datetime import datetime
 
@@ -18,6 +19,24 @@ logger = logging.getLogger(__name__)
 
 # Base data directory
 BASE_DATA_DIR = os.getenv("DATA_DIR", "data")
+SAM_API_KEY = os.getenv("SAM_API_KEY")
+
+
+def _build_download_url(raw_url: str) -> str:
+    """Append SAM API key to download URLs if missing."""
+    if not SAM_API_KEY:
+        return raw_url
+    try:
+        parsed = urlparse(raw_url)
+        query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        if "api_key" in query:
+            return raw_url
+        query["api_key"] = SAM_API_KEY
+        new_query = urlencode(query)
+        new_url = urlunparse(parsed._replace(query=new_query))
+        return new_url
+    except Exception:
+        return raw_url
 
 
 def _log_download(db: Session, job_id: str, level: str, message: str, step: Optional[str] = None, attachment_name: Optional[str] = None, extra_metadata: Optional[Dict] = None):
@@ -87,6 +106,15 @@ async def download_attachments_for_opportunity(
         
         _log_download(db, job_id, 'INFO', f"Download directory: {opp_dir}", step='init', extra_metadata={"directory": str(opp_dir)})
         
+        # Get all attachments for this opportunity (for debugging)
+        all_attachments = db.query(OpportunityAttachment).filter(
+            OpportunityAttachment.opportunity_id == opportunity_id
+        ).all()
+        
+        logger.info(f"[Job {job_id}] Total attachments in DB: {len(all_attachments)}")
+        for att in all_attachments:
+            logger.info(f"[Job {job_id}] Attachment {att.id}: name={att.name}, source_url={att.source_url}, downloaded={att.downloaded}, local_path={att.local_path}")
+        
         # Get all attachments that need downloading
         attachments = db.query(OpportunityAttachment).filter(
             OpportunityAttachment.opportunity_id == opportunity_id,
@@ -98,8 +126,18 @@ async def download_attachments_for_opportunity(
         db.commit()
         
         if not attachments:
-            _log_download(db, job_id, 'INFO', "No attachments to download", step='complete')
-            logger.info(f"[Job {job_id}] No attachments to download")
+            # Check why no attachments
+            attachments_without_url = db.query(OpportunityAttachment).filter(
+                OpportunityAttachment.opportunity_id == opportunity_id,
+                OpportunityAttachment.source_url.is_(None)
+            ).count()
+            already_downloaded = db.query(OpportunityAttachment).filter(
+                OpportunityAttachment.opportunity_id == opportunity_id,
+                OpportunityAttachment.downloaded == True
+            ).count()
+            
+            logger.warning(f"[Job {job_id}] No attachments to download. Total: {len(all_attachments)}, Without URL: {attachments_without_url}, Already downloaded: {already_downloaded}")
+            _log_download(db, job_id, 'WARNING', f"No attachments to download. Total: {len(all_attachments)}, Without URL: {attachments_without_url}, Already downloaded: {already_downloaded}", step='complete')
             job.status = 'completed'
             job.completed_at = datetime.now()
             db.commit()
@@ -115,7 +153,8 @@ async def download_attachments_for_opportunity(
         downloaded_count = 0
         failed_count = 0
         
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        # httpx client with redirect following enabled (for SAM.gov 303 redirects)
+        async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
             for idx, att in enumerate(attachments):
                 try:
                     if not att.source_url:
@@ -153,10 +192,18 @@ async def download_attachments_for_opportunity(
                         continue
                     
                     # Download file
-                    _log_download(db, job_id, 'INFO', f"Downloading {att.name}", step='download', attachment_name=att.name, extra_metadata={"url": att.source_url})
-                    logger.info(f"[Job {job_id}] Downloading {att.name} from {att.source_url}")
+                    download_url = _build_download_url(att.source_url)
+                    _log_download(
+                        db,
+                        job_id,
+                        f"Downloading {att.name}",
+                        step='download',
+                        attachment_name=att.name,
+                        extra_metadata={"url": download_url},
+                    )
+                    logger.info(f"[Job {job_id}] Downloading {att.name} from {download_url}")
                     
-                    response = await client.get(att.source_url)
+                    response = await client.get(download_url)
                     response.raise_for_status()
                     
                     # Save to disk
@@ -181,11 +228,55 @@ async def download_attachments_for_opportunity(
                     downloaded_count += 1
                     
                 except httpx.HTTPStatusError as e:
-                    error_msg = f"HTTP error {e.response.status_code}"
-                    logger.error(f"[Job {job_id}] {error_msg} for {att.name}")
-                    _log_download(db, job_id, 'ERROR', error_msg, step='download', attachment_name=att.name, extra_metadata={"status_code": e.response.status_code, "error": str(e)})
-                    failed_count += 1
-                    continue
+                    # Handle 303 redirects specially - try to follow Location header
+                    if e.response.status_code == 303:
+                        location = e.response.headers.get("Location")
+                        if location:
+                            logger.info(f"[Job {job_id}] Got 303 redirect for {att.name}, following to {location}")
+                            try:
+                                # Try downloading from the redirect location
+                                redirect_response = await client.get(location)
+                                redirect_response.raise_for_status()
+                                
+                                # Save to disk
+                                with open(local_path, "wb") as f:
+                                    f.write(redirect_response.content)
+                                
+                                # Update attachment record
+                                att.local_path = str(local_path)
+                                att.downloaded = True
+                                att.size_bytes = len(redirect_response.content)
+                                att.downloaded_at = datetime.now()
+                                
+                                # Update mime_type if not set
+                                if not att.mime_type and redirect_response.headers.get("content-type"):
+                                    att.mime_type = redirect_response.headers.get("content-type").split(";")[0]
+                                
+                                db.commit()
+                                db.refresh(att)
+                                
+                                _log_download(db, job_id, 'INFO', f"Downloaded {att.name} via 303 redirect ({att.size_bytes} bytes)", step='save', attachment_name=att.name, extra_metadata={"size_bytes": att.size_bytes, "path": str(local_path), "redirect_url": location})
+                                logger.info(f"[Job {job_id}] Downloaded {att.name} via 303 redirect ({att.size_bytes} bytes) to {local_path}")
+                                downloaded_count += 1
+                                continue
+                            except Exception as redirect_err:
+                                error_msg = f"HTTP 303 redirect failed: {redirect_err}"
+                                logger.error(f"[Job {job_id}] {error_msg} for {att.name} (redirect to {location})")
+                                _log_download(db, job_id, 'ERROR', error_msg, step='download', attachment_name=att.name, extra_metadata={"status_code": 303, "redirect_location": location, "error": str(redirect_err)})
+                                failed_count += 1
+                                continue
+                        else:
+                            error_msg = f"HTTP 303 redirect but no Location header"
+                            logger.error(f"[Job {job_id}] {error_msg} for {att.name}")
+                            _log_download(db, job_id, 'ERROR', error_msg, step='download', attachment_name=att.name, extra_metadata={"status_code": 303, "error": "No Location header"})
+                            failed_count += 1
+                            continue
+                    else:
+                        error_msg = f"HTTP error {e.response.status_code}"
+                        logger.error(f"[Job {job_id}] {error_msg} for {att.name} (URL: {att.source_url})")
+                        _log_download(db, job_id, 'ERROR', error_msg, step='download', attachment_name=att.name, extra_metadata={"status_code": e.response.status_code, "url": att.source_url, "error": str(e)})
+                        failed_count += 1
+                        continue
                 except Exception as e:
                     error_msg = f"Error downloading: {e}"
                     logger.error(f"[Job {job_id}] {error_msg} for {att.name}", exc_info=True)

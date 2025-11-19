@@ -17,11 +17,16 @@ try:
         from autogen import AssistantAgent, UserProxyAgent, tool
         AUTOGEN_AVAILABLE = True
     except ImportError:
-        # Try new pyautogen structure
-        from pyautogen import AssistantAgent, UserProxyAgent
-        from pyautogen.agentchat.contrib.capabilities.teachable_agent import TeachableAgent
-        # For tool decorator, use function annotation instead
-        AUTOGEN_AVAILABLE = True
+        try:
+            # Try old pyautogen structure
+            from pyautogen import AssistantAgent, UserProxyAgent
+            AUTOGEN_AVAILABLE = True
+        except ImportError:
+            # Try new autogen_agentchat structure (pyautogen 0.10.0+)
+            from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+            # tool decorator not available in new API, will be handled differently
+            tool = None  # Will be handled at usage point
+            AUTOGEN_AVAILABLE = True
 except ImportError:  # pragma: no cover - optional dependency
     AUTOGEN_AVAILABLE = False
 
@@ -31,8 +36,7 @@ class HotelMatcherUnavailableError(RuntimeError):
 
 
 if AUTOGEN_AVAILABLE:
-
-    @tool
+    # Tool decorator - use if available, otherwise define function normally
     def amadeus_search_hotels_tool(params: Dict[str, Any]) -> Dict[str, Any]:
         """Call Amadeus hotel search and return raw offers."""
         city_code = params["city_code"]
@@ -42,6 +46,10 @@ if AUTOGEN_AVAILABLE:
         max_results = int(params.get("max_results", 5))
         offers = search_hotels_by_city_code(city_code, check_in, check_out, adults, max_results)
         return {"offers": offers}
+    
+    # Apply tool decorator if available
+    if tool is not None:
+        amadeus_search_hotels_tool = tool(amadeus_search_hotels_tool)
 
 
 def create_hotel_matcher_agent(llm_model: str = "gpt-4o-mini") -> AssistantAgent:
@@ -98,11 +106,16 @@ def run_hotel_match_for_opportunity(
         raise HotelMatcherUnavailableError("pyautogen not installed. Run `pip install pyautogen`.")
 
     assistant = create_hotel_matcher_agent(llm_model=llm_model)
-    user = UserProxyAgent(
-        name="HotelMatchUser",
-        code_execution_config=False,
-        human_input_mode="NEVER",
-    )
+    # New autogen_agentchat API uses different parameters
+    try:
+        user = UserProxyAgent(
+            name="HotelMatchUser",
+            code_execution_config=False,
+            human_input_mode="NEVER",
+        )
+    except TypeError:
+        # New API (autogen_agentchat) - simplified parameters
+        user = UserProxyAgent(name="HotelMatchUser")
     user_message = (
         "Here are the hotel search requirements:\n"
         f"{json.dumps(requirements, indent=2)}\n\n"

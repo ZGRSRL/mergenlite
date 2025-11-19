@@ -28,9 +28,14 @@ try:
         print(f"   [OK] Imported from 'autogen' module")
         AUTOGEN_AVAILABLE = True
     except ImportError:
-        from pyautogen import AssistantAgent, UserProxyAgent
-        print(f"   [OK] Imported from 'pyautogen' module")
-        AUTOGEN_AVAILABLE = True
+        try:
+            from pyautogen import AssistantAgent, UserProxyAgent
+            print(f"   [OK] Imported from 'pyautogen' module")
+            AUTOGEN_AVAILABLE = True
+        except ImportError:
+            from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+            print(f"   [OK] Imported from 'autogen_agentchat.agents' module")
+            AUTOGEN_AVAILABLE = True
     print(f"   [OK] AssistantAgent: {AssistantAgent}")
     print(f"   [OK] UserProxyAgent: {UserProxyAgent}")
 except ImportError as e:

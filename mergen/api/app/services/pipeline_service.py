@@ -5,6 +5,7 @@ Simulates AutoGen workflow, writes logs/results, and stores output artifacts.
 import json
 import os
 import logging
+import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -41,6 +42,143 @@ from ..services.parsing.document_analyzer import analyze_document
 logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
+
+
+def _auto_download_attachments(
+    db: Session,
+    opportunity: Opportunity,
+    analysis_result_id: int,
+    agent_run_id: Optional[int],
+    attachment_ids: Optional[List[int]] = None,
+) -> List[OpportunityAttachment]:
+    """
+    Ensure all attachments for the opportunity are downloaded locally.
+    Reuses the attachment_service async downloader and refreshes Attachment records.
+    """
+    query = db.query(OpportunityAttachment).filter(
+        OpportunityAttachment.opportunity_id == opportunity.id
+    )
+    if attachment_ids:
+        query = query.filter(OpportunityAttachment.id.in_(attachment_ids))
+    attachments = query.all()
+
+    # Filter attachments that need downloading (have source_url but not downloaded)
+    missing = [att for att in attachments if att.source_url and (not att.downloaded or not att.local_path)]
+    
+    # Only download if we have attachments with source_url that are missing
+    if missing:
+        from ..services.attachment_service import download_attachments_for_opportunity
+        import uuid
+
+        _log_analysis(
+            db,
+            analysis_result_id,
+            "INFO",
+            f"Auto-downloading {len(missing)} missing attachment(s) before pipeline execution",
+            step="prepare",
+            agent_run_id=agent_run_id,
+        )
+        
+        try:
+            # Create a job_id for tracking
+            job_id = str(uuid.uuid4())
+            logger.info(f"[Pipeline {analysis_result_id}] Starting auto-download job {job_id} for {len(missing)} attachments")
+            
+            # Check if we're already in an async context
+            try:
+                loop = asyncio.get_running_loop()
+                # We're in an async context, need to use a different approach
+                logger.warning(f"[Pipeline {analysis_result_id}] Already in async context, creating task for download")
+                # Create a new event loop in a thread
+                import threading
+                import queue
+                result_queue = queue.Queue()
+                
+                def run_download():
+                    try:
+                        new_loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(new_loop)
+                        result = new_loop.run_until_complete(
+                            download_attachments_for_opportunity(db, opportunity.id, job_id)
+                        )
+                        result_queue.put(('success', result))
+                        new_loop.close()
+                    except Exception as e:
+                        logger.exception(f"[Pipeline {analysis_result_id}] Download thread error: {e}")
+                        result_queue.put(('error', e))
+                
+                thread = threading.Thread(target=run_download, daemon=False)
+                thread.start()
+                thread.join(timeout=300)  # 5 minute timeout
+                
+                if thread.is_alive():
+                    logger.error(f"[Pipeline {analysis_result_id}] Download timeout after 5 minutes")
+                    raise TimeoutError("Download timeout after 5 minutes")
+                
+                if not result_queue.empty():
+                    status, result = result_queue.get()
+                    if status == 'error':
+                        logger.error(f"[Pipeline {analysis_result_id}] Download failed: {result}")
+                        raise result
+                else:
+                    logger.error(f"[Pipeline {analysis_result_id}] Download thread completed but no result in queue")
+                    raise RuntimeError("Download thread completed but no result available")
+            except RuntimeError as e:
+                if "no running event loop" in str(e).lower() or "no current event loop" in str(e).lower():
+                    # No running loop, we can use asyncio.run
+                    logger.info(f"[Pipeline {analysis_result_id}] No running loop, using asyncio.run")
+                    try:
+                        asyncio.run(download_attachments_for_opportunity(db, opportunity.id, job_id))
+                    except Exception as run_error:
+                        logger.exception(f"[Pipeline {analysis_result_id}] asyncio.run failed: {run_error}")
+                        raise
+                else:
+                    raise
+            
+            # Refresh attachment records from DB
+            db.expire_all()
+            query = db.query(OpportunityAttachment).filter(
+                OpportunityAttachment.opportunity_id == opportunity.id
+            )
+            if attachment_ids:
+                query = query.filter(OpportunityAttachment.id.in_(attachment_ids))
+            attachments = query.all()
+            
+            # Check results
+            downloaded_count = len([att for att in attachments if att.downloaded and att.local_path])
+            _log_analysis(
+                db,
+                analysis_result_id,
+                "INFO",
+                f"Auto-download completed: {downloaded_count}/{len(attachments)} attachments now available",
+                step="prepare",
+                agent_run_id=agent_run_id,
+            )
+            logger.info(f"[Pipeline {analysis_result_id}] Auto-download completed: {downloaded_count}/{len(attachments)} attachments available")
+            
+        except Exception as exc:
+            logger.exception(f"Automatic attachment download failed for opportunity {opportunity.id}: {exc}")
+            _log_analysis(
+                db,
+                analysis_result_id,
+                "ERROR",
+                f"Attachment auto-download failed: {exc}. Pipeline will continue with available attachments.",
+                step="prepare",
+                agent_run_id=agent_run_id,
+            )
+            # Continue with whatever attachments we have
+    elif attachments and not any(att.source_url for att in attachments):
+        # No source URLs available
+        _log_analysis(
+            db,
+            analysis_result_id,
+            "WARNING",
+            f"Found {len(attachments)} attachment(s) but none have source_url. Cannot auto-download.",
+            step="prepare",
+            agent_run_id=agent_run_id,
+        )
+    
+    return attachments
 
 
 def _log_analysis(
@@ -112,15 +250,19 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
     Background worker that simulates the AutoGen pipeline.
     Reads attachments, creates a summary JSON file, and updates AIAnalysisResult.
     """
+    logger.info(f"[Pipeline {analysis_result_id}] Background task started")
     session = SessionLocal()
     try:
         result = session.query(AIAnalysisResult).filter(AIAnalysisResult.id == analysis_result_id).first()
         if not result:
-            logger.error("Analysis result %s not found", analysis_result_id)
+            logger.error(f"[Pipeline {analysis_result_id}] Analysis result not found")
             return
+
+        logger.info(f"[Pipeline {analysis_result_id}] Found analysis result, status: {result.status}")
 
         opportunity = session.query(Opportunity).filter(Opportunity.id == result.opportunity_id).first()
         if not opportunity:
+            logger.error(f"[Pipeline {analysis_result_id}] Opportunity not found")
             _log_analysis(session, analysis_result_id, "ERROR", "Opportunity not found", step="init")
             result.status = "failed"
             result.result_json = {"error": "Opportunity not found"}
@@ -131,6 +273,8 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
         options: Dict[str, Any] = payload.get("options") or {}
         agent_run_id = payload.get("agent_run_id")
 
+        logger.info(f"[Pipeline {analysis_result_id}] Processing {result.analysis_type} analysis")
+
         if result.analysis_type == "hotel_match":
             _execute_hotel_match(session, result, opportunity, options, agent_run_id)
             return
@@ -138,6 +282,7 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
         result.status = "running"
         result.updated_at = datetime.utcnow()
         session.commit()
+        logger.info(f"[Pipeline {analysis_result_id}] Status set to 'running'")
 
         _log_analysis(session, analysis_result_id, "INFO", "Pipeline job started", step="init", agent_run_id=agent_run_id)
 
@@ -187,132 +332,33 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
                 logger.warning(f"Error extracting attachments from raw_data: {e}", exc_info=True)
                 _log_analysis(session, analysis_result_id, "WARNING", f"Failed to extract attachments from raw_data: {e}", step="prepare")
 
+        # Remove any None placeholders from extraction step
+        attachments = [att for att in attachments if att is not None]
+
+        attachments = _auto_download_attachments(
+            session,
+            opportunity,
+            analysis_result_id,
+            agent_run_id,
+            attachment_ids=attachment_ids,
+        )
+
         if not attachments:
-            _log_analysis(session, analysis_result_id, "WARNING", "No attachments found; continuing with metadata only", step="prepare")
+            warning_msg = (
+                "No attachments found for this opportunity. "
+                "AutoGen agents cannot analyze documents without attachments. "
+                "Pipeline will continue with metadata only, but analysis results will be limited. "
+                "Please sync attachments from SAM.gov or upload documents manually."
+            )
+            _log_analysis(session, analysis_result_id, "WARNING", warning_msg, step="prepare")
+            logger.warning(f"[Pipeline {analysis_result_id}] {warning_msg}")
 
         attachment_details = []
         analyzed_documents = []
         
-        # Download any attachments that are not downloaded yet
-        attachments_to_download = [att for att in attachments if not att.downloaded or not att.local_path]
-        if attachments_to_download:
-            _log_analysis(
-                session,
-                analysis_result_id,
-                "INFO",
-                f"Downloading {len(attachments_to_download)} attachment(s) that are not yet downloaded",
-                step="prepare",
-                agent_run_id=agent_run_id,
-            )
-            
-            # Download attachments synchronously
-            import httpx
-            import asyncio
-            from datetime import datetime
-            
-            notice_id = opportunity.notice_id or str(opportunity.id)
-            opp_dir = Path(os.getenv("DATA_DIR", "data")) / "opportunities" / notice_id / "attachments"
-            opp_dir.mkdir(parents=True, exist_ok=True)
-            
-            async def download_single_attachment(att):
-                """Download a single attachment"""
-                try:
-                    if not att.source_url:
-                        return False
-                    
-                    # Generate safe filename
-                    filename = att.name.replace("/", "_").replace("\\", "_")
-                    filename = Path(filename).name
-                    
-                    # If no extension, try to guess from URL
-                    if not Path(filename).suffix and att.mime_type:
-                        ext_map = {
-                            "application/pdf": ".pdf",
-                            "application/msword": ".doc",
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-                            "application/vnd.ms-excel": ".xls",
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
-                        }
-                        ext = ext_map.get(att.mime_type, "")
-                        if ext:
-                            filename = filename + ext
-                    
-                    local_path = opp_dir / filename
-                    
-                    # Skip if already exists
-                    if local_path.exists():
-                        att.local_path = str(local_path)
-                        att.downloaded = True
-                        att.size_bytes = local_path.stat().st_size
-                        att.downloaded_at = datetime.now()
-                        session.commit()
-                        return True
-                    
-                    # Download file
-                    async with httpx.AsyncClient(timeout=120.0) as client:
-                        response = await client.get(att.source_url)
-                        response.raise_for_status()
-                        
-                        # Save to disk
-                        with open(local_path, "wb") as f:
-                            f.write(response.content)
-                        
-                        # Update attachment record
-                        att.local_path = str(local_path)
-                        att.downloaded = True
-                        att.size_bytes = len(response.content)
-                        att.downloaded_at = datetime.now()
-                        
-                        # Update mime_type if not set
-                        if not att.mime_type and response.headers.get("content-type"):
-                            att.mime_type = response.headers.get("content-type").split(";")[0]
-                        
-                        session.commit()
-                        session.refresh(att)
-                        
-                        _log_analysis(
-                            session,
-                            analysis_result_id,
-                            "INFO",
-                            f"Downloaded {att.name} ({att.size_bytes} bytes)",
-                            step="download",
-                            agent_run_id=agent_run_id,
-                        )
-                        return True
-                except Exception as e:
-                    logger.error(f"Error downloading attachment {att.name}: {e}", exc_info=True)
-                    _log_analysis(
-                        session,
-                        analysis_result_id,
-                        "ERROR",
-                        f"Failed to download {att.name}: {e}",
-                        step="download",
-                        agent_run_id=agent_run_id,
-                    )
-                    return False
-            
-            # Download all attachments in parallel
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            
-            download_tasks = [download_single_attachment(att) for att in attachments_to_download]
-            download_results = loop.run_until_complete(asyncio.gather(*download_tasks))
-            
-            downloaded_count = sum(1 for r in download_results if r)
-            _log_analysis(
-                session,
-                analysis_result_id,
-                "INFO",
-                f"Downloaded {downloaded_count}/{len(attachments_to_download)} attachment(s)",
-                step="download",
-                agent_run_id=agent_run_id,
-            )
-            
-            # Refresh attachments from DB
-            session.refresh_all()
+        # Attachments are already downloaded by _auto_download_attachments
+        # Just refresh the list to get latest status
+        session.refresh_all()
         
         for att in attachments:
             details = {
@@ -325,28 +371,42 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
             }
             attachment_details.append(details)
             
+            # Check if attachment is downloaded and has local path
             if not att.downloaded or not att.local_path:
-                _log_analysis(
-                    session,
-                    analysis_result_id,
-                    "WARNING",
-                    f"Attachment {att.name} is not downloaded locally",
-                    step="prepare",
-                    agent_run_id=agent_run_id,
+                error_msg = (
+                    f"Attachment '{att.name}' (ID: {att.id}) is not downloaded locally. "
+                    f"AutoGen cannot analyze this document without a local file. "
+                    f"Please run download-attachments endpoint first. "
+                    f"Source URL: {att.source_url or 'N/A'}"
                 )
-                continue
-            
-            # Check if file exists
-            local_path_obj = Path(att.local_path)
-            if not local_path_obj.exists():
                 _log_analysis(
                     session,
                     analysis_result_id,
-                    "WARNING",
-                    f"Document file not found: {att.local_path}",
+                    "ERROR",
+                    error_msg,
                     step="analyze",
                     agent_run_id=agent_run_id,
                 )
+                logger.warning(f"[Pipeline {analysis_result_id}] {error_msg}")
+                continue
+            
+            # Check if file exists on disk
+            local_path_obj = Path(att.local_path)
+            if not local_path_obj.exists():
+                error_msg = (
+                    f"Document file not found at path: {att.local_path}. "
+                    f"File may have been deleted or path is incorrect. "
+                    f"Attachment ID: {att.id}, Name: {att.name}"
+                )
+                _log_analysis(
+                    session,
+                    analysis_result_id,
+                    "ERROR",
+                    error_msg,
+                    step="analyze",
+                    agent_run_id=agent_run_id,
+                )
+                logger.error(f"[Pipeline {analysis_result_id}] {error_msg}")
                 continue
             
             # Analyze downloaded document
@@ -658,7 +718,8 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
 
     except Exception as exc:
         session.rollback()
-        logger.exception("Pipeline job %s failed", analysis_result_id)
+        logger.exception(f"[Pipeline {analysis_result_id}] Pipeline job failed with exception: {exc}")
+        _log_analysis(session, analysis_result_id, "ERROR", f"Pipeline failed: {exc}", step="error", agent_run_id=payload.get("agent_run_id"))
         result = session.query(AIAnalysisResult).filter(AIAnalysisResult.id == analysis_result_id).first()
         if result:
             result.status = "failed"
@@ -677,6 +738,22 @@ def _execute_hotel_match(
     options: Dict[str, Any],
     agent_run_id: Optional[int],
 ) -> None:
+    result.status = "running"
+    result.updated_at = datetime.utcnow()
+    db.commit()
+    
+    _log_analysis(db, result.id, "INFO", "Hotel match job started", step="init", agent_run_id=agent_run_id)
+    
+    # Auto-download attachments for hotel match too (in case they need documents)
+    attachment_ids = options.get("attachment_ids")
+    _auto_download_attachments(
+        db,
+        opportunity,
+        result.id,
+        agent_run_id,
+        attachment_ids=attachment_ids,
+    )
+    
     try:
         requirements = build_hotel_match_requirements(opportunity, options)
     except ValueError as exc:

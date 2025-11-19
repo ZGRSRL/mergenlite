@@ -3,12 +3,16 @@ ZgrBid AutoGen Implementation
 Multi-Agent RFQ Analysis and Proposal Generation System
 """
 
-import autogen
 from typing import Dict, List, Any, Optional
 import json
 import logging
 from dataclasses import dataclass
 from enum import Enum
+
+try:
+    import autogen  # Optional dependency for runtime orchestration
+except ImportError:  # pragma: no cover - best effort fallback
+    autogen = None  # type: ignore
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

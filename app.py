@@ -9,6 +9,8 @@ import requests
 from datetime import datetime
 import os
 import logging
+import time
+from threading import Lock
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +24,25 @@ try:
             break
 except ImportError:
     pass
+
+SAM_RATE_LIMIT_SECONDS = float(os.getenv("SAM_RATE_LIMIT", "0") or 0)
+_SAM_RATE_LIMIT_LOCK = Lock()
+_LAST_SAM_CALL_TS = 0.0
+
+
+def _respect_sam_rate_limit():
+    """Simple rate limiter based on SAM_RATE_LIMIT env (seconds between requests)."""
+    global _LAST_SAM_CALL_TS
+    if SAM_RATE_LIMIT_SECONDS <= 0:
+        return
+    with _SAM_RATE_LIMIT_LOCK:
+        now = time.time()
+        wait_duration = SAM_RATE_LIMIT_SECONDS - (now - _LAST_SAM_CALL_TS)
+        if wait_duration > 0:
+            logger.info("SAM rate limit active; sleeping %.2f seconds before next request", wait_duration)
+            time.sleep(wait_duration)
+            now = time.time()
+        _LAST_SAM_CALL_TS = now
 
 # Local imports
 try:
@@ -530,7 +551,7 @@ def sync_opportunities_from_sam(naics_code: str = "721110", days_back: int = 30,
         try:
             if show_progress and progress_bar:
                 status_text.text(f"🔄 SAM.gov API çağrısı yapılıyor (NAICS: {naics_code}, Son {days_back} gün)...")
-            
+            _respect_sam_rate_limit()
             opportunities = sam.fetch_opportunities(
                 naics_codes=[naics_code],
                 days_back=days_back,

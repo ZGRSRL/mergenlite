@@ -12,7 +12,7 @@ from app.db import Base
 from app.config import settings
 
 # Import all models so Alembic can detect them
-from app.models import (
+from app.models.db_models import (  # noqa: F401  (needed for Alembic autogenerate)
     Opportunity,
     OpportunityAttachment,
     OpportunityHistory,
@@ -20,6 +20,22 @@ from app.models import (
     AnalysisLog,
     AgentRun,
     AgentMessage,
+    Document,
+    LLMCall,
+    EmailLog,
+    DecisionCache,
+    TrainingExample,
+    SyncJob,
+    SyncLog,
+    DownloadJob,
+    DownloadLog,
+    Requirement,
+    Evidence,
+    FacilityFeature,
+    PricingItem,
+    PastPerformance,
+    Clause,
+    VectorChunk,
 )
 
 # this is the Alembic Config object, which provides
@@ -99,6 +115,5 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
 
 

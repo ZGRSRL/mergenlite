@@ -14,8 +14,14 @@ try:
         from autogen import AssistantAgent, UserProxyAgent, tool
         AUTOGEN_AVAILABLE = True
     except ImportError:
-        from pyautogen import AssistantAgent, UserProxyAgent
-        AUTOGEN_AVAILABLE = True
+        try:
+            from pyautogen import AssistantAgent, UserProxyAgent
+            AUTOGEN_AVAILABLE = True
+        except ImportError:
+            from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+            # tool decorator not available in new API, will be handled differently
+            tool = None  # Will be handled at usage point
+            AUTOGEN_AVAILABLE = True
 except ImportError:
     AUTOGEN_AVAILABLE = False
 
@@ -158,12 +164,17 @@ def analyze_sow_document(
         api_key = os.getenv("OPENAI_API_KEY") or os.getenv("AZURE_OPENAI_API_KEY")
 
     assistant = create_sow_analyzer_agent(llm_model=llm_model, api_key=api_key)
-    user = UserProxyAgent(
-        name="SOWAnalysisUser",
-        code_execution_config=False,
-        human_input_mode="NEVER",
-        max_consecutive_auto_reply=3,
-    )
+    # New autogen_agentchat API uses different parameters
+    try:
+        user = UserProxyAgent(
+            name="SOWAnalysisUser",
+            code_execution_config=False,
+            human_input_mode="NEVER",
+            max_consecutive_auto_reply=3,
+        )
+    except TypeError:
+        # New API (autogen_agentchat) - simplified parameters
+        user = UserProxyAgent(name="SOWAnalysisUser")
     
     user_message = f"""Please analyze the following SOW document and extract ALL requirements in detail.
 

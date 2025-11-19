@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download, PictureAsPdf, Code, ExpandMore, ExpandLess } from '@mui/icons-material'
+import { Download, PictureAsPdf, Code, ExpandMore, ExpandLess, OpenInNew } from '@mui/icons-material'
 import {
   Box,
   Typography,
@@ -13,7 +13,6 @@ import {
 } from '@mui/material'
 import { listGeneratedFiles, getArtifactUrl, listAllAnalysisResults, AnalysisResult } from '../api/pipeline'
 import { getOpportunity, Opportunity } from '../api/opportunities'
-import { Link } from '@mui/material'
 
 interface GeneratedFile {
   filename: string
@@ -178,14 +177,16 @@ export function Results() {
                                 {opportunity.title || 'Başlık Yok'}
                               </Typography>
                               {samUrl && (
-                                <Link
+                                <Button
+                                  size="small"
+                                  variant="outlined"
                                   href={samUrl}
                                   target="_blank"
-                                  rel="noopener noreferrer"
-                                  sx={{ fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+                                  startIcon={<OpenInNew />}
+                                  sx={{ textTransform: 'none', mt: 0.5 }}
                                 >
-                                  SAM.gov'da Görüntüle →
-                                </Link>
+                                  SAM.gov'da Aç
+                                </Button>
                               )}
                               {opportunity.noticeId && (
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>

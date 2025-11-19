@@ -15,8 +15,12 @@ try:
         from autogen import AssistantAgent, UserProxyAgent
         AUTOGEN_AVAILABLE = True
     except ImportError:
-        from pyautogen import AssistantAgent, UserProxyAgent
-        AUTOGEN_AVAILABLE = True
+        try:
+            from pyautogen import AssistantAgent, UserProxyAgent
+            AUTOGEN_AVAILABLE = True
+        except ImportError:
+            from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+            AUTOGEN_AVAILABLE = True
 except ImportError:
     AUTOGEN_AVAILABLE = False
 
@@ -97,12 +101,17 @@ def run_sow_generator_agent(
         logger.warning("No API key provided, SOWGeneratorAgent may not work")
     
     generator = create_sow_generator_agent(llm_model, api_key)
-    user = UserProxyAgent(
-        name="SOWGeneratorUser",
-        code_execution_config=False,
-        human_input_mode="NEVER",
-        max_consecutive_auto_reply=3,
-    )
+    # New autogen_agentchat API uses different parameters
+    try:
+        user = UserProxyAgent(
+            name="SOWGeneratorUser",
+            code_execution_config=False,
+            human_input_mode="NEVER",
+            max_consecutive_auto_reply=3,
+        )
+    except TypeError:
+        # New API (autogen_agentchat) - simplified parameters
+        user = UserProxyAgent(name="SOWGeneratorUser")
     
     generator_message = f"""Generate a professional Statement of Work (SOW) in Markdown format from the following normalized RFQ data.
 

@@ -15,8 +15,12 @@ try:
         from autogen import AssistantAgent, UserProxyAgent
         AUTOGEN_AVAILABLE = True
     except ImportError:
-        from pyautogen import AssistantAgent, UserProxyAgent
-        AUTOGEN_AVAILABLE = True
+        try:
+            from pyautogen import AssistantAgent, UserProxyAgent
+            AUTOGEN_AVAILABLE = True
+        except ImportError:
+            from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+            AUTOGEN_AVAILABLE = True
 except ImportError:
     AUTOGEN_AVAILABLE = False
 
@@ -96,12 +100,17 @@ def run_reviewer_agent(
         logger.warning("No API key provided, ReviewerAgent may not work")
     
     reviewer = create_reviewer_agent(llm_model, api_key)
-    user = UserProxyAgent(
-        name="ReviewerUser",
-        code_execution_config=False,
-        human_input_mode="NEVER",
-        max_consecutive_auto_reply=3,
-    )
+    # New autogen_agentchat API uses different parameters
+    try:
+        user = UserProxyAgent(
+            name="ReviewerUser",
+            code_execution_config=False,
+            human_input_mode="NEVER",
+            max_consecutive_auto_reply=3,
+        )
+    except TypeError:
+        # New API (autogen_agentchat) - simplified parameters
+        user = UserProxyAgent(name="ReviewerUser")
     
     reviewer_message = f"""Review and correct the following raw analyzer JSON output.
 

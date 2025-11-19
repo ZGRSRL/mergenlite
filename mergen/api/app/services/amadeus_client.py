@@ -2,7 +2,7 @@
 Thin wrapper around the Amadeus hotel search API.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from amadeus import Client, ResponseError
@@ -95,6 +95,43 @@ def normalize_date(value: Optional[str], fallback_days: int = 0) -> Optional[str
             return datetime.fromisoformat(value).date().isoformat()
         except ValueError:
             pass
-    return (datetime.utcnow().date()).isoformat() if fallback_days == 0 else (
-        (datetime.utcnow().date()).isoformat()
-    )
+    base_date = datetime.utcnow().date()
+    if fallback_days:
+        base_date = base_date + timedelta(days=fallback_days)
+    return base_date.isoformat()
+
+
+def is_amadeus_configured() -> bool:
+    """Return True if API credentials are configured."""
+    return bool(settings.amadeus_api_key and settings.amadeus_api_secret)
+
+
+def amadeus_health_check(test_city: str = "Washington", nights: int = 2) -> Dict[str, Any]:
+    """
+    Perform a lightweight health check against Amadeus API.
+    Returns diagnostic information without raising.
+    """
+    status = {
+        "configured": is_amadeus_configured(),
+        "environment": settings.amadeus_env,
+        "client_initialized": _CLIENT is not None,
+        "status": "disabled",
+        "city_code": None,
+        "offers_found": 0,
+    }
+    if not _CLIENT:
+        status["status"] = "disabled"
+        return status
+    
+    city_code = lookup_city_code(test_city)
+    status["city_code"] = city_code
+    if not city_code:
+        status["status"] = "city_lookup_failed"
+        return status
+    
+    check_in = (datetime.utcnow().date() + timedelta(days=30)).isoformat()
+    check_out = (datetime.utcnow().date() + timedelta(days=30 + max(nights, 1))).isoformat()
+    offers = search_hotels_by_city_code(city_code, check_in, check_out, adults=1, max_results=1)
+    status["offers_found"] = len(offers)
+    status["status"] = "ok" if offers else "no_offers"
+    return status

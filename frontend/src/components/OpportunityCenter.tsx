@@ -354,11 +354,13 @@ export function OpportunityCenter({ onAnalyze }: OpportunityCenterProps) {
                       {opp.samGovLink && (
                         <Button
                           size="small"
+                          variant="outlined"
                           href={opp.samGovLink}
                           target="_blank"
                           startIcon={<OpenInNew />}
+                          sx={{ textTransform: 'none' }}
                         >
-                          SAM.gov
+                          SAM.gov'da Aç
                         </Button>
                       )}
                     </Box>

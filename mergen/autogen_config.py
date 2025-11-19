@@ -2,11 +2,48 @@
 AutoGen Configuration for ZgrBid System
 Configuration files and agent definitions
 """
+from __future__ import annotations
 
-import autogen
-from typing import Dict, List, Any, Optional
+import importlib
 import json
+import logging
 import os
+from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
+
+
+def _load_assistant_agent() -> Tuple[Optional[type], Optional[str]]:
+    """
+    Try multiple module paths to find the AssistantAgent class.
+    Returns (class, module_path) or (None, None) if not available.
+    """
+    candidates = [
+        ("autogen", "AssistantAgent"),
+        ("pyautogen", "AssistantAgent"),
+        ("autogen_agentchat.agents", "AssistantAgent"),
+    ]
+    for module_path, attr in candidates:
+        try:
+            module = importlib.import_module(module_path)
+            assistant_cls = getattr(module, attr)
+            return assistant_cls, module_path
+        except (ImportError, AttributeError):
+            continue
+    return None, None
+
+
+AssistantAgentCls, ASSISTANT_AGENT_MODULE = _load_assistant_agent()
+AUTOGEN_AVAILABLE = AssistantAgentCls is not None
+
+if not AUTOGEN_AVAILABLE:
+    logger.warning(
+        "AutoGen AssistantAgent could not be imported. "
+        "Install 'autogen==0.2.26' or 'autogen-agentchat' to enable multi-agent features."
+    )
+else:
+    logger.info(f"AutoGen AssistantAgent loaded from '{ASSISTANT_AGENT_MODULE}'.")
+
 
 # AutoGen Agent Configurations
 def get_agent_configs() -> Dict[str, Dict[str, Any]]:
@@ -121,9 +158,12 @@ def get_agent_configs() -> Dict[str, Dict[str, Any]]:
         }
     }
 
-def create_autogen_agents() -> Dict[str, autogen.AssistantAgent]:
+def create_autogen_agents() -> Dict[str, Any]:
     """Create AutoGen agents with proper configuration"""
-    
+    if not AUTOGEN_AVAILABLE:
+        logger.warning("AutoGen not available. Returning empty agent registry.")
+        return {}
+
     configs = get_agent_configs()
     agents = {}
     
@@ -136,7 +176,7 @@ def create_autogen_agents() -> Dict[str, autogen.AssistantAgent]:
     }
     
     for agent_name, config in configs.items():
-        agent = autogen.AssistantAgent(
+        agent = AssistantAgentCls(
             name=config["name"],
             system_message=config["system_message"],
             llm_config=llm_config
