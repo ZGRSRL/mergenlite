@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+import re
 from typing import Any, Dict, Optional
 
 from ..services.amadeus_client import search_hotels_by_city_code
@@ -654,39 +655,152 @@ def run_hotel_match_for_opportunity(
     if not isinstance(content, str):
         content = str(content)
     
+    # CRITICAL: Log raw agent response for debugging
+    logger.info(f"[Agent Response] Raw content length: {len(content)} chars")
+    logger.info(f"[Agent Response] Content preview (first 500 chars): {content[:500]}")
+    if len(content) > 500:
+        logger.info(f"[Agent Response] Content preview (last 200 chars): {content[-200:]}")
+    
+    # Robust JSON extraction function
+    def extract_json_from_response(response_text: str):
+        """
+        Extract and parse JSON from agent response.
+        Handles:
+        1. Markdown code blocks (```json ... ``` or ``` ... ```)
+        2. Plain JSON strings
+        3. JSON with extra text before/after
+        4. Multiple JSON objects (takes first valid one)
+        """
+        import re
+        
+        if not response_text or not isinstance(response_text, str):
+            return None
+        
+        # Step 1: Try to extract from markdown code blocks
+        # Pattern: ```json ... ``` or ``` ... ```
+        markdown_patterns = [
+            r"```json\s*(.*?)\s*```",  # ```json ... ```
+            r"```\s*(.*?)\s*```",      # ``` ... ```
+        ]
+        
+        for pattern in markdown_patterns:
+            match = re.search(pattern, response_text, re.DOTALL)
+            if match:
+                json_str = match.group(1).strip()
+                try:
+                    parsed = json.loads(json_str)
+                    if isinstance(parsed, dict):
+                        logger.info(f"[JSON Extraction] Successfully extracted JSON from markdown block")
+                        return parsed
+                except json.JSONDecodeError:
+                    continue
+        
+        # Step 2: Try to find JSON object in text (handles cases with extra text)
+        # Look for {...} pattern - use balanced brace matching
+        brace_count = 0
+        start_idx = -1
+        for i, char in enumerate(response_text):
+            if char == '{':
+                if brace_count == 0:
+                    start_idx = i
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0 and start_idx >= 0:
+                    json_str = response_text[start_idx:i+1]
+                    try:
+                        parsed = json.loads(json_str)
+                        if isinstance(parsed, dict) and ("hotels" in parsed or "reasoning" in parsed):
+                            logger.info(f"[JSON Extraction] Successfully extracted JSON object from text (balanced braces)")
+                            return parsed
+                    except json.JSONDecodeError:
+                        pass
+                    start_idx = -1
+        
+        # Step 3: Try direct JSON parse (if content is already clean JSON)
+        content_stripped = response_text.strip()
+        if content_stripped.startswith("{") or content_stripped.startswith("["):
+            try:
+                parsed = json.loads(content_stripped)
+                if isinstance(parsed, dict):
+                    logger.info(f"[JSON Extraction] Successfully parsed direct JSON")
+                    return parsed
+            except json.JSONDecodeError:
+                pass
+        
+        return None
+    
+    # Extract JSON from response
+    parsed = extract_json_from_response(content)
+    
+    if parsed:
+        # Successfully extracted JSON
+        logger.info(f"[Agent Response] Successfully parsed JSON. Keys: {list(parsed.keys())}")
+        
+        # CRITICAL: Normalize hotel names in parsed response
+        # Handle key variations: name, hotel_name, hotelName, etc.
+        if "hotels" in parsed and isinstance(parsed["hotels"], list):
+            normalized_hotels = []
+            for hotel in parsed["hotels"]:
+                if not isinstance(hotel, dict):
+                    continue
+                
+                # Extract hotel name with flexible key matching
+                # Priority: name > hotel_name > hotelName > hotel (if string) > hotel.name (if dict)
+                hotel_name = hotel.get("name")
+                if not hotel_name:
+                    hotel_name = hotel.get("hotel_name") or hotel.get("hotelName")
+                if not hotel_name:
+                    hotel_obj = hotel.get("hotel")
+                    if isinstance(hotel_obj, str):
+                        hotel_name = hotel_obj
+                    elif isinstance(hotel_obj, dict):
+                        hotel_name = hotel_obj.get("name")
+                
+                # If still no name, try to extract from nested structures
+                if not hotel_name:
+                    # Try amadeus_hotel_id or hotel_id to identify
+                    hotel_id = hotel.get("amadeus_hotel_id") or hotel.get("hotel_id") or hotel.get("hotelId")
+                    if hotel_id:
+                        logger.warning(f"[Hotel Name] Missing name for hotel ID: {hotel_id}")
+                
+                # Normalize hotel dict
+                normalized_hotel = hotel.copy()
+                if hotel_name:
+                    normalized_hotel["name"] = str(hotel_name)
+                elif "name" not in normalized_hotel:
+                    normalized_hotel["name"] = "Unknown Hotel"
+                    logger.warning(f"[Hotel Name] Could not extract name from hotel: {list(hotel.keys())}")
+                
+                normalized_hotels.append(normalized_hotel)
+            
+            parsed["hotels"] = normalized_hotels
+            logger.info(f"[Agent Response] Normalized {len(normalized_hotels)} hotels")
+        
+        return parsed
+    
+    # JSON extraction failed - try fallback
+    logger.warning(f"[Agent Response] Failed to extract JSON from response. Content preview: {content[:500]}")
+    
     # Check if content looks like JSON (starts with { or [)
     content_stripped = content.strip()
     if not (content_stripped.startswith("{") or content_stripped.startswith("[")):
         # Agent returned plain text instead of JSON - this is the critical error case
         logger.warning(f"Hotel matcher returned plain text instead of JSON. Content preview: {content[:200]}")
-        # Try to extract JSON from markdown code blocks if present
-        if "```json" in content:
-            # Extract JSON from markdown code block
-            json_start = content.find("```json") + 7
-            json_end = content.find("```", json_start)
-            if json_end > json_start:
-                content = content[json_start:json_end].strip()
-        elif "```" in content:
-            # Try generic code block
-            json_start = content.find("```") + 3
-            json_end = content.find("```", json_start)
-            if json_end > json_start:
-                content = content[json_start:json_end].strip()
-        else:
-            # No JSON found - return error response
-            return {
-                "error": f"Agent returned plain text instead of JSON. Message: {content[:500]}",
-                "hotels": [],
-                "reasoning": "The agent did not follow the JSON output format requirement",
-                "requirements_analysis": {
-                    "lodging_requirements_met": False,
-                    "transportation_requirements_met": False,
-                    "amenities_requirements_met": False,
-                    "summary": "No hotels found - agent output format error"
-                }
+        # Return error response
+        return {
+            "error": f"Agent returned plain text instead of JSON. Message: {content[:500]}",
+            "hotels": [],
+            "reasoning": "The agent did not follow the JSON output format requirement",
+            "requirements_analysis": {
+                "lodging_requirements_met": False,
+                "transportation_requirements_met": False,
+                "amenities_requirements_met": False,
+                "summary": "No hotels found - agent output format error"
             }
+        }
     
-    # Try to parse JSON
+    # Try to parse JSON directly (last attempt)
     try:
         parsed = json.loads(content)
         # Validate it's a dict (not a list or other type)
