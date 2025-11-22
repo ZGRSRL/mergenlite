@@ -37,32 +37,120 @@ def search_hotels_by_city_code(
     check_in: str,
     check_out: str,
     adults: int = 1,
-    max_results: int = 5,
+    max_results: int = 10,  # Increased from 5 to 10
 ) -> List[Dict[str, Any]]:
     """
-    Fetch hotel offers for given city code + stay window.
-    Dates must be ISO strings (YYYY-MM-DD).
+    Fetch hotel offers and flatten structure for Agent compatibility.
+    
+    Returns formatted offers with 'name' at root level for easy access.
     """
     if not _CLIENT:
         return []
     try:
-        # Amadeus Hotel Search API - SDK has hotel_offers_search
-        # Note: Some parameters may be optional or have different names
-        params = {
-            'cityCode': city_code.upper(),
+        # Step 1: Get hotel list by city code
+        logger.info(f"Fetching hotel list for city code: {city_code}")
+        try:
+            hotel_list_response = _CLIENT.reference_data.locations.hotels.by_city.get(cityCode=city_code.upper())
+        except AttributeError:
+            # Fallback: try alternative API endpoint
+            logger.warning("hotels.by_city not available, trying alternative method")
+            # Use hotel list search instead
+            hotel_list_response = _CLIENT.reference_data.locations.hotels.get(cityCode=city_code.upper())
+        
+        if not hotel_list_response.data or len(hotel_list_response.data) == 0:
+            logger.warning(f"No hotels found for city code: {city_code}")
+            return []
+        
+        # Extract hotel IDs (limit to first 20 to avoid too many requests)
+        hotel_ids = [hotel.get('hotelId') for hotel in hotel_list_response.data[:20] if hotel.get('hotelId')]
+        
+        if not hotel_ids:
+            logger.warning(f"No hotel IDs found in response for city code: {city_code}")
+            return []
+        
+        logger.info(f"Found {len(hotel_ids)} hotels, fetching offers for first {min(len(hotel_ids), 10)}")
+        
+        # Step 2: Get offers for these hotels
+        # Amadeus Hotel Offers Search requires hotelIds (not cityCode)
+        offers_params = {
+            'hotelIds': ','.join(hotel_ids[:10]),  # Limit to 10 hotels to avoid API limits
+            'checkInDate': check_in,
+            'checkOutDate': check_out,
+            'adults': adults,
+            'roomQuantity': adults,  # CRITICAL: roomQuantity = adults to avoid "NO RATE FOR REQUESTED OCCUPANCY" errors
+            'bestRateOnly': True
         }
-        # Add optional parameters only if provided
-        if check_in:
-            params['checkInDate'] = check_in
-        if check_out:
-            params['checkOutDate'] = check_out
-        if adults:
-            params['adults'] = adults
             
-        response = _CLIENT.shopping.hotel_offers_search.get(**params)
-        return response.data[:max_results] if hasattr(response, 'data') and response.data else []
-    except (ResponseError, Exception) as exc:
+        offers_response = _CLIENT.shopping.hotel_offers_search.get(**offers_params)
+        
+        # --- CRITICAL FIX: DATA MAPPING ---
+        # Flatten nested structure for Agent compatibility
+        formatted_offers = []
+        if offers_response.data:
+            for hotel_data in offers_response.data:
+                hotel_info = hotel_data.get('hotel', {})
+                hotel_offers = hotel_data.get('offers', [])
+                
+                # Take first offer if available
+                offer_data = hotel_offers[0] if hotel_offers else {}
+                price_data = offer_data.get('price', {}) if offer_data else {}
+                
+                # Extract hotel name - CRITICAL: Must be at root level
+                hotel_name = hotel_info.get('name', 'Unknown Hotel')
+                
+                # Flatten structure for Agent
+                formatted_hotel = {
+                    "name": hotel_name,  # <-- Root level name (CRITICAL for Agent)
+                    "hotelId": hotel_info.get('hotelId'),
+                    "latitude": hotel_info.get('latitude'),
+                    "longitude": hotel_info.get('longitude'),
+                    "cityCode": hotel_info.get('cityCode', city_code),
+                    "rating": hotel_info.get('rating'),
+                    "price": {
+                        "total": price_data.get('total'),
+                        "currency": price_data.get('currency'),
+                        "base": price_data.get('base'),
+                    },
+                    "description": hotel_info.get('description', {}).get('text', '') if isinstance(hotel_info.get('description'), dict) else '',
+                    "amenities": hotel_info.get('amenities', []),
+                    # Keep nested structure for backward compatibility
+                    "hotel": hotel_info,
+                    "offer": offer_data,
+                    # Keep raw data subset for reference
+                    "raw_data_subset": {
+                        "hotel": hotel_info,
+                        "price": price_data
+                    }
+                }
+                formatted_offers.append(formatted_hotel)
+        
+        # Sort by price if available and return top results
+        if formatted_offers:
+            try:
+                formatted_offers.sort(key=lambda x: float(x.get('price', {}).get('total', '999999') or '999999'))
+            except (ValueError, TypeError):
+                pass  # If sorting fails, return unsorted
+        
+        return formatted_offers[:max_results]
+        
+    except ResponseError as exc:
+        logger.error(f"Amadeus API error: {exc.code} - {exc.description}")
+        if hasattr(exc, 'response') and exc.response:
+            logger.error(f"Response body: {exc.response.body}")
+        # Log request parameters for debugging
+        logger.error(f"Request params: city_code={city_code}, check_in={check_in}, check_out={check_out}, adults={adults}")
+        return []
+    except Exception as exc:
         logger.error("Amadeus hotel search error: %s", exc, exc_info=True)
+        # Log more details about the error
+        if hasattr(exc, 'response'):
+            logger.error(f"Error response: {exc.response}")
+        if hasattr(exc, 'description'):
+            logger.error(f"Error description: {exc.description}")
+        if hasattr(exc, 'code'):
+            logger.error(f"Error code: {exc.code}")
+        # Log request parameters for debugging
+        logger.error(f"Request params: city_code={city_code}, check_in={check_in}, check_out={check_out}, adults={adults}")
         return []
 
 
