@@ -511,23 +511,23 @@ def run_hotel_match_for_opportunity(
         """Convert Amadeus API offers to hotel match format."""
         hotels = []
         for offer_data in offers:
-            # Extract hotel info from Amadeus response structure
-            # Amadeus returns: {"hotel": {...}, "offer": {...}, "hotelId": "..."}
-            # FIXED: Use offer_data.get("hotel", {}) to safely access hotel info
-            hotel_info = offer_data.get("hotel", {})
-            if not isinstance(hotel_info, dict):
-                hotel_info = {}
-            offer_info = offer_data.get("offer", {})
-            if not isinstance(offer_info, dict):
-                offer_info = {}
-            price_info = offer_info.get("price", {}) if offer_info else {}
+            # CRITICAL FIX: amadeus_client now returns formatted offers with 'name' at root level
+            # Structure: {"name": "...", "hotel": {...}, "offer": {...}, "price": {...}, ...}
             
-            # Extract hotel name - FIXED: amadeus_client now provides 'name' at root level
-            # Priority: root level 'name' (from amadeus_client) > hotel.name > fallback
-            hotel_name = offer_data.get("name")  # Root level name (added by amadeus_client)
+            # Extract hotel name - Priority: root level 'name' (from formatted_offers) > hotel.name > offer.hotel.name > fallback
+            hotel_name = offer_data.get("name")  # Root level name (from amadeus_client formatted_offers)
             if not hotel_name:
-                # Fallback: try hotel.name (for backward compatibility)
-                hotel_name = offer_data.get("hotel", {}).get("name")
+                # Fallback 1: try hotel.name (for backward compatibility)
+                hotel_info = offer_data.get("hotel", {})
+                if isinstance(hotel_info, dict):
+                    hotel_name = hotel_info.get("name")
+            if not hotel_name:
+                # Fallback 2: try offer.hotel.name (for raw Amadeus response structure)
+                offer_info = offer_data.get("offer", {})
+                if isinstance(offer_info, dict):
+                    offer_hotel = offer_info.get("hotel", {})
+                    if isinstance(offer_hotel, dict):
+                        hotel_name = offer_hotel.get("name")
             
             # If still no name found, use "Unknown Hotel" and log for debugging
             if not hotel_name:
@@ -536,9 +536,25 @@ def run_hotel_match_for_opportunity(
             else:
                 hotel_name = str(hotel_name)
             
-            # Extract prices
+            # Extract hotel info - use nested structure if available, otherwise use root level data
+            hotel_info = offer_data.get("hotel", {})
+            if not isinstance(hotel_info, dict):
+                hotel_info = {}
+            
+            # Extract offer info
+            offer_info = offer_data.get("offer", {})
+            if not isinstance(offer_info, dict):
+                offer_info = {}
+            
+            # Extract price - CRITICAL: Check both root level 'price' and nested 'offer.price'
+            price_info = offer_data.get("price", {})  # Root level price (from formatted_offers)
+            if not price_info or not isinstance(price_info, dict):
+                price_info = offer_info.get("price", {})  # Fallback to nested price
+            
+            # Extract prices - CRITICAL: formatted_offers uses {"total": ..., "currency": ..., "base": ...}
             total_price = float(price_info.get("total", 0)) if price_info.get("total") else 0
             avg_price = 0
+            # Try variations first (nested structure), then calculate from total
             if price_info.get("variations", {}).get("average", {}).get("total"):
                 avg_price = float(price_info.get("variations", {}).get("average", {}).get("total"))
             elif total_price > 0:
