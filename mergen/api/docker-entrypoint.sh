@@ -2,7 +2,7 @@
 set -e
 
 # Cloud Run compatibility: Use PORT environment variable if set
-APP_PORT=${PORT:-8000}
+APP_PORT=${PORT:-8080}
 
 # Database connection check - only wait for Docker Compose 'db' host
 # Cloud SQL connections don't need waiting (they're already ready)

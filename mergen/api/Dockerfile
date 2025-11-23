@@ -29,7 +29,11 @@ RUN pip install --upgrade pip && \
 # This ensures all necessary files (sam_integration.py, app/, migrations/, etc.) are included
 COPY . /app/
 
-# Make entrypoint executable
+# Fix Windows line endings (CRLF -> LF) for entrypoint script
+# This is critical for Cloud Run (Linux-based)
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh || true
+
+# Make entrypoint executable (required for Cloud Run)
 RUN chmod +x /app/docker-entrypoint.sh
 
 # Cloud Run requires PORT environment variable
@@ -38,6 +42,5 @@ ENV PORT=8080
 
 EXPOSE 8080
 
+# Entrypoint script handles PORT env var and starts uvicorn
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-# PORT will be handled by entrypoint.sh
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
