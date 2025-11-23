@@ -38,8 +38,9 @@ services:
       SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@mergenlite.com}
       PIPELINE_NOTIFICATION_EMAIL: ${PIPELINE_NOTIFICATION_EMAIL:-}
+      PORT: 8080  # Cloud Run compatibility
     ports:
-      - "8000:8000"
+      - "8000:8080"  # Map host 8000 to container 8080 (Cloud Run compatible)
 
   frontend:
     build:

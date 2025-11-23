@@ -6,31 +6,38 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential libpq-dev postgresql-client libgl1 libglib2.0-0 netcat-openbsd && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+        postgresql-client \
+        libgl1 \
+        libglib2.0-0 \
+        netcat-openbsd && \
     rm -rf /var/lib/apt/lists/*
 
+# Copy dependency files first (for better Docker layer caching)
 COPY pyproject.toml /app/pyproject.toml
-COPY alembic.ini /app/alembic.ini
-COPY migrations /app/migrations
-COPY app /app/app
-COPY sam_integration.py /app/sam_integration.py
 
-RUN pip install --upgrade pip && pip install . && pip install alembic pydantic-settings psycopg2-binary
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install . && \
+    pip install alembic pydantic-settings psycopg2-binary
 
-COPY docker-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Copy everything else (respects .dockerignore)
+# This ensures all necessary files (sam_integration.py, app/, migrations/, etc.) are included
+COPY . /app/
+
+# Make entrypoint executable
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Cloud Run requires PORT environment variable
-# Default to 8000 for local development
-ENV PORT=8000
+# Default to 8080 (Cloud Run standard) for production, 8000 for local
+ENV PORT=8080
 
-# Cloud Run requires PORT environment variable
-# Default to 8000 for local development
-ENV PORT=8000
+EXPOSE 8080
 
-EXPOSE 8000
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 # PORT will be handled by entrypoint.sh
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

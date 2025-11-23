@@ -1,0 +1,73 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Environment files (will be provided via env vars)
+.env
+*.env
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache/
+*.cache
+
+# Test files (keep test structure but exclude test data)
+test_*.py
+*_test.py
+tests/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Data directories (will be mounted or created at runtime)
+data/
+opportunities/
+downloads/
+samples/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Documentation (optional - can include if needed)
+*.md
+!README.md
+
+# Node modules (if any)
+node_modules/
+

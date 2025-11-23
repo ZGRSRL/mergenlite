@@ -22,6 +22,7 @@ if [ -n "$PORT" ]; then
   echo "Starting application on port $PORT (Cloud Run mode)"
   exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
 else
-  echo "Starting application with default command"
-  exec "$@"
+  # Fallback to default port 8000 for local development
+  echo "Starting application on default port 8000 (local development)"
+  exec uvicorn app.main:app --host 0.0.0.0 --port 8000
 fi
