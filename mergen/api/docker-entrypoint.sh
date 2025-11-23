@@ -1,28 +1,34 @@
 #!/bin/sh
 set -e
 
-DB_HOST=${DB_HOST:-db}
-DB_PORT=${DB_PORT:-5432}
+# Cloud Run compatibility: Use PORT environment variable if set
+APP_PORT=${PORT:-8000}
 
-if ! command -v pg_isready >/dev/null 2>&1; then
-  echo "pg_isready not found. Ensure postgresql-client is installed in the image."
-  exit 1
+# Database connection check - only wait for Docker Compose 'db' host
+# Cloud SQL connections don't need waiting (they're already ready)
+DB_HOST=${POSTGRES_HOST:-${DB_HOST:-db}}
+DB_PORT=${POSTGRES_PORT:-${DB_PORT:-5432}}
+
+# Only wait for database if using Docker Compose (host = 'db')
+# Cloud SQL uses Unix socket path (/cloudsql/...) which doesn't need pg_isready
+if [ "$DB_HOST" = "db" ] || [ "$DB_HOST" = "localhost" ]; then
+  if command -v pg_isready >/dev/null 2>&1; then
+    echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
+    until pg_isready -h "$DB_HOST" -p "$DB_PORT" >/dev/null 2>&1; do
+      sleep 1
+    done
+    echo "Database is ready!"
+  else
+    echo "Warning: pg_isready not found. Skipping database readiness check."
+  fi
+else
+  echo "Using Cloud SQL or external database at ${DB_HOST}. Skipping readiness check."
 fi
 
-echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
-until pg_isready -h "$DB_HOST" -p "$DB_PORT" >/dev/null 2>&1; do
-  sleep 1
-done
-
+# Run migrations (only if database is accessible)
 echo "Running migrations..."
 python -m alembic upgrade head || echo "Migration failed, continuing anyway..."
 
-# Cloud Run compatibility: Use PORT environment variable if set
-if [ -n "$PORT" ]; then
-  echo "Starting application on port $PORT (Cloud Run mode)"
-  exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
-else
-  # Fallback to default port 8000 for local development
-  echo "Starting application on default port 8000 (local development)"
-  exec uvicorn app.main:app --host 0.0.0.0 --port 8000
-fi
+# Start application
+echo "Starting application on port ${APP_PORT}..."
+exec uvicorn app.main:app --host 0.0.0.0 --port "$APP_PORT"
