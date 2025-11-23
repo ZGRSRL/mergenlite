@@ -116,7 +116,6 @@ async def process_daily_scan_job(
                     opp_dict = map_sam_record_to_opportunity(opp_data)
                     
                     # Use upsert_opportunity from CRUD
-                    from ..crud.opportunities import upsert_opportunity
                     opportunity = upsert_opportunity(db, opp_dict)
                 except Exception as db_error:
                     logger.error(f"⚠️  İlan {notice_id} veritabanına kaydedilemedi: {db_error}")
