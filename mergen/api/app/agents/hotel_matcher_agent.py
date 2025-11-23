@@ -1,5 +1,6 @@
 """
 AutoGen-based hotel matcher agent that queries Amadeus and returns scored hotels.
+DEBUG VERSION: WRITES TO /tmp/hotel_debug.log
 """
 from __future__ import annotations
 
@@ -7,11 +8,41 @@ import json
 import logging
 import time
 import re
-from typing import Any, Dict, Optional
+import os
+import threading
+from datetime import datetime
+from typing import Any, Dict, Optional, List
 
 from ..services.amadeus_client import search_hotels_by_city_code
+from ..config import settings
 
 logger = logging.getLogger(__name__)
+
+# --- DEBUG HELPER ---
+def debug_log(message):
+    """Writes debug messages directly to a file to bypass stdout buffering issues."""
+    try:
+        import os
+        # Ensure directory exists
+        log_dir = "/tmp"
+        os.makedirs(log_dir, exist_ok=True)
+        
+        log_path = "/tmp/hotel_debug.log"
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"[{timestamp}] {message}\n")
+            f.flush()  # Force write to disk
+        # Also print to stderr for immediate visibility
+        import sys
+        print(f"[DEBUG] {message}", file=sys.stderr, flush=True)
+    except Exception as e:
+        # Try to log the error itself
+        try:
+            import sys
+            print(f"[DEBUG ERROR] Failed to write log: {e}", file=sys.stderr, flush=True)
+        except:
+            pass
+# --------------------
 
 # Import LLM logger for database logging
 try:
@@ -53,6 +84,224 @@ except ImportError:
 
 class HotelMatcherUnavailableError(RuntimeError):
     pass
+
+
+def _convert_amadeus_offers_to_hotels(
+    offers: List[Dict[str, Any]],
+    city_code: str,
+    check_in: str,
+    check_out: str,
+) -> List[Dict[str, Any]]:
+    """Convert Amadeus API offers to hotel match format."""
+    hotels: List[Dict[str, Any]] = []
+    logger.info(f"[convert] Converting {len(offers)} offers from Amadeus")
+
+    def find_name_recursive(obj: Any, depth: int = 0, max_depth: int = 4) -> Optional[str]:
+        if depth > max_depth:
+            return None
+        if isinstance(obj, dict):
+            for key in ("name", "hotelName", "propertyName"):
+                val = obj.get(key)
+                if isinstance(val, str) and val.strip():
+                    return val.strip()
+            for val in obj.values():
+                if isinstance(val, (dict, list)):
+                    result = find_name_recursive(val, depth + 1, max_depth)
+                    if result:
+                        return result
+        elif isinstance(obj, list):
+            for item in obj:
+                result = find_name_recursive(item, depth + 1, max_depth)
+                if result:
+                    return result
+        return None
+
+    from datetime import datetime
+
+    for offer_data in offers:
+        hotel_name = offer_data.get("name")
+        if not hotel_name:
+            hotel_name = offer_data.get("hotel", {}).get("name")
+        if not hotel_name:
+            hotel_name = find_name_recursive(offer_data)
+        if not hotel_name:
+            hotel_name = "Unknown Hotel"
+            logger.warning(f"[convert] Could not determine hotel name; keys={list(offer_data.keys())}")
+
+        total_price = 0.0
+        price_data = offer_data.get("price") or offer_data.get("offer", {}).get("price")
+        if isinstance(price_data, dict):
+            try:
+                total_price = float(price_data.get("total", 0))
+            except (TypeError, ValueError):
+                total_price = 0.0
+
+        avg_price = 0.0
+        if total_price > 0:
+            try:
+                nights = (datetime.fromisoformat(check_out) - datetime.fromisoformat(check_in)).days
+                if nights > 0:
+                    avg_price = total_price / nights
+            except Exception:
+                avg_price = 0.0
+
+        hotel = {
+            "name": hotel_name,
+            "amadeus_hotel_id": offer_data.get("hotelId") or offer_data.get("hotel", {}).get("hotelId"),
+            "city": offer_data.get("cityCode", city_code),
+            "price_per_night": round(avg_price, 2) if avg_price else 0,
+            "total_price": round(total_price, 2) if total_price else 0,
+            "distance": offer_data.get("distance", "Unknown"),
+            "score": 0.7,
+            "reasoning": "Generated via direct Amadeus API call",
+            "offer": offer_data,
+        }
+        hotels.append(hotel)
+
+    return hotels
+
+
+def _execute_manual_fallback(requirements: Dict[str, Any], reason: str) -> Dict[str, Any]:
+    """Executes the search manually without any LLM involvement."""
+    debug_log(f"FALLBACK: Executing manual search. Reason: {reason}")
+    
+    try:
+        city_code = requirements.get("city_code")
+        check_in = requirements.get("check_in")
+        check_out = requirements.get("check_out")
+        adults = requirements.get("adults", 1)
+
+        if not city_code or not check_in or not check_out:
+            msg = "Missing required parameters (city_code, check_in, check_out)"
+            debug_log(f"FALLBACK ERROR: {msg}")
+            return {
+                "error": msg,
+                "hotels": [],
+                "reasoning": msg,
+                "requirements_analysis": {
+                    "lodging_requirements_met": False,
+                    "transportation_requirements_met": False,
+                    "amenities_requirements_met": False,
+                    "summary": msg,
+                },
+            }
+
+        debug_log(f"FALLBACK: Calling Amadeus API directly - city={city_code}, check_in={check_in}, check_out={check_out}, adults={adults}")
+        
+        # Try with requested adults first
+        offers = search_hotels_by_city_code(city_code, check_in, check_out, adults, max_results=10)
+        
+        # Fallback to adults=1 if no results
+        if not offers and adults > 1:
+            debug_log(f"FALLBACK: No offers for {adults} adults, retrying with adults=1")
+            offers = search_hotels_by_city_code(city_code, check_in, check_out, 1, max_results=10)
+        
+        if not offers:
+            msg = "Amadeus API returned no hotels"
+            debug_log(f"FALLBACK: {msg}")
+            return {
+                "error": msg,
+                "hotels": [],
+                "reasoning": f"Automatic fallback triggered. Reason: {reason}. {msg}",
+                "requirements_analysis": {
+                    "lodging_requirements_met": False,
+                    "transportation_requirements_met": False,
+                    "amenities_requirements_met": False,
+                    "summary": msg,
+                },
+            }
+
+        debug_log(f"FALLBACK SUCCESS: Found {len(offers)} offers")
+        hotels = _convert_amadeus_offers_to_hotels(offers, city_code, check_in, check_out)
+        reasoning = f"Automatic fallback triggered. Reason: {reason}. Found {len(hotels)} hotels via direct Amadeus API."
+        
+        return {
+            "hotels": hotels,
+            "reasoning": reasoning,
+            "requirements_analysis": {
+                "lodging_requirements_met": False,
+                "transportation_requirements_met": False,
+                "amenities_requirements_met": False,
+                "summary": reasoning,
+            },
+            "fallback_used": True,
+        }
+    except Exception as e:
+        debug_log(f"FALLBACK FAILED: {e}")
+        import traceback
+        debug_log(f"FALLBACK TRACEBACK: {traceback.format_exc()}")
+        return {
+            "error": str(e),
+            "hotels": [],
+            "reasoning": f"Fallback execution failed: {str(e)}",
+            "requirements_analysis": {
+                "lodging_requirements_met": False,
+                "transportation_requirements_met": False,
+                "amenities_requirements_met": False,
+                "summary": f"Fallback failed: {str(e)}",
+            },
+        }
+
+
+def _direct_hotel_match_response(
+    requirements: Dict[str, Any],
+    failure_reason: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Use Amadeus API directly without AutoGen."""
+    city_code = requirements.get("city_code")
+    check_in = requirements.get("check_in")
+    check_out = requirements.get("check_out")
+    adults = requirements.get("adults", 2)
+
+    if not city_code or not check_in or not check_out:
+        msg = "Missing required parameters (city_code, check_in, check_out)"
+        logger.warning(f"[direct] {msg}")
+        return {
+            "error": msg,
+            "hotels": [],
+            "reasoning": msg,
+            "requirements_analysis": {
+                "lodging_requirements_met": False,
+                "transportation_requirements_met": False,
+                "amenities_requirements_met": False,
+                "summary": msg,
+            },
+        }
+
+    logger.info(
+        f"[direct] Calling Amadeus API directly (city={city_code}, check_in={check_in}, "
+        f"check_out={check_out}, adults={adults})"
+    )
+    offers = search_hotels_by_city_code(city_code, check_in, check_out, adults, max_results=10)
+    if not offers:
+        msg = "Amadeus API returned no hotels"
+        logger.warning(f"[direct] {msg}")
+        return {
+            "error": msg,
+            "hotels": [],
+            "reasoning": msg,
+            "requirements_analysis": {
+                "lodging_requirements_met": False,
+                "transportation_requirements_met": False,
+                "amenities_requirements_met": False,
+                "summary": msg,
+            },
+            "fallback_used": True,
+        }
+
+    hotels = _convert_amadeus_offers_to_hotels(offers, city_code, check_in, check_out)
+    reasoning = failure_reason or f"Direct Amadeus API call returned {len(hotels)} hotels."
+    return {
+        "hotels": hotels,
+        "reasoning": reasoning,
+        "requirements_analysis": {
+            "lodging_requirements_met": False,
+            "transportation_requirements_met": False,
+            "amenities_requirements_met": False,
+            "summary": reasoning,
+        },
+        "fallback_used": bool(failure_reason),
+    }
 
 
 if AUTOGEN_AVAILABLE:
@@ -135,12 +384,14 @@ if AUTOGEN_AVAILABLE:
 
 
 def create_hotel_matcher_agent(llm_model: str = "gpt-4o-mini") -> AssistantAgent:
+    debug_log(f"create_hotel_matcher_agent called with model: {llm_model}")
     if not AUTOGEN_AVAILABLE:
         raise HotelMatcherUnavailableError("pyautogen not installed. Run `pip install pyautogen`.")
 
     import os
     # Get API key from environment
     api_key = os.getenv("OPENAI_API_KEY") or os.getenv("AZURE_OPENAI_API_KEY")
+    debug_log(f"API key found: {bool(api_key)}")
     
     system_message = """You are HotelMatcherAgent, an expert hotel matching agent that analyzes hotels from Amadeus API against detailed SOW (Statement of Work) requirements.
 
@@ -256,6 +507,7 @@ Respond with JSON containing:
     # Old API - use llm_config
     if not api_key:
         logger.warning("OPENAI_API_KEY or AZURE_OPENAI_API_KEY not set. AutoGen may not work without API key.")
+        # ADDING TIMEOUT TO CONFIG
         llm_config = {
             "config_list": [
                 {
@@ -263,8 +515,11 @@ Respond with JSON containing:
                 }
             ],
             "temperature": 0.2,
+            "timeout": 45,  # Request timeout
+            "request_timeout": 45
         }
     else:
+        # ADDING TIMEOUT TO CONFIG
         llm_config = {
             "config_list": [
                 {
@@ -273,37 +528,46 @@ Respond with JSON containing:
                 }
             ],
             "temperature": 0.2,
+            "timeout": 45,  # Request timeout
+            "request_timeout": 45
         }
 
     # Use llm_config with autogen (standard API)
     # autogen 0.10.x supports llm_config, not direct model parameter
+    debug_log("Creating AssistantAgent...")
     try:
         # First try with tools if available
         if AUTOGEN_AVAILABLE and tool is not None:
             try:
+                debug_log("Attempting to create AssistantAgent with tools...")
                 assistant = AssistantAgent(
                     name="HotelMatcherAgent",
                     system_message=system_message,
                     llm_config=llm_config,
                     tools=[amadeus_search_hotels_tool],
                 )
+                debug_log("AssistantAgent created with tools successfully")
                 logger.info("HotelMatcherAgent created with tools")
             except TypeError:
                 # Tools not supported, try without
+                debug_log("Tools not supported, retrying without tools...")
                 logger.warning("AssistantAgent rejected tools parameter; retrying without tools")
                 assistant = AssistantAgent(
                     name="HotelMatcherAgent",
                     system_message=system_message,
                     llm_config=llm_config,
                 )
+                debug_log("AssistantAgent created without tools successfully")
                 logger.info("HotelMatcherAgent created without tools")
         else:
             # No tools available, create without
+            debug_log("No tools available, creating AssistantAgent without tools...")
             assistant = AssistantAgent(
                 name="HotelMatcherAgent",
                 system_message=system_message,
                 llm_config=llm_config,
             )
+            debug_log("AssistantAgent created (no tools) successfully")
             logger.info("HotelMatcherAgent created (no tools available)")
     except TypeError as exc:
         # If llm_config is also rejected, this is a version mismatch
@@ -329,6 +593,11 @@ def run_hotel_match_for_opportunity(
     llm_model: str = "gpt-4o-mini",
     agent_run_id: Optional[int] = None,
 ) -> Dict[str, Any]:
+    # CRITICAL: Log function entry immediately
+    debug_log("\n" + "="*70)
+    debug_log(f"FUNCTION ENTRY: run_hotel_match_for_opportunity")
+    debug_log(f"Requirements: {requirements}")
+    debug_log("="*70)
     """
     Run hotel matching with SOW requirements analysis.
     
@@ -339,26 +608,65 @@ def run_hotel_match_for_opportunity(
         llm_model: LLM model to use
     """
     if not AUTOGEN_AVAILABLE:
-        raise HotelMatcherUnavailableError("pyautogen not installed. Run `pip install pyautogen`.")
-
-    assistant = create_hotel_matcher_agent(llm_model=llm_model)
-    # New autogen_agentchat API uses different parameters
+        debug_log("ERROR: AutoGen library missing. Switching to manual fallback.")
+        return _execute_manual_fallback(requirements, "AutoGen Library Missing")
+    
+    # Check API key
+    import os
+    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("AZURE_OPENAI_API_KEY")
+    if not api_key:
+        debug_log("ERROR: API Key missing. Switching to manual fallback.")
+        return _execute_manual_fallback(requirements, "LLM API Key Missing")
+    
+    # GLOBAL TIMEOUT PROTECTION: Wrap ENTIRE agent lifecycle
+    # This includes agent creation, which was hanging
+    TIMEOUT_SECONDS = 45
+    
+    class GlobalTimeoutError(Exception):
+        pass
+    
+    def timeout_handler(signum, frame):
+        raise GlobalTimeoutError("Operation timed out (Global Safe-Guard)")
+    
+    # Set up signal timeout (only works in main thread, but we try anyway)
+    signal_obj = None
     try:
-        user = UserProxyAgent(
-            name="HotelMatchUser",
-            code_execution_config=False,
-            human_input_mode="NEVER",
-        )
-    except TypeError:
-        # New API (autogen_agentchat) - simplified parameters
-        user = UserProxyAgent(name="HotelMatchUser")
+        import signal
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(TIMEOUT_SECONDS)
+        signal_obj = signal
+        debug_log(f"Global timeout set ({TIMEOUT_SECONDS}s) - protecting agent creation AND chat")
+    except (AttributeError, ValueError, OSError) as sig_err:
+        # Signal not available (Windows or background thread)
+        debug_log(f"OS-level timeout not available: {sig_err}. Using threading timeout instead.")
+        signal_obj = None
     
-    user_message = "Here are the hotel search requirements:\n"
-    user_message += f"{json.dumps(requirements, indent=2)}\n\n"
-    
-    # Add SOW requirements if available
-    if sow_requirements:
-        user_message += "**SOW REQUIREMENTS FOR HOTEL ANALYSIS:**\n"
+    try:
+        debug_log("STEP 1: Creating hotel matcher agent (PROTECTED BY TIMEOUT)...")
+        assistant = create_hotel_matcher_agent(llm_model=llm_model)
+        debug_log("Agent created successfully")
+        
+        debug_log("STEP 2: Creating UserProxyAgent...")
+        # New autogen_agentchat API uses different parameters
+        try:
+            user = UserProxyAgent(
+                name="HotelMatchUser",
+                code_execution_config=False,
+                human_input_mode="NEVER",
+            )
+            debug_log("UserProxyAgent created (standard API)")
+        except TypeError:
+            # New API (autogen_agentchat) - simplified parameters
+            user = UserProxyAgent(name="HotelMatchUser")
+            debug_log("UserProxyAgent created (new API)")
+        
+        user_message = "Here are the hotel search requirements:\n"
+        user_message += f"{json.dumps(requirements, indent=2)}\n\n"
+        debug_log(f"User message prepared: {user_message[:200]}...")
+        
+        # Add SOW requirements if available
+        if sow_requirements:
+            user_message += "**SOW REQUIREMENTS FOR HOTEL ANALYSIS:**\n"
         user_message += f"{json.dumps(sow_requirements, indent=2)}\n\n"
         user_message += (
             "IMPORTANT: Analyze each hotel against these SOW requirements:\n"
@@ -368,9 +676,9 @@ def run_hotel_match_for_opportunity(
             "- Period of Performance (date range availability)\n"
             "- Price competitiveness\n\n"
         )
-    
-    if decision_hint:
-        hint_lines = [
+        
+        if decision_hint:
+            hint_lines = [
             "Historical decision cache context:",
             json.dumps({k: v for k, v in decision_hint.items() if k != 'cached_hotels'}, indent=2),
         ]
@@ -378,38 +686,135 @@ def run_hotel_match_for_opportunity(
         if cached_hotels:
             hint_lines.append("Previously recommended hotels:")
             hint_lines.append(json.dumps(cached_hotels, indent=2))
-        user_message += "\n".join(hint_lines) + "\n\n"
+            user_message += "\n".join(hint_lines) + "\n\n"
 
-    user_message += "\n\n**CRITICAL INSTRUCTIONS:**\n"
-    user_message += "1. You MUST call the `amadeus_search_hotels_tool` function with the provided parameters (city_code, check_in, check_out, adults).\n"
-    user_message += "2. **IF NO HOTELS ARE FOUND:**\n"
-    user_message += "   - Do NOT return an empty message.\n"
-    user_message += "   - Do NOT apologize in plain text.\n"
-    user_message += "   - YOU MUST RETURN A VALID JSON with an empty 'hotels' list and a 'reasoning' field explaining why (e.g., 'Dates are too far in the future for booking').\n"
-    user_message += "   - Example Failure Response: {\"hotels\": [], \"reasoning\": \"Amadeus API returned no results. The check-in date (2026) is likely outside the available booking window (typically 330 days).\", \"requirements_analysis\": {...}}\n"
-    user_message += "3. **IF HOTELS ARE FOUND:**\n"
-    user_message += "   - You MUST process ALL offers returned by the Amadeus tool.\n"
-    user_message += "   - Analyze each hotel against the SOW requirements provided.\n"
-    user_message += "   - Score hotels based on how well they match the requirements.\n"
-    user_message += "   - Return a ranked list of hotels with detailed analysis in JSON format.\n"
-    user_message += "4. NEVER return empty content - always return valid JSON even if no hotels are found.\n"
-    user_message += "5. Use the Amadeus tool to fetch hotels and analyze them against the SOW requirements. Respond strictly with JSON as described in the system prompt.\n"
-    user_message += "6. **CRITICAL:** Your response MUST be valid JSON. Start with '{' and end with '}'. Include at minimum: {\"hotels\": [], \"reasoning\": \"...\"}\n"
-    user_message += "7. **ABSOLUTELY FORBIDDEN:** Do NOT return an empty string, empty message, or plain text. ALWAYS return valid JSON.\n"
+        user_message += "\n\n**CRITICAL INSTRUCTIONS:**\n"
+        user_message += "1. You MUST call the `amadeus_search_hotels_tool` function with the provided parameters (city_code, check_in, check_out, adults).\n"
+        user_message += "2. **IF NO HOTELS ARE FOUND:**\n"
+        user_message += "   - Do NOT return an empty message.\n"
+        user_message += "   - Do NOT apologize in plain text.\n"
+        user_message += "   - YOU MUST RETURN A VALID JSON with an empty 'hotels' list and a 'reasoning' field explaining why (e.g., 'Dates are too far in the future for booking').\n"
+        user_message += "   - Example Failure Response: {\"hotels\": [], \"reasoning\": \"Amadeus API returned no results. The check-in date (2026) is likely outside the available booking window (typically 330 days).\", \"requirements_analysis\": {...}}\n"
+        user_message += "3. **IF HOTELS ARE FOUND:**\n"
+        user_message += "   - You MUST process ALL offers returned by the Amadeus tool.\n"
+        user_message += "   - Analyze each hotel against the SOW requirements provided.\n"
+        user_message += "   - Score hotels based on how well they match the requirements.\n"
+        user_message += "   - Return a ranked list of hotels with detailed analysis in JSON format.\n"
+        user_message += "4. NEVER return empty content - always return valid JSON even if no hotels are found.\n"
+        user_message += "5. Use the Amadeus tool to fetch hotels and analyze them against the SOW requirements. Respond strictly with JSON as described in the system prompt.\n"
+        user_message += "6. **CRITICAL:** Your response MUST be valid JSON. Start with '{' and end with '}'. Include at minimum: {\"hotels\": [], \"reasoning\": \"...\"}\n"
+        user_message += "7. **ABSOLUTELY FORBIDDEN:** Do NOT return an empty string, empty message, or plain text. ALWAYS return valid JSON.\n"
+        
+        logger.info("Starting hotel matcher chat...")
+        logger.info(f"User message length: {len(user_message)}")
+        
+        # Track start time for latency
+        start_time = time.time()
     
-    logger.info("Starting hotel matcher chat...")
-    logger.info(f"User message length: {len(user_message)}")
+        debug_log("STEP 2: Creating UserProxyAgent...")
+        # New autogen_agentchat API uses different parameters
+        try:
+            user = UserProxyAgent(
+                name="HotelMatchUser",
+                code_execution_config=False,
+                human_input_mode="NEVER",
+            )
+            debug_log("UserProxyAgent created (standard API)")
+        except TypeError:
+            # New API (autogen_agentchat) - simplified parameters
+            user = UserProxyAgent(name="HotelMatchUser")
+            debug_log("UserProxyAgent created (new API)")
+        
+        debug_log("STEP 3: Initiating chat with agent (PROTECTED BY TIMEOUT)...")
+        user.initiate_chat(assistant, message=user_message)
+        debug_log("Chat initiated successfully")
+        
+        # Disable alarm if it was set
+        if signal_obj:
+            try:
+                signal_obj.alarm(0)
+                debug_log("Timeout alarm disabled (success)")
+            except:
+                pass
+        
+        debug_log("STEP 4: Retrieving last message...")
+        last_message = assistant.last_message()
+        
+        if last_message:
+            debug_log(f"Last message retrieved: {type(last_message)}")
+            debug_log(f"Last message keys: {list(last_message.keys()) if isinstance(last_message, dict) else 'Not a dict'}")
+        else:
+            debug_log("Last message is None - will trigger fallback")
+        
+        # Add SOW requirements if available
+        if sow_requirements:
+            user_message += "**SOW REQUIREMENTS FOR HOTEL ANALYSIS:**\n"
+            user_message += f"{json.dumps(sow_requirements, indent=2)}\n\n"
+            user_message += (
+                "IMPORTANT: Analyze each hotel against these SOW requirements:\n"
+                "- Lodging Requirements (room counts, cancellation policy, amenities)\n"
+                "- Transportation Requirements (distance to venue, transportation options)\n"
+                "- Location Requirements (ZIP codes, proximity to stadium/venue)\n"
+                "- Period of Performance (date range availability)\n"
+                "- Price competitiveness\n\n"
+            )
+        
+        if decision_hint:
+            hint_lines = [
+                "Historical decision cache context:",
+                json.dumps({k: v for k, v in decision_hint.items() if k != 'cached_hotels'}, indent=2),
+            ]
+            cached_hotels = decision_hint.get("cached_hotels")
+            if cached_hotels:
+                hint_lines.append("Previously recommended hotels:")
+                hint_lines.append(json.dumps(cached_hotels, indent=2))
+            user_message += "\n".join(hint_lines) + "\n\n"
+
+        user_message += "\n\n**CRITICAL INSTRUCTIONS:**\n"
+        user_message += "1. You MUST call the `amadeus_search_hotels_tool` function with the provided parameters (city_code, check_in, check_out, adults).\n"
+        user_message += "2. **IF NO HOTELS ARE FOUND:**\n"
+        user_message += "   - Do NOT return an empty message.\n"
+        user_message += "   - Do NOT apologize in plain text.\n"
+        user_message += "   - YOU MUST RETURN A VALID JSON with an empty 'hotels' list and a 'reasoning' field explaining why (e.g., 'Dates are too far in the future for booking').\n"
+        user_message += "   - Example Failure Response: {\"hotels\": [], \"reasoning\": \"Amadeus API returned no results. The check-in date (2026) is likely outside the available booking window (typically 330 days).\", \"requirements_analysis\": {...}}\n"
+        user_message += "3. **IF HOTELS ARE FOUND:**\n"
+        user_message += "   - You MUST process ALL offers returned by the Amadeus tool.\n"
+        user_message += "   - Analyze each hotel against the SOW requirements provided.\n"
+        user_message += "   - Score hotels based on how well they match the requirements.\n"
+        user_message += "   - Return a ranked list of hotels with detailed analysis in JSON format.\n"
+        user_message += "4. NEVER return empty content - always return valid JSON even if no hotels are found.\n"
+        user_message += "5. Use the Amadeus tool to fetch hotels and analyze them against the SOW requirements. Respond strictly with JSON as described in the system prompt.\n"
+        user_message += "6. **CRITICAL:** Your response MUST be valid JSON. Start with '{' and end with '}'. Include at minimum: {\"hotels\": [], \"reasoning\": \"...\"}\n"
+        user_message += "7. **ABSOLUTELY FORBIDDEN:** Do NOT return an empty string, empty message, or plain text. ALWAYS return valid JSON.\n"
+        
+        logger.info("Starting hotel matcher chat...")
+        logger.info(f"User message length: {len(user_message)}")
+        
+        # Calculate latency
+        latency_ms = int((time.time() - start_time) * 1000)
+        debug_log(f"Latency: {latency_ms}ms")
+        
+        logger.info(f"Chat completed. Last message exists: {last_message is not None}")
+        
+    except (GlobalTimeoutError, Exception) as e:
+        # CRITICAL: Catch ALL exceptions including timeout
+        if signal_obj:
+            try:
+                signal_obj.alarm(0)  # Ensure alarm is off
+            except:
+                pass
+        
+        debug_log(f"!!! CRITICAL FAILURE: {type(e).__name__}: {e} !!!")
+        debug_log("Redirecting to MANUAL FALLBACK...")
+        import traceback
+        debug_log(f"TRACEBACK: {traceback.format_exc()}")
+        return _execute_manual_fallback(requirements, f"System Crash/Timeout: {type(e).__name__}: {str(e)}")
     
-    # Track start time for latency
-    start_time = time.time()
-    
-    user.initiate_chat(assistant, message=user_message)
-    last_message = assistant.last_message()
-    
-    # Calculate latency
-    latency_ms = int((time.time() - start_time) * 1000)
-    
-    logger.info(f"Chat completed. Last message exists: {last_message is not None}")
+        # Calculate latency
+        latency_ms = int((time.time() - start_time) * 1000)
+        debug_log(f"Latency: {latency_ms}ms")
+        
+        logger.info(f"Chat completed. Last message exists: {last_message is not None}")
     
     # Debug: Check chat messages if last_message is None
     if not last_message:
@@ -475,128 +880,162 @@ def run_hotel_match_for_opportunity(
                 db.close()
         except Exception as log_exc:
             logger.warning(f"Failed to log LLM call to database: {log_exc}", exc_info=True)
-    if not last_message:
-        logger.error("Hotel matcher produced no output - agent returned None")
-        # Try to get any messages from the conversation
-        try:
-            if hasattr(assistant, 'chat_messages') and assistant.chat_messages:
-                last_chat_message = assistant.chat_messages[-1] if assistant.chat_messages else None
-                if last_chat_message:
-                    logger.warning(f"Found chat message: {last_chat_message}")
-        except:
-            pass
-        
-        return {
-            "error": "Hotel matcher agent produced no output",
-            "hotels": [],
-            "reasoning": "The AutoGen agent did not return any response. This may indicate: 1) Agent timeout, 2) LLM API error, 3) Agent configuration issue. Please check logs for details.",
-            "requirements_analysis": {
-                "lodging_requirements_met": False,
-                "transportation_requirements_met": False,
-                "amenities_requirements_met": False,
-                "summary": "No hotels found due to agent error - agent returned empty response"
-            }
-        }
+        if not last_message:
+            debug_log("!!! AGENT FAILED: No output from agent !!!")
+            debug_log("SWITCHING TO MANUAL FALLBACK...")
+            return _execute_manual_fallback(requirements, "Agent returned no output")
     
+    debug_log("Extracting content from last message...")
     content = last_message.get("content")
+    debug_log(f"Content type: {type(content)}")
+    debug_log(f"Content preview: {str(content)[:500] if content else 'None'}...")
     
     # Handle different content formats
     if isinstance(content, list):
+        debug_log(f"Content is a list with {len(content)} items")
         content = content[0].get("text") if content and len(content) > 0 else ""
+        debug_log(f"Extracted text from list: {str(content)[:500] if content else 'None'}...")
     elif isinstance(content, dict):
+        debug_log("Content is a dict, returning as-is")
         # Already a dict, return as-is
         return content
     
     # Helper function to convert Amadeus offers to hotel match format
     def _convert_amadeus_offers_to_hotels(offers, city_code, check_in, check_out):
-        """Convert Amadeus API offers to hotel match format."""
-        hotels = []
-        for offer_data in offers:
-            # CRITICAL FIX: amadeus_client now returns formatted offers with 'name' at root level
-            # Structure: {"name": "...", "hotel": {...}, "offer": {...}, "price": {...}, ...}
+        """Convert Amadeus API offers to hotel match format with FILE DEBUGGING."""
+        debug_log("\n" + "="*70)
+        debug_log(f"FALLBACK PATH ENTERED: _convert_amadeus_offers_to_hotels with {len(offers)} offers")
+        debug_log("="*70)
+        
+        try:
+            hotels = []
             
-            # Extract hotel name - Priority: root level 'name' (from formatted_offers) > hotel.name > offer.hotel.name > fallback
-            hotel_name = offer_data.get("name")  # Root level name (from amadeus_client formatted_offers)
-            if not hotel_name:
-                # Fallback 1: try hotel.name (for backward compatibility)
-                hotel_info = offer_data.get("hotel", {})
-                if isinstance(hotel_info, dict):
-                    hotel_name = hotel_info.get("name")
-            if not hotel_name:
-                # Fallback 2: try offer.hotel.name (for raw Amadeus response structure)
-                offer_info = offer_data.get("offer", {})
-                if isinstance(offer_info, dict):
-                    offer_hotel = offer_info.get("hotel", {})
-                    if isinstance(offer_hotel, dict):
-                        hotel_name = offer_hotel.get("name")
-            
-            # If still no name found, use "Unknown Hotel" and log for debugging
-            if not hotel_name:
-                hotel_name = "Unknown Hotel"
-                logger.warning(f"Could not extract hotel name from offer_data. Keys: {list(offer_data.keys())}, hotel keys: {list(offer_data.get('hotel', {}).keys()) if isinstance(offer_data.get('hotel'), dict) else 'N/A'}")
-            else:
-                hotel_name = str(hotel_name)
-            
-            # Extract hotel info - use nested structure if available, otherwise use root level data
-            hotel_info = offer_data.get("hotel", {})
-            if not isinstance(hotel_info, dict):
-                hotel_info = {}
-            
-            # Extract offer info
-            offer_info = offer_data.get("offer", {})
-            if not isinstance(offer_info, dict):
-                offer_info = {}
-            
-            # Extract price - CRITICAL: Check both root level 'price' and nested 'offer.price'
-            price_info = offer_data.get("price", {})  # Root level price (from formatted_offers)
-            if not price_info or not isinstance(price_info, dict):
-                price_info = offer_info.get("price", {})  # Fallback to nested price
-            
-            # Extract prices - CRITICAL: formatted_offers uses {"total": ..., "currency": ..., "base": ...}
-            total_price = float(price_info.get("total", 0)) if price_info.get("total") else 0
-            avg_price = 0
-            # Try variations first (nested structure), then calculate from total
-            if price_info.get("variations", {}).get("average", {}).get("total"):
-                avg_price = float(price_info.get("variations", {}).get("average", {}).get("total"))
-            elif total_price > 0:
-                # Calculate average from total if variations not available
-                from datetime import datetime
+            for idx, offer_data in enumerate(offers):
+                debug_log(f"FALLBACK processing offer #{idx+1}")
+                
+                # CRITICAL FIX: Priority 1 - Raw Amadeus Structure (offer['hotel']['name'])
+                # This fixes the "Unknown Hotel" issue seen in logs
+                hotel_name = None
+                
+                # CRITICAL: Check offer.hotel.name FIRST (most common structure)
+                if isinstance(offer_data, dict):
+                    hotel_obj = offer_data.get("hotel")
+                    if isinstance(hotel_obj, dict):
+                        hotel_name = hotel_obj.get("name")
+                        if hotel_name and isinstance(hotel_name, str) and len(hotel_name.strip()) > 0 and "Unknown" not in hotel_name:
+                            debug_log(f"FALLBACK: Found name at offer.hotel.name (PRIORITY 1): '{hotel_name}'")
+                            hotel_name = hotel_name.strip()
+                # 1. DEBUG: Log the EXACT structure
+                if idx == 0:
+                    debug_log(f"FALLBACK: INSPECTING OFFER #1 TYPE: {type(offer_data)}")
+                    try:
+                        raw_dump = json.dumps(offer_data, default=str)
+                        debug_log(f"FALLBACK: RAW DATA (first 500 chars): {raw_dump[:500]}")
+                        if isinstance(offer_data, dict):
+                            debug_log(f"FALLBACK: KEYS: {list(offer_data.keys())}")
+                    except Exception as e:
+                        debug_log(f"FALLBACK: COULD NOT DUMP JSON: {e}")
+
+                # --- INTERNAL HELPER: Recursive Name Search ---
+                def find_name_recursive_fallback(obj, depth=0, max_depth=4):
+                    if depth > max_depth: return None
+                    if isinstance(obj, dict):
+                        # Priority keys
+                        for key in ['name', 'hotelName', 'propertyName']:
+                            val = obj.get(key)
+                            if val and isinstance(val, str) and len(val) > 1 and "Unknown" not in val:
+                                return val
+                        # Dig deeper
+                        for val in obj.values():
+                            if isinstance(val, (dict, list)):
+                                res = find_name_recursive_fallback(val, depth + 1, max_depth)
+                                if res: return res
+                    elif isinstance(obj, list):
+                        for item in obj:
+                            res = find_name_recursive_fallback(item, depth + 1, max_depth)
+                            if res: return res
+                    return None
+                # -----------------------------------------------
+
+                # 2. EXTRACTION STRATEGY (Priority order updated)
+                # Attempt 1: Root Level (Processed Client Data)
+                if not hotel_name and isinstance(offer_data, dict):
+                    hotel_name = offer_data.get("name")
+                    if hotel_name:
+                        debug_log(f"FALLBACK: Found name at ROOT (PRIORITY 2): '{hotel_name}'")
+
+                # Attempt 2: offer.offer.hotel.name (Nested offer structure)
+                if not hotel_name and isinstance(offer_data, dict):
+                    try:
+                        offer_obj = offer_data.get("offer")
+                        if isinstance(offer_obj, dict):
+                            nested_hotel = offer_obj.get("hotel")
+                            if isinstance(nested_hotel, dict):
+                                hotel_name = nested_hotel.get("name")
+                                if hotel_name and isinstance(hotel_name, str) and len(hotel_name.strip()) > 0 and "Unknown" not in hotel_name:
+                                    debug_log(f"FALLBACK: Found name at offer.offer.hotel.name: '{hotel_name}'")
+                                    hotel_name = hotel_name.strip()
+                    except Exception as e:
+                        debug_log(f"FALLBACK: Error checking offer.offer.hotel.name: {e}")
+
+                # Attempt 3: Deep Search
+                if not hotel_name:
+                    debug_log(f"FALLBACK: Name missing via standard paths. Trying Deep Search...")
+                    hotel_name = find_name_recursive_fallback(offer_data)
+                    if hotel_name:
+                        debug_log(f"FALLBACK: Deep Search RECOVERED name: '{hotel_name}'")
+
+                # Final Fallback - Try one more recursive search before giving up
+                if not hotel_name:
+                    debug_log(f"FALLBACK: Name still missing after all attempts. Trying final recursive search...")
+                    hotel_name = find_name_recursive_fallback(offer_data, max_depth=6)  # Increase depth
+                    if hotel_name:
+                        debug_log(f"FALLBACK: Final recursive search RECOVERED name: '{hotel_name}'")
+                    else:
+                        hotel_name = "N/A"
+                        keys = list(offer_data.keys()) if isinstance(offer_data, dict) else 'Not a dict'
+                        debug_log(f"FALLBACK: Name FAILED after all attempts. Keys: {keys}")
+                        if isinstance(offer_data, dict):
+                            try:
+                                debug_log(f"FALLBACK: Full offer_data (first 500 chars): {json.dumps(offer_data, default=str)[:500]}")
+                            except:
+                                pass
+
+                # 3. PRICE extraction
+                total_price = 0
                 try:
-                    check_in_dt = datetime.fromisoformat(check_in)
-                    check_out_dt = datetime.fromisoformat(check_out)
-                    nights = (check_out_dt - check_in_dt).days
-                    if nights > 0:
-                        avg_price = total_price / nights
+                    if isinstance(offer_data, dict):
+                        price_data = offer_data.get("price")
+                        if isinstance(price_data, dict):
+                            total_price = float(price_data.get("total", 0))
+                        elif not price_data:
+                            total_price = float(offer_data.get("offer", {}).get("price", {}).get("total", 0))
                 except:
-                    pass
-            
-            # Extract location
-            latitude = hotel_info.get("latitude")
-            longitude = hotel_info.get("longitude")
-            city_code_from_api = hotel_info.get("cityCode", city_code)
-            
-            # Extract room info
-            room_info = offer_info.get("room", {})
-            room_description = ""
-            if room_info.get("description", {}).get("text"):
-                room_description = room_info.get("description", {}).get("text", "")[:200]
-            
-            hotel = {
-                "name": hotel_name,
-                "address": f"Lat: {latitude}, Lon: {longitude}" if latitude and longitude else "Address not available",
-                "city": city_code_from_api,
-                "price_per_night": round(avg_price, 2) if avg_price > 0 else 0,
-                "total_price": round(total_price, 2) if total_price > 0 else 0,
-                "distance": "Unknown",  # Amadeus doesn't provide distance to venue
-                "rating": 0,  # Amadeus doesn't provide rating in this endpoint
-                "score": 0.7,  # Default score since we can't analyze against SOW
-                "reasoning": f"Hotel found via direct Amadeus API call (agent fallback). {room_description}",
-                "offer": offer_data,  # Keep full offer for reference
-                "hotel_id": hotel_info.get("hotelId") if hotel_info else None,
-                "chain_code": hotel_info.get("chainCode") if hotel_info else None,
-            }
-            hotels.append(hotel)
-        return hotels
+                    total_price = 0
+
+                # 4. Construct Hotel Object
+                if hotel_name:
+                    debug_log(f"FALLBACK: Final hotel_name for offer #{idx+1}: '{hotel_name}'")
+                hotel = {
+                    "name": str(hotel_name),
+                    "address": "See details",
+                    "city": city_code,
+                    "price_per_night": round(total_price, 2),
+                    "total_price": round(total_price, 2),
+                    "distance": "Unknown",
+                    "rating": 0,
+                    "score": 0.7,
+                    "reasoning": "Fallback path used",
+                    "offer": offer_data 
+                }
+                hotels.append(hotel)
+            debug_log(f"FALLBACK: Returning {len(hotels)} hotels")
+            return hotels
+        except Exception as e:
+            debug_log(f"FALLBACK ERROR: {e}")
+            import traceback
+            debug_log(f"FALLBACK TRACEBACK: {traceback.format_exc()}")
+            return []
     
     # Validate content exists and is not empty
     # Check for empty string, None, or whitespace-only content
@@ -618,7 +1057,19 @@ def run_hotel_match_for_opportunity(
                 
                 if offers:
                     logger.info(f"Fallback: Amadeus API returned {len(offers)} hotels")
+                    print(f"\n>>> CALLING _convert_amadeus_offers_to_hotels with {len(offers)} offers", flush=True)
+                    if offers:
+                        print(f">>> First offer type: {type(offers[0])}", flush=True)
+                        print(f">>> First offer has 'name': {'name' in offers[0] if isinstance(offers[0], dict) else 'N/A'}", flush=True)
+                        if isinstance(offers[0], dict):
+                            print(f">>> First offer name value: {offers[0].get('name')}", flush=True)
+                    debug_log(f"FALLBACK (JSON parse error): Amadeus API returned {len(offers)} hotels")
+                    if offers and isinstance(offers[0], dict):
+                        debug_log(f"FALLBACK (JSON parse error): First offer keys: {list(offers[0].keys())[:10]}")
                     hotels = _convert_amadeus_offers_to_hotels(offers, city_code, check_in, check_out)
+                    debug_log(f"FALLBACK (JSON parse error): _convert returned {len(hotels)} hotels")
+                    if hotels:
+                        debug_log(f"FALLBACK (JSON parse error): First hotel name from _convert: {hotels[0].get('name')}")
                     
                     return {
                         "hotels": hotels,
@@ -731,46 +1182,100 @@ def run_hotel_match_for_opportunity(
         return None
     
     # Extract JSON from response
+    debug_log("\n" + "="*70)
+    debug_log(f"RUN STARTED: run_hotel_match_for_opportunity")
+    debug_log(f"AGENT RAW RESPONSE (First 200 chars): {content[:200] if content else 'EMPTY'}")
+    debug_log("="*70)
+    
     parsed = extract_json_from_response(content)
     
     if parsed:
         # Successfully extracted JSON
+        debug_log(f"MAIN PATH: JSON parsed successfully. Keys: {list(parsed.keys())}")
         logger.info(f"[Agent Response] Successfully parsed JSON. Keys: {list(parsed.keys())}")
         
         # CRITICAL: Normalize hotel names in parsed response
-        # Handle key variations: name, hotel_name, hotelName, etc.
         if "hotels" in parsed and isinstance(parsed["hotels"], list):
+            
+            # --- HELPER: Recursive Name Search (Ana Akış İçin) ---
+            def find_name_recursive_main(obj, depth=0, max_depth=4):
+                if depth > max_depth: return None
+                if isinstance(obj, dict):
+                    # Priority keys
+                    for key in ['name', 'hotelName', 'hotel_name', 'propertyName']:
+                        val = obj.get(key)
+                        if val and isinstance(val, str) and len(val) > 1 and "Unknown" not in val:
+                            return val
+                    # Dig deeper
+                    for val in obj.values():
+                        if isinstance(val, (dict, list)):
+                            res = find_name_recursive_main(val, depth + 1, max_depth)
+                            if res: return res
+                elif isinstance(obj, list):
+                    for item in obj:
+                        res = find_name_recursive_main(item, depth + 1, max_depth)
+                        if res: return res
+                return None
+            # -------------------------------------------------------
+
             normalized_hotels = []
-            for hotel in parsed["hotels"]:
+            for i, hotel in enumerate(parsed["hotels"]):
                 if not isinstance(hotel, dict):
                     continue
                 
-                # Extract hotel name with flexible key matching
-                # Priority: name > hotel_name > hotelName > hotel (if string) > hotel.name (if dict)
+                # STRATEGY 1: Direct Access
                 hotel_name = hotel.get("name")
-                if not hotel_name:
-                    hotel_name = hotel.get("hotel_name") or hotel.get("hotelName")
-                if not hotel_name:
-                    hotel_obj = hotel.get("hotel")
-                    if isinstance(hotel_obj, str):
-                        hotel_name = hotel_obj
-                    elif isinstance(hotel_obj, dict):
-                        hotel_name = hotel_obj.get("name")
                 
-                # If still no name, try to extract from nested structures
-                if not hotel_name:
-                    # Try amadeus_hotel_id or hotel_id to identify
-                    hotel_id = hotel.get("amadeus_hotel_id") or hotel.get("hotel_id") or hotel.get("hotelId")
-                    if hotel_id:
-                        logger.warning(f"[Hotel Name] Missing name for hotel ID: {hotel_id}")
+                # STRATEGY 2: Common Agent Structures
+                if not hotel_name or "Unknown" in str(hotel_name):
+                     hotel_name = hotel.get("hotel_name") or hotel.get("hotelName")
                 
-                # Normalize hotel dict
+                if not hotel_name:
+                    if isinstance(hotel.get("hotel"), dict):
+                        hotel_name = hotel.get("hotel", {}).get("name")
+                
+                # STRATEGY 3: DEEP SEARCH (The Fix)
+                # Eğer hala bulamadıysak, JSON ağacının derinliklerine in
+                if not hotel_name or "Unknown" in str(hotel_name):
+                    debug_log(f"MAIN PATH: Name missing for hotel #{i+1}, trying recursive...")
+                    logger.info(f"[Main Logic] Name missing for Hotel #{i+1}. Running Deep Search on Agent Response...")
+                    
+                    found_name = find_name_recursive_main(hotel)
+                    if found_name:
+                        hotel_name = found_name
+                        debug_log(f"MAIN PATH: Recovered name: {hotel_name}")
+                        logger.info(f"[Main Logic] Deep Search RECOVERED: {hotel_name}")
+                    else:
+                        debug_log(f"MAIN PATH: Failed to recover name.")
+                        try:
+                            debug_log(f"MAIN PATH: FAILED STRUCTURE (first 500 chars): {json.dumps(hotel, default=str)[:500]}")
+                        except:
+                            pass
+
+                # Construct Normalized Object
                 normalized_hotel = hotel.copy()
                 if hotel_name:
                     normalized_hotel["name"] = str(hotel_name)
-                elif "name" not in normalized_hotel:
-                    normalized_hotel["name"] = "Unknown Hotel"
-                    logger.warning(f"[Hotel Name] Could not extract name from hotel: {list(hotel.keys())}")
+                    debug_log(f"MAIN PATH: Final hotel_name for hotel #{i+1}: '{hotel_name}'")
+                else:
+                    # Try to extract from nested structures if name is missing
+                    if isinstance(hotel.get("offer"), dict):
+                        hotel_name = hotel.get("offer", {}).get("name") or hotel.get("offer", {}).get("hotel", {}).get("name")
+                    if not hotel_name and isinstance(hotel.get("hotel"), dict):
+                        hotel_name = hotel.get("hotel", {}).get("name")
+                    
+                    if hotel_name:
+                        normalized_hotel["name"] = str(hotel_name)
+                        debug_log(f"MAIN PATH: Recovered name from nested structure: '{hotel_name}'")
+                    elif "name" not in normalized_hotel or "Unknown" in str(normalized_hotel.get("name", "")):
+                        # If name is still missing or contains "Unknown", try recursive search
+                        found_name = find_name_recursive_main(hotel)
+                        if found_name:
+                            normalized_hotel["name"] = str(found_name)
+                            debug_log(f"MAIN PATH: Recovered name via recursive search: '{found_name}'")
+                        else:
+                            normalized_hotel["name"] = "N/A"
+                            debug_log(f"MAIN PATH: Could not recover name for hotel #{i+1}, using 'N/A'")
                 
                 normalized_hotels.append(normalized_hotel)
             
@@ -780,6 +1285,8 @@ def run_hotel_match_for_opportunity(
         return parsed
     
     # JSON extraction failed - try fallback
+    debug_log("TRIGGERING FALLBACK due to empty/invalid JSON")
+    debug_log("SWITCHING TO MANUAL FALLBACK...")
     logger.warning(f"[Agent Response] Failed to extract JSON from response. Content preview: {content[:500]}")
     
     # Check if content looks like JSON (starts with { or [)
@@ -840,7 +1347,19 @@ def run_hotel_match_for_opportunity(
                 
                 if offers:
                     logger.info(f"Fallback (JSON parse error): Amadeus API returned {len(offers)} hotels")
+                    print(f"\n>>> CALLING _convert_amadeus_offers_to_hotels with {len(offers)} offers", flush=True)
+                    if offers:
+                        print(f">>> First offer type: {type(offers[0])}", flush=True)
+                        print(f">>> First offer has 'name': {'name' in offers[0] if isinstance(offers[0], dict) else 'N/A'}", flush=True)
+                        if isinstance(offers[0], dict):
+                            print(f">>> First offer name value: {offers[0].get('name')}", flush=True)
+                    debug_log(f"FALLBACK (JSON parse error): Amadeus API returned {len(offers)} hotels")
+                    if offers and isinstance(offers[0], dict):
+                        debug_log(f"FALLBACK (JSON parse error): First offer keys: {list(offers[0].keys())[:10]}")
                     hotels = _convert_amadeus_offers_to_hotels(offers, city_code, check_in, check_out)
+                    debug_log(f"FALLBACK (JSON parse error): _convert returned {len(hotels)} hotels")
+                    if hotels:
+                        debug_log(f"FALLBACK (JSON parse error): First hotel name from _convert: {hotels[0].get('name')}")
                     
                     return {
                         "hotels": hotels,

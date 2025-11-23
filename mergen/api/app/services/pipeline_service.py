@@ -801,10 +801,10 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
                             'mime_type': 'application/json'
                         })
                 
-                # For sow_draft/sow: Also add hotel match JSON if available (Amadeus hotel suggestions)
+                # For sow_draft/sow: Also add hotel match PDF and JSON if available (Amadeus hotel suggestions)
                 # For hotel_match: Also add SOW PDF/JSON if available
                 if result.analysis_type in ["sow_draft", "sow"]:
-                    # Add hotel match JSON if available (Amadeus'tan gelen hotel öneri JSON'u)
+                    # Add hotel match PDF and JSON if available (Amadeus'tan gelen hotel öneri PDF ve JSON'u)
                     if not hotel_match_results:
                         hotel_match_results = session.query(AIAnalysisResult).filter(
                             AIAnalysisResult.opportunity_id == opportunity.id,
@@ -813,6 +813,28 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
                         ).order_by(AIAnalysisResult.created_at.desc()).limit(1).all()
                     
                     for hotel_result in hotel_match_results:
+                        # Add hotel match PDF (Amadeus'tan gelen hotel öneri PDF'i)
+                        if hotel_result.pdf_path:
+                            hotel_pdf_path = Path(hotel_result.pdf_path)
+                            # Try alternative paths if not found
+                            if not hotel_pdf_path.exists():
+                                alt_paths = [
+                                    Path('/data') / hotel_result.pdf_path.lstrip('/'),
+                                    DATA_DIR / hotel_result.pdf_path.lstrip('/'),
+                                ]
+                                for alt_path in alt_paths:
+                                    if alt_path.exists():
+                                        hotel_pdf_path = alt_path
+                                        break
+                            
+                            if hotel_pdf_path.exists():
+                                attachments.append({
+                                    'path': str(hotel_pdf_path),
+                                    'filename': f"hotel_suggestions_{hotel_result.id}.pdf",
+                                    'mime_type': 'application/pdf'
+                                })
+                                logger.info(f"[Pipeline {analysis_result_id}] Added hotel match PDF (Amadeus) to SOW email: {hotel_pdf_path}")
+                        
                         # Add hotel match JSON (Amadeus'tan gelen hotel öneri JSON'u)
                         if hotel_result.json_path:
                             hotel_json_path = Path(hotel_result.json_path)
@@ -1155,6 +1177,18 @@ def _execute_hotel_match(
     options: Dict[str, Any],
     agent_run_id: Optional[int],
 ) -> None:
+    # DEBUG: Log function entry
+    try:
+        from datetime import datetime
+        with open("/tmp/hotel_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"\n{'='*70}\n")
+            f.write(f"[{datetime.now().strftime('%H:%M:%S')}] _execute_hotel_match ENTRY\n")
+            f.write(f"[{datetime.now().strftime('%H:%M:%S')}] Analysis ID: {result.id}\n")
+            f.write(f"[{datetime.now().strftime('%H:%M:%S')}] Options: {options}\n")
+            f.write(f"{'='*70}\n")
+    except Exception as e:
+        pass  # Fail silently
+    
     result.status = "running"
     result.updated_at = datetime.utcnow()
     db.commit()
@@ -1321,6 +1355,17 @@ def _execute_hotel_match(
     force_refresh = bool(options.get("force_refresh"))
     use_cache_only = bool(cached_hotels and not force_refresh)
 
+    # DEBUG: Log cache decision
+    try:
+        from datetime import datetime
+        with open("/tmp/hotel_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: Cache check\n")
+            f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: cached_hotels count: {len(cached_hotels) if cached_hotels else 0}\n")
+            f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: force_refresh: {force_refresh}\n")
+            f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: use_cache_only: {use_cache_only}\n")
+    except:
+        pass
+
     agent_output: Dict[str, Any] = {}
     decision_hint = None
     if key_hash:
@@ -1332,16 +1377,41 @@ def _execute_hotel_match(
         }
 
     if use_cache_only:
+        # DEBUG: Log cache-only path
+        try:
+            from datetime import datetime
+            with open("/tmp/hotel_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: Using CACHE ONLY - run_hotel_match_for_opportunity will NOT be called\n")
+        except:
+            pass
         decision_metadata["source"] = "cache"
     else:
         decision_metadata["source"] = "agent_with_cache_hint" if cached_hotels else "agent"
         try:
+            # DEBUG: Log before calling hotel matcher
+            try:
+                from datetime import datetime
+                with open("/tmp/hotel_debug.log", "a", encoding="utf-8") as f:
+                    f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: About to call run_hotel_match_for_opportunity\n")
+                    f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: Requirements: {requirements}\n")
+            except:
+                pass
+            
             agent_output = run_hotel_match_for_opportunity(
                 requirements, 
                 decision_hint=decision_hint,
                 sow_requirements=sow_requirements,
                 agent_run_id=agent_run_id
             )
+            
+            # DEBUG: Log after calling hotel matcher
+            try:
+                from datetime import datetime
+                with open("/tmp/hotel_debug.log", "a", encoding="utf-8") as f:
+                    f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: Returned from run_hotel_match_for_opportunity\n")
+                    f.write(f"[{datetime.now().strftime('%H:%M:%S')}] PIPELINE: Hotels count: {len(agent_output.get('hotels', []))}\n")
+            except:
+                pass
         except HotelMatcherUnavailableError as exc:
             result.status = "failed"
             result.result_json = {"error": str(exc)}

@@ -15,6 +15,13 @@ until pg_isready -h "$DB_HOST" -p "$DB_PORT" >/dev/null 2>&1; do
 done
 
 echo "Running migrations..."
-python -m alembic upgrade head
+python -m alembic upgrade head || echo "Migration failed, continuing anyway..."
 
-exec "$@"
+# Cloud Run compatibility: Use PORT environment variable if set
+if [ -n "$PORT" ]; then
+  echo "Starting application on port $PORT (Cloud Run mode)"
+  exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+else
+  echo "Starting application with default command"
+  exec "$@"
+fi
