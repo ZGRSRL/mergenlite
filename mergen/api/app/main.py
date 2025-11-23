@@ -34,7 +34,7 @@ except Exception as e:
     print(f"[main.py] Error loading .env: {e}")
 
 from .config import settings
-from .routes import health, ingest, compliance, proposal, search, opportunities, proxy, pipeline, dashboard
+from .routes import health, ingest, compliance, proposal, search, opportunities, proxy, pipeline, dashboard, jobs
 
 app = FastAPI(
     title="MergenLite API",
@@ -70,6 +70,7 @@ app.include_router(opportunities.router, tags=["opportunities"])
 app.include_router(proxy.router, tags=["proxy"])
 app.include_router(pipeline.router, tags=["pipeline"])
 app.include_router(dashboard.router, tags=["dashboard"])
+app.include_router(jobs.router, tags=["jobs"])
 
 
 @app.get("/")
