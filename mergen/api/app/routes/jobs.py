@@ -14,7 +14,7 @@ from ..models import Opportunity, AIAnalysisResult
 from ..services.pipeline_service import create_pipeline_job, run_pipeline_job
 from ..services.sam_service import fetch_opportunities_from_sam
 from ..services.sam_gov.integration import SAMGovIntegration
-from ..crud.opportunities import create_or_update_opportunity
+from ..crud.opportunities import upsert_opportunity
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
