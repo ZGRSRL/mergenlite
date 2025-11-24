@@ -4,7 +4,8 @@ FROM python:3.11-slim
 # Environment variables
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8080
 
 # Working directory
 WORKDIR /app
@@ -35,7 +36,6 @@ COPY . /app/
 EXPOSE 8080
 
 # --- KRİTİK DEĞİŞİKLİK ---
-# Değişken kullanma, direkt 8080 yaz. En güvenlisi budur.
-# Alembic migration'ları uygulama başlamadan önce çalıştır (hata olsa bile devam et)
-# app.main:app çünkü uygulama app/ klasörü içinde
-CMD ["sh", "-c", "python -m alembic upgrade head || echo 'Migration failed, continuing...' && uvicorn app.main:app --host 0.0.0.0 --port 8080"]
+# Alembic migration'ı kaldırdık - uygulama başlarken yapılacak (startup event)
+# Sadece uvicorn'u başlat, en güvenlisi budur
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
