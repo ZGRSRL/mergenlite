@@ -4,8 +4,7 @@ FROM python:3.11-slim
 # Environment variables
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8080
+    PYTHONDONTWRITEBYTECODE=1
 
 # Working directory
 WORKDIR /app
@@ -30,15 +29,13 @@ RUN pip install --upgrade pip && \
     pip install alembic pydantic-settings psycopg2-binary
 
 # Copy everything else (respects .dockerignore)
-# This ensures all necessary files (sam_integration.py, app/, migrations/, etc.) are included
 COPY . /app/
 
 # Expose port
 EXPOSE 8080
 
 # --- KRİTİK DEĞİŞİKLİK ---
-# Entrypoint script'ini devre dışı bırakıyoruz.
-# Doğrudan uvicorn komutunu çalıştırıyoruz.
-# "sh -c" kullanarak $PORT değişkeninin algılanmasını sağlıyoruz.
-# Alembic migration'ları uygulama başlarken çalıştırılıyor (opsiyonel, hata olsa bile devam eder).
-CMD ["sh", "-c", "python -m alembic upgrade head || echo 'Migration failed, continuing...' && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Değişken kullanma, direkt 8080 yaz. En güvenlisi budur.
+# Alembic migration'ları uygulama başlamadan önce çalıştır (hata olsa bile devam et)
+# app.main:app çünkü uygulama app/ klasörü içinde
+CMD ["sh", "-c", "python -m alembic upgrade head || echo 'Migration failed, continuing...' && uvicorn app.main:app --host 0.0.0.0 --port 8080"]
