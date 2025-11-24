@@ -33,8 +33,27 @@ except ImportError:
 except Exception as e:
     print(f"[main.py] Error loading .env: {e}")
 
-from .config import settings
-from .routes import health, ingest, compliance, proposal, search, opportunities, proxy, pipeline, dashboard, jobs
+# Import settings (non-blocking, just configuration)
+try:
+    from .config import settings
+    print(f"[main.py] Settings loaded. Database host: {settings.postgres_host}")
+except Exception as e:
+    print(f"[main.py] WARNING: Failed to load settings: {e}")
+    # Create a minimal settings object to prevent import errors
+    class MinimalSettings:
+        postgres_host = os.getenv("POSTGRES_HOST", "localhost")
+    settings = MinimalSettings()
+
+# Import routes (lazy loading - database connections happen on request, not at startup)
+try:
+    from .routes import health, ingest, compliance, proposal, search, opportunities, proxy, pipeline, dashboard, jobs
+    print("[main.py] All routes imported successfully")
+except Exception as e:
+    print(f"[main.py] ERROR: Failed to import routes: {e}")
+    import traceback
+    traceback.print_exc()
+    # Re-raise to fail fast
+    raise
 
 app = FastAPI(
     title="MergenLite API",
@@ -61,16 +80,23 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(health.router, prefix="/api", tags=["health"])
-app.include_router(ingest.router, prefix="/api/ingest", tags=["ingest"])
-app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])
-app.include_router(proposal.router, prefix="/api/proposal", tags=["proposal"])
-app.include_router(search.router, prefix="/api/search", tags=["search"])
-app.include_router(opportunities.router, tags=["opportunities"])
-app.include_router(proxy.router, tags=["proxy"])
-app.include_router(pipeline.router, tags=["pipeline"])
-app.include_router(dashboard.router, tags=["dashboard"])
-app.include_router(jobs.router, tags=["jobs"])
+try:
+    app.include_router(health.router, prefix="/api", tags=["health"])
+    app.include_router(ingest.router, prefix="/api/ingest", tags=["ingest"])
+    app.include_router(compliance.router, prefix="/api/compliance", tags=["compliance"])
+    app.include_router(proposal.router, prefix="/api/proposal", tags=["proposal"])
+    app.include_router(search.router, prefix="/api/search", tags=["search"])
+    app.include_router(opportunities.router, tags=["opportunities"])
+    app.include_router(proxy.router, tags=["proxy"])
+    app.include_router(pipeline.router, tags=["pipeline"])
+    app.include_router(dashboard.router, tags=["dashboard"])
+    app.include_router(jobs.router, tags=["jobs"])
+    print("[main.py] All routers included successfully")
+except Exception as e:
+    print(f"[main.py] ERROR: Failed to include routers: {e}")
+    import traceback
+    traceback.print_exc()
+    raise
 
 
 @app.get("/")
@@ -81,3 +107,7 @@ async def root():
         "docs": "/docs"
     }
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Cloud Run"""
+    return {"status": "healthy", "service": "mergenlite-backend"}
