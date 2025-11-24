@@ -1,9 +1,13 @@
-FROM python:3.11-slim as base
+# Base Image
+FROM python:3.11-slim
 
+# Environment variables
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8080
 
+# Working directory
 WORKDIR /app
 
 # Install system dependencies
@@ -13,12 +17,12 @@ RUN apt-get update && \
         libpq-dev \
         postgresql-client \
         libgl1 \
-        libglib2.0-0 \
-        netcat-openbsd && \
+        libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy dependency files first (for better Docker layer caching)
 COPY pyproject.toml /app/pyproject.toml
+COPY alembic.ini /app/alembic.ini
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
@@ -29,18 +33,12 @@ RUN pip install --upgrade pip && \
 # This ensures all necessary files (sam_integration.py, app/, migrations/, etc.) are included
 COPY . /app/
 
-# Fix Windows line endings (CRLF -> LF) for entrypoint script
-# This is critical for Cloud Run (Linux-based)
-RUN sed -i 's/\r$//' /app/docker-entrypoint.sh || true
-
-# Make entrypoint executable (required for Cloud Run)
-RUN chmod +x /app/docker-entrypoint.sh
-
-# Cloud Run requires PORT environment variable
-# Default to 8080 (Cloud Run standard) for production, 8000 for local
-ENV PORT=8080
-
+# Expose port
 EXPOSE 8080
 
-# Entrypoint script handles PORT env var and starts uvicorn
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# --- KRİTİK DEĞİŞİKLİK ---
+# Entrypoint script'ini devre dışı bırakıyoruz.
+# Doğrudan uvicorn komutunu çalıştırıyoruz.
+# "sh -c" kullanarak $PORT değişkeninin algılanmasını sağlıyoruz.
+# Alembic migration'ları uygulama başlarken çalıştırılıyor (opsiyonel, hata olsa bile devam eder).
+CMD ["sh", "-c", "python -m alembic upgrade head || echo 'Migration failed, continuing...' && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
