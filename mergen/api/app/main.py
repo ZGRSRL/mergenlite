@@ -115,23 +115,7 @@ async def health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    """Run migrations and other startup tasks"""
-    try:
-        print("[startup] Running database migrations...")
-        import subprocess
-        result = subprocess.run(
-            ["python", "-m", "alembic", "upgrade", "head"],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        if result.returncode == 0:
-            print("[startup] Migrations completed successfully")
-        else:
-            print(f"[startup] Migration warning: {result.stderr}")
-            print("[startup] Continuing anyway...")
-    except Exception as e:
-        print(f"[startup] Migration error (non-fatal): {e}")
-        print("[startup] Continuing with application startup...")
-    
+    """Startup tasks - migrations disabled for Cloud Run"""
+    print("[startup] Application starting...")
+    print("[startup] Note: Database migrations should be run manually or via Cloud Build")
     print("[startup] Application startup complete")
