@@ -22,23 +22,31 @@ logger = logging.getLogger(__name__)
 # Import existing SAMIntegration if available
 try:
     import sys
-    # sam_service.py is at: mergen/api/app/services/sam_service.py
-    # We need to go up 4 levels to get to mergen/, then one more to get to project root
-    current_file = Path(__file__).resolve()
-    # Go up: services -> app -> api -> mergen -> project_root
-    project_root = current_file.parent.parent.parent.parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
+    # In Docker container, sam_integration.py is at /app/sam_integration.py
+    # Add /app to path if not already there
+    if '/app' not in sys.path:
+        sys.path.insert(0, '/app')
     
-    # Try importing from project root
+    # Try importing from /app (Docker container root)
     from sam_integration import SAMIntegration
     SAM_INTEGRATION_AVAILABLE = True
-    logger.info(f"SAMIntegration imported successfully from {project_root}")
+    logger.info(f"SAMIntegration imported successfully from /app")
 except ImportError as e:
-    SAM_INTEGRATION_AVAILABLE = False
-    logger.warning(f"SAMIntegration not available: {e}")
-    logger.warning(f"Tried to import from project_root: {project_root if 'project_root' in locals() else 'unknown'}")
-    SAMIntegration = None
+    # Fallback: try from project root (for local development)
+    try:
+        current_file = Path(__file__).resolve()
+        # Go up: services -> app -> api -> mergen -> project_root
+        project_root = current_file.parent.parent.parent.parent.parent
+        if str(project_root) not in sys.path:
+            sys.path.insert(0, str(project_root))
+        
+        from sam_integration import SAMIntegration
+        SAM_INTEGRATION_AVAILABLE = True
+        logger.info(f"SAMIntegration imported successfully from {project_root}")
+    except ImportError as e2:
+        SAM_INTEGRATION_AVAILABLE = False
+        logger.warning(f"SAMIntegration not available: {e2}")
+        SAMIntegration = None
 
 
 class SAMFetchError(RuntimeError):

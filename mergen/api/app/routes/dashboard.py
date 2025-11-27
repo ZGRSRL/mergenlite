@@ -21,6 +21,8 @@ from ..models import Opportunity
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 
+
+
 @router.get("/stats")
 async def get_dashboard_stats(db: Session = Depends(get_db)):
     """
@@ -85,6 +87,7 @@ async def get_recent_activities(
     limit: int = 5,
     db: Session = Depends(get_db)
 ):
+
     """
     Get recent activities (recent opportunities)
     """
@@ -106,6 +109,7 @@ async def get_recent_activities(
         
         result = []
         for opp in opportunities:
+
             # Calculate days left
             days_left = 0
             if opp.response_deadline:
@@ -146,5 +150,7 @@ async def get_recent_activities(
         }
     
     except Exception as e:
+        # logger.error(f"Error fetching activities: {e}", exc_info=True) # Logger not configured in this file yet
+        print(f"Error in get_recent_activities: {e}") # Keep print for now as fallback
         raise HTTPException(status_code=500, detail=f"Error fetching activities: {str(e)}")
 

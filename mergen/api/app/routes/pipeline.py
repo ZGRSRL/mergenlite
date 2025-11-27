@@ -26,7 +26,9 @@ from ..services.pipeline_service import create_pipeline_job, run_pipeline_job
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
 
-DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR = Path(os.getenv("DATA_DIR", str(DEFAULT_DATA_DIR))).resolve()
 
 
 @router.post("/run", response_model=PipelineRunResponse)
@@ -142,14 +144,20 @@ async def list_analysis_results_for_opportunity(
     db: Session = Depends(get_db),
 ):
     """List recent analysis results for a given opportunity."""
-    results = (
-        db.query(AIAnalysisResult)
-        .filter(AIAnalysisResult.opportunity_id == opportunity_id)
-        .order_by(AIAnalysisResult.created_at.desc())
-        .limit(limit)
-        .all()
-    )
-    return results
+    try:
+        results = (
+            db.query(AIAnalysisResult)
+            .filter(AIAnalysisResult.opportunity_id == opportunity_id)
+            .order_by(AIAnalysisResult.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return results
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error in list_analysis_results_for_opportunity: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fetching analysis results: {str(e)}")
 
 
 @router.get("/results/{analysis_result_id}/download-pdf")

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { 
-  ArrowBack, 
-  Download, 
-  CheckCircle, 
-  Warning, 
+import {
+  ArrowBack,
+  Download,
+  CheckCircle,
+  Warning,
   Error as ErrorIcon,
   OpenInNew,
   PlayArrow,
@@ -79,6 +79,8 @@ import {
   AnalysisResult,
   AnalysisLog,
 } from '../api/pipeline'
+import { EmailHistory } from './EmailHistory'
+
 
 interface GuidedAnalysisProps {
   opportunity: Opportunity | null
@@ -210,14 +212,14 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
 
   const handleDownloadAttachments = async () => {
     if (!opportunity) return
-    
+
     // Check if there are attachments to download
     const undownloaded = attachments.filter(att => !att.downloaded || !att.local_path)
     if (undownloaded.length === 0) {
       setError('Tüm dokümanlar zaten indirilmiş')
       return
     }
-    
+
     // Check if attachments have source_url
     const attachmentsWithoutUrl = undownloaded.filter(att => !att.source_url)
     if (attachmentsWithoutUrl.length > 0) {
@@ -225,16 +227,16 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
       setError(`${attachmentsWithoutUrl.length} dokümanın kaynak linki yok. Sync işlemini tekrar çalıştırın.`)
       return
     }
-    
+
     console.log('Starting download for opportunity:', opportunity.id)
     console.log('Attachments to download:', undownloaded.map(att => ({ id: att.id, name: att.name, source_url: att.source_url })))
-    
+
     setDownloadLoading(true)
     setError(null)
     try {
       const response = await startAttachmentDownload(opportunity.id)
       console.log('Download response:', response)
-      
+
       if (response?.job_id) {
         setDownloadJobId(response.job_id)
         // Poll job status
@@ -262,7 +264,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
       console.log('Polling download job:', jobId)
       const job = await getDownloadJob(jobId)
       console.log('Job status:', job.status, 'Downloaded:', job.downloaded_count, 'Failed:', job.failed_count)
-      
+
       if (job.status === 'completed' || job.status === 'failed') {
         setDownloadLoading(false)
         setDownloadJobId(null)
@@ -288,7 +290,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
               })
             })
             if (errorLogs.length > 0) {
-              const errorMessages = errorLogs.map((log: any) => 
+              const errorMessages = errorLogs.map((log: any) =>
                 `${log.attachment_name || 'Genel'}: ${log.message}`
               ).join('; ')
               setError(`İndirme başarısız: ${errorMessages}`)
@@ -359,10 +361,10 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
     return {
       documents: {
         label: `Dokümanlar: ${downloadedCount}/${totalAttachments}`,
-        color: downloadedCount === totalAttachments && totalAttachments > 0 ? 'success' : 
-               downloadedCount > 0 ? 'warning' : 'error',
-        icon: downloadedCount === totalAttachments && totalAttachments > 0 ? <CheckCircle /> : 
-              downloadedCount > 0 ? <Warning /> : <ErrorIcon />
+        color: downloadedCount === totalAttachments && totalAttachments > 0 ? 'success' :
+          downloadedCount > 0 ? 'warning' : 'error',
+        icon: downloadedCount === totalAttachments && totalAttachments > 0 ? <CheckCircle /> :
+          downloadedCount > 0 ? <Warning /> : <ErrorIcon />
       },
       pipeline: {
         label: `Pipeline: ${hasAnalysis ? analysisResults.length : 0} analiz`,
@@ -432,34 +434,34 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
       setError('Fırsat seçilmedi')
       return
     }
-    
+
     console.log('Starting pipeline for opportunity:', opportunity.id)
     setRunning(true)
     setError(null)
-    
+
     try {
       // Fetch attachments first
       console.log('Fetching attachments...')
       const attachments = await getAttachments(opportunity.id)
       console.log('Attachments fetched:', attachments.length)
       const attachmentIds = attachments.map(att => att.id)
-      
+
       console.log('Calling runPipelineJob with:', {
         opportunityId: opportunity.id,
         analysisType: 'sow_draft',
         pipelineVersion: 'v1',
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
       })
-      
+
       const response = await runPipelineJob({
         opportunityId: opportunity.id,
         analysisType: 'sow_draft',
         pipelineVersion: 'v1',
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
       })
-      
+
       console.log('Pipeline job started:', response)
-      
+
       if (response?.analysis_result_id) {
         await pollAnalysis(response.analysis_result_id)
         await fetchAttachments(opportunity.id)
@@ -490,7 +492,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
       // Fetch attachments first (hotel match might also need them)
       const attachments = await getAttachments(opportunity.id)
       const attachmentIds = attachments.map(att => att.id)
-      
+
       const response = await runPipelineJob({
         opportunityId: opportunity.id,
         analysisType: 'hotel_match',
@@ -575,8 +577,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
       </Box>
 
       {error && (
-        <Alert 
-          severity="error" 
+        <Alert
+          severity="error"
           sx={{ mb: 2 }}
           onClose={() => setError(null)}
         >
@@ -625,7 +627,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                           href={opportunity.samGovLink}
                           target="_blank"
                           startIcon={<OpenInNew />}
-                          sx={{ 
+                          sx={{
                             textTransform: 'none',
                             mt: 0.5
                           }}
@@ -643,21 +645,21 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <Stack spacing={1} alignItems="flex-end">
-                    <Chip 
-                      icon={statusChips.documents.icon} 
-                      label={statusChips.documents.label} 
+                    <Chip
+                      icon={statusChips.documents.icon}
+                      label={statusChips.documents.label}
                       color={statusChips.documents.color as any}
                       size="small"
                     />
-                    <Chip 
-                      icon={statusChips.pipeline.icon} 
-                      label={statusChips.pipeline.label} 
+                    <Chip
+                      icon={statusChips.pipeline.icon}
+                      label={statusChips.pipeline.label}
                       color={statusChips.pipeline.color as any}
                       size="small"
                     />
-                    <Chip 
-                      icon={statusChips.hotel.icon} 
-                      label={statusChips.hotel.label} 
+                    <Chip
+                      icon={statusChips.hotel.icon}
+                      label={statusChips.hotel.label}
                       color={statusChips.hotel.color as any}
                       size="small"
                     />
@@ -688,7 +690,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                 <Alert severity="info">
                   Bu fırsat için henüz döküman eklenmemiş. Sync işlemi yaparak dökümanları yükleyebilirsiniz.
                   <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                    Not: Sync işlemi sırasında SAM.gov'dan attachment metadata'sı (URL, isim vb.) veritabanına kaydedilir, 
+                    Not: Sync işlemi sırasında SAM.gov'dan attachment metadata'sı (URL, isim vb.) veritabanına kaydedilir,
                     ancak dosyalar otomatik indirilmez. Dosyaları indirmek için "Dokümanları İndir" butonunu kullanın.
                   </Typography>
                 </Alert>
@@ -699,9 +701,9 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                     <Box sx={{ mb: 2 }}>
                       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
                         <Box sx={{ flex: 1 }}>
-                          <LinearProgress 
-                            variant="determinate" 
-                            value={downloadProgress} 
+                          <LinearProgress
+                            variant="determinate"
+                            value={downloadProgress}
                             sx={{ height: 8, borderRadius: 1 }}
                             color={downloadProgress === 100 ? 'success' : 'primary'}
                           />
@@ -720,7 +722,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                   )}
                   {attachments.filter(att => !att.downloaded || !att.local_path).length > 0 && !downloadLoading && (
                     <Alert severity="warning" sx={{ mb: 2 }}>
-                      {attachments.filter(att => !att.downloaded || !att.local_path).length} döküman henüz indirilmemiş. 
+                      {attachments.filter(att => !att.downloaded || !att.local_path).length} döküman henüz indirilmemiş.
                       Pipeline çalıştırmadan önce "Dokümanları İndir" butonuna tıklayın.
                     </Alert>
                   )}
@@ -762,17 +764,17 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                             </TableCell>
                             <TableCell>
                               {att.downloaded && att.local_path ? (
-                                <Chip 
-                                  size="small" 
-                                  label="İndirildi" 
-                                  color="success" 
+                                <Chip
+                                  size="small"
+                                  label="İndirildi"
+                                  color="success"
                                   icon={<CheckCircle />}
                                 />
                               ) : att.downloaded === false ? (
-                                <Chip 
-                                  size="small" 
-                                  label="İndirilmedi" 
-                                  color="warning" 
+                                <Chip
+                                  size="small"
+                                  label="İndirilmedi"
+                                  color="warning"
                                   icon={<Warning />}
                                 />
                               ) : (
@@ -867,8 +869,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
           </Card>
 
           {/* 3. Pipeline Kartları (Accordion) */}
-          <Accordion 
-            expanded={expandedAccordions.has('pipeline')} 
+          <Accordion
+            expanded={expandedAccordions.has('pipeline')}
             onChange={() => handleAccordionChange('pipeline')}
             sx={{ mb: 2 }}
           >
@@ -883,7 +885,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                   <Tab label="Analiz Sonuçları" />
                   <Tab label="Loglar" />
                 </Tabs>
-                
+
                 {logTab === 0 ? (
                   analysisResults.length === 0 ? (
                     <Alert severity="info">
@@ -893,9 +895,9 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                     <Grid container spacing={2}>
                       {analysisResults.map((result) => (
                         <Grid item xs={12} sm={6} key={result.id}>
-                          <Card 
+                          <Card
                             variant="outlined"
-                            sx={{ 
+                            sx={{
                               cursor: 'pointer',
                               border: selectedResult?.id === result.id ? 2 : 1,
                               borderColor: selectedResult?.id === result.id ? 'primary.main' : 'divider',
@@ -909,13 +911,13 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                             <CardContent>
                               <Stack spacing={1}>
                                 <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                                  <Chip 
-                                    size="small" 
-                                    label={result.analysis_type} 
+                                  <Chip
+                                    size="small"
+                                    label={result.analysis_type}
                                     color={result.status === 'completed' ? 'success' : result.status === 'failed' ? 'error' : 'warning'}
                                   />
-                                  <Chip 
-                                    size="small" 
+                                  <Chip
+                                    size="small"
                                     label={result.status}
                                     color={result.status === 'completed' ? 'success' : result.status === 'failed' ? 'error' : 'default'}
                                     variant="outlined"
@@ -968,10 +970,10 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                           {/* Timeline */}
                           {logs.map((log, index) => {
                             const isLast = index === logs.length - 1
-                            const logColor = log.level === 'ERROR' ? 'error.main' : 
-                                           log.level === 'WARNING' ? 'warning.main' : 
-                                           log.level === 'INFO' ? 'info.main' : 'success.main'
-                            
+                            const logColor = log.level === 'ERROR' ? 'error.main' :
+                              log.level === 'WARNING' ? 'warning.main' :
+                                log.level === 'INFO' ? 'info.main' : 'success.main'
+
                             return (
                               <Box key={log.id} sx={{ position: 'relative', pb: isLast ? 0 : 3 }}>
                                 {/* Timeline line */}
@@ -1007,14 +1009,14 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                                   <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
                                     <Stack spacing={1}>
                                       <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                                        <Chip 
-                                          size="small" 
-                                          label={log.level} 
+                                        <Chip
+                                          size="small"
+                                          label={log.level}
                                           color={
-                                            log.level === 'ERROR' ? 'error' : 
-                                            log.level === 'WARNING' ? 'warning' : 
-                                            log.level === 'INFO' ? 'info' : 
-                                            'success'
+                                            log.level === 'ERROR' ? 'error' :
+                                              log.level === 'WARNING' ? 'warning' :
+                                                log.level === 'INFO' ? 'info' :
+                                                  'success'
                                           }
                                         />
                                         {log.step && (
@@ -1079,10 +1081,10 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                   {latestHotelMatch.hotels.map((hotel, idx) => {
                     const score = hotel.score || 0
                     const scorePercent = (score * 100).toFixed(0)
-                    
+
                     return (
                       <Grid item xs={12} sm={6} md={4} key={hotel.amadeus_hotel_id || idx}>
-                        <Card 
+                        <Card
                           variant="outlined"
                           sx={{
                             height: '100%',
@@ -1103,8 +1105,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                                     {hotel.name || 'Otel'}
                                   </Typography>
                                   {score > 0 && (
-                                    <Chip 
-                                      size="small" 
+                                    <Chip
+                                      size="small"
                                       icon={<Star />}
                                       label={`${scorePercent}%`}
                                       color={score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'default'}
@@ -1113,9 +1115,9 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                                   )}
                                 </Stack>
                                 {score > 0 && (
-                                  <LinearProgress 
-                                    variant="determinate" 
-                                    value={score * 100} 
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={score * 100}
                                     color={score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'primary'}
                                     sx={{ height: 6, borderRadius: 1, mt: 0.5 }}
                                   />
@@ -1134,7 +1136,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                                     </Typography>
                                   </Stack>
                                 )}
-                                
+
                                 {(hotel as any).distance_miles && (
                                   <Stack direction="row" spacing={1} alignItems="center">
                                     <LocationOn fontSize="small" color="action" />
@@ -1184,8 +1186,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
           </Card>
 
           {/* Additional Accordions */}
-          <Accordion 
-            expanded={expandedAccordions.has('agents')} 
+          <Accordion
+            expanded={expandedAccordions.has('agents')}
             onChange={() => handleAccordionChange('agents')}
             sx={{ mb: 2 }}
           >
@@ -1207,9 +1209,9 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                         primary={
                           <Stack direction="row" spacing={1} alignItems="center">
                             <Chip size="small" label={run.run_type} />
-                            <Chip 
-                              size="small" 
-                              label={run.status} 
+                            <Chip
+                              size="small"
+                              label={run.status}
                               color={run.status === 'completed' ? 'success' : run.status === 'failed' ? 'error' : 'default'}
                             />
                           </Stack>
@@ -1227,8 +1229,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
             </AccordionDetails>
           </Accordion>
 
-          <Accordion 
-            expanded={expandedAccordions.has('decision')} 
+          <Accordion
+            expanded={expandedAccordions.has('decision')}
             onChange={() => handleAccordionChange('decision')}
             sx={{ mb: 2 }}
           >
@@ -1254,7 +1256,7 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                     </Typography>
                   )}
                   {Array.isArray(decisionLookup.pattern.recommended_hotels) &&
-                  decisionLookup.pattern.recommended_hotels.length > 0 ? (
+                    decisionLookup.pattern.recommended_hotels.length > 0 ? (
                     <List dense>
                       {decisionLookup.pattern.recommended_hotels.map((hotel: any, idx: number) => (
                         <ListItem key={hotel.id || hotel.name || idx}>
@@ -1285,8 +1287,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
             </AccordionDetails>
           </Accordion>
 
-          <Accordion 
-            expanded={expandedAccordions.has('emails')} 
+          <Accordion
+            expanded={expandedAccordions.has('emails')}
             onChange={() => handleAccordionChange('emails')}
             sx={{ mb: 2 }}
           >
@@ -1307,8 +1309,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                       <ListItemText
                         primary={
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Chip 
-                              size="small" 
+                            <Chip
+                              size="small"
                               label={email.direction === 'outbound' ? 'Giden' : 'Gelen'}
                               color={email.direction === 'outbound' ? 'primary' : 'default'}
                             />
@@ -1317,9 +1319,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                             </Typography>
                           </Stack>
                         }
-                        secondary={`${new Date(email.created_at).toLocaleString()} · ${
-                          email.from_address || email.to_address || ''
-                        }`}
+                        secondary={`${new Date(email.created_at).toLocaleString()} · ${email.from_address || email.to_address || ''
+                          }`}
                       />
                     </ListItem>
                   ))}
@@ -1425,9 +1426,8 @@ export function GuidedAnalysis({ opportunity, onBack }: GuidedAnalysisProps) {
                               </Typography>
                             </Stack>
                           }
-                          secondary={`${new Date(example.created_at).toLocaleDateString()} · Puan: ${
-                            example.rating ?? '-'
-                          }`}
+                          secondary={`${new Date(example.created_at).toLocaleDateString()} · Puan: ${example.rating ?? '-'
+                            }`}
                         />
                       </ListItem>
                     ))}

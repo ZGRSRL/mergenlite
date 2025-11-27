@@ -201,14 +201,20 @@ async def get_opportunity_agent_runs(
     limit: int = Query(20, ge=1, le=200, description="Max agent runs"),
     db: Session = Depends(get_db),
 ):
-    runs = (
-        db.query(AgentRun)
-        .filter(AgentRun.opportunity_id == opportunity_id)
-        .order_by(AgentRun.started_at.desc())
-        .limit(limit)
-        .all()
-    )
-    return runs
+    try:
+        runs = (
+            db.query(AgentRun)
+            .filter(AgentRun.opportunity_id == opportunity_id)
+            .order_by(AgentRun.started_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return runs
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error in get_opportunity_agent_runs: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fetching agent runs: {str(e)}")
 
 
 @router.get("/{opportunity_id}/hotel-matches", response_model=List[HotelMatchRead])

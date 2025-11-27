@@ -6,6 +6,7 @@ Job tracking ve background task desteği ile
 import os
 import logging
 import uuid
+import re
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 import httpx
@@ -18,7 +19,9 @@ from ..models import Opportunity, OpportunityAttachment, DownloadJob, DownloadLo
 logger = logging.getLogger(__name__)
 
 # Base data directory
-BASE_DATA_DIR = os.getenv("DATA_DIR", "data")
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
+BASE_DATA_DIR = Path(os.getenv("DATA_DIR", str(DEFAULT_DATA_DIR))).resolve()
 SAM_API_KEY = os.getenv("SAM_API_KEY")
 
 
@@ -101,7 +104,7 @@ async def download_attachments_for_opportunity(
         
         # Create directory structure
         notice_id = opportunity.notice_id or str(opportunity.id)
-        opp_dir = Path(BASE_DATA_DIR) / "opportunities" / notice_id / "attachments"
+        opp_dir = BASE_DATA_DIR / "opportunities" / notice_id / "attachments"
         opp_dir.mkdir(parents=True, exist_ok=True)
         
         _log_download(db, job_id, 'INFO', f"Download directory: {opp_dir}", step='init', extra_metadata={"directory": str(opp_dir)})
@@ -114,6 +117,36 @@ async def download_attachments_for_opportunity(
         logger.info(f"[Job {job_id}] Total attachments in DB: {len(all_attachments)}")
         for att in all_attachments:
             logger.info(f"[Job {job_id}] Attachment {att.id}: name={att.name}, source_url={att.source_url}, downloaded={att.downloaded}, local_path={att.local_path}")
+        
+        # Verify that "downloaded" attachments actually exist on disk
+        # If file is missing, reset downloaded flag
+        for att in all_attachments:
+            if att.downloaded and att.local_path:
+                local_path_obj = Path(att.local_path)
+                # Also check if file exists in alternative locations
+                if not local_path_obj.exists():
+                    # Try alternative paths
+                    alt_paths = [
+                        BASE_DATA_DIR / att.local_path.lstrip('/'),
+                        BASE_DATA_DIR.parent / att.local_path.lstrip('/'),
+                        Path(att.local_path),
+                    ]
+                    found = False
+                    for alt_path in alt_paths:
+                        if alt_path.exists():
+                            # Update local_path to correct location
+                            att.local_path = str(alt_path)
+                            db.commit()
+                            logger.info(f"[Job {job_id}] Found attachment {att.id} at alternative path: {alt_path}")
+                            found = True
+                            break
+                    
+                    if not found:
+                        logger.warning(f"[Job {job_id}] Attachment {att.id} marked as downloaded but file missing: {att.local_path}. Resetting downloaded flag.")
+                        att.downloaded = False
+                        att.local_path = None
+                        att.downloaded_at = None
+                        db.commit()
         
         # Get all attachments that need downloading
         attachments = db.query(OpportunityAttachment).filter(
@@ -161,12 +194,64 @@ async def download_attachments_for_opportunity(
                         _log_download(db, job_id, 'WARNING', f"Attachment {att.id} has no source_url, skipping", step='download', attachment_name=att.name)
                         continue
                     
-                    # Generate safe filename
-                    filename = att.name.replace("/", "_").replace("\\", "_")
-                    filename = Path(filename).name
+                    # Download file first to get content-type
+                    download_url = _build_download_url(att.source_url)
+                    _log_download(
+                        db,
+                        job_id,
+                        'INFO',
+                        f"Downloading {att.name}",
+                        step='download',
+                        attachment_name=att.name,
+                        extra_metadata={"url": download_url},
+                    )
+                    logger.info(f"[Job {job_id}] Downloading {att.name} from {download_url}")
                     
-                    # If no extension, try to guess from URL
-                    if not Path(filename).suffix and att.mime_type:
+                    response = await client.get(download_url)
+                    response.raise_for_status()
+                    
+                    # Get content-type from response
+                    content_type = response.headers.get("content-type", "")
+                    if content_type:
+                        content_type = content_type.split(";")[0].strip()
+                    
+                    # Detect file type from content if content-type is not reliable
+                    detected_mime = None
+                    if response.content:
+                        header = response.content[:16]
+                        if header.startswith(b'%PDF'):
+                            detected_mime = "application/pdf"
+                        elif header.startswith(b'PK\x03\x04'):
+                            # ZIP-based formats (DOCX, XLSX, PPTX)
+                            # Check for Office document signatures
+                            if b'word/' in response.content[:1024] or b'[Content_Types].xml' in response.content[:2048]:
+                                detected_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            elif b'xl/' in response.content[:1024] or b'xl/workbook' in response.content[:2048]:
+                                detected_mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            else:
+                                detected_mime = "application/zip"
+                        elif header.startswith(b'\xd0\xcf\x11\xe0'):
+                            # Old MS Office formats
+                            detected_mime = "application/msword"
+                    
+                    # Use detected MIME type if content-type is generic
+                    if detected_mime and (not content_type or content_type == "application/octet-stream"):
+                        content_type = detected_mime
+                    
+                    # Update mime_type if not set or if we detected a better one
+                    if not att.mime_type or (detected_mime and att.mime_type == "application/octet-stream"):
+                        att.mime_type = content_type or detected_mime
+                    
+                    # Generate safe and unique filename (noticeId_attachmentId_originalName.ext)
+                    # Use response content-type or detected MIME type
+                    base_name = att.name or "attachment"
+                    base_name = re.sub(r"[^A-Za-z0-9._-]+", "_", base_name).strip("._") or "attachment"
+                    original_suffix = Path(base_name).suffix
+                    ext = original_suffix
+                    
+                    # Use detected MIME type or content-type
+                    mime_to_use = detected_mime or content_type or att.mime_type
+                    if not ext and mime_to_use:
                         ext_map = {
                             "application/pdf": ".pdf",
                             "application/msword": ".doc",
@@ -174,10 +259,15 @@ async def download_attachments_for_opportunity(
                             "application/vnd.ms-excel": ".xls",
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
                         }
-                        ext = ext_map.get(att.mime_type, "")
-                        if ext:
-                            filename = filename + ext
-                    
+                        ext = ext_map.get(mime_to_use, "")
+                    if not ext:
+                        parsed = urlparse(att.source_url)
+                        ext = Path(parsed.path).suffix
+                    if not ext:
+                        ext = ".bin"
+                    stem = Path(base_name).stem or "file"
+                    unique_prefix = f"{notice_id}_{att.id or idx}"
+                    filename = f"{unique_prefix}_{stem}{ext}"
                     local_path = opp_dir / filename
                     
                     # Skip if already exists
@@ -191,34 +281,33 @@ async def download_attachments_for_opportunity(
                         downloaded_count += 1
                         continue
                     
-                    # Download file
-                    download_url = _build_download_url(att.source_url)
-                    _log_download(
-                        db,
-                        job_id,
-                        f"Downloading {att.name}",
-                        step='download',
-                        attachment_name=att.name,
-                        extra_metadata={"url": download_url},
-                    )
-                    logger.info(f"[Job {job_id}] Downloading {att.name} from {download_url}")
-                    
-                    response = await client.get(download_url)
-                    response.raise_for_status()
+                    # Ensure directory exists
+                    local_path.parent.mkdir(parents=True, exist_ok=True)
                     
                     # Save to disk
-                    with open(local_path, "wb") as f:
-                        f.write(response.content)
+                    try:
+                        with open(local_path, "wb") as f:
+                            f.write(response.content)
+                        
+                        # Verify file was written
+                        if not local_path.exists():
+                            raise IOError(f"File was not created at {local_path}")
+                        
+                        file_size = local_path.stat().st_size
+                        if file_size != len(response.content):
+                            raise IOError(f"File size mismatch: expected {len(response.content)}, got {file_size}")
+                        
+                        logger.info(f"[Job {job_id}] File saved successfully: {local_path} ({file_size} bytes)")
+                    except Exception as save_exc:
+                        logger.error(f"[Job {job_id}] Failed to save file {local_path}: {save_exc}")
+                        _log_download(db, job_id, 'ERROR', f"Failed to save file: {save_exc}", step='save', attachment_name=att.name, extra_metadata={"path": str(local_path), "error": str(save_exc)})
+                        continue
                     
                     # Update attachment record
                     att.local_path = str(local_path)
                     att.downloaded = True
                     att.size_bytes = len(response.content)
                     att.downloaded_at = datetime.now()
-                    
-                    # Update mime_type if not set
-                    if not att.mime_type and response.headers.get("content-type"):
-                        att.mime_type = response.headers.get("content-type").split(";")[0]
                     
                     db.commit()
                     db.refresh(att)

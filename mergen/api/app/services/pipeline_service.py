@@ -397,13 +397,40 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
 
         if not attachments:
             warning_msg = (
-                "No attachments found for this opportunity. "
-                "AutoGen agents cannot analyze documents without attachments. "
-                "Pipeline will continue with metadata only, but analysis results will be limited. "
-                "Please sync attachments from SAM.gov or upload documents manually."
+                "⚠️ BU FIRSATTA DOKÜMAN BULUNAMADI! ⚠️\n\n"
+                "AutoGen ajanları doküman olmadan detaylı analiz yapamaz.\n"
+                "Ancak fırsat bilgilerinden temel bir özet oluşturulacak.\n\n"
+                "Daha detaylı analiz için:\n"
+                "1. SAM.gov'dan dokümanları senkronize edin (Sync butonu)\n"
+                "2. Manuel olarak doküman yükleyin\n"
+                "3. Ardından analizi tekrar başlatın"
             )
-            _log_analysis(session, analysis_result_id, "WARNING", warning_msg, step="prepare")
+            _log_analysis(session, analysis_result_id, "WARNING", warning_msg, step="prepare", agent_run_id=agent_run_id)
             logger.warning(f"[Pipeline {analysis_result_id}] {warning_msg}")
+            
+            # Create basic summary from opportunity metadata
+            basic_summary_from_metadata = {
+                "notice": "No documents available for detailed analysis",
+                "opportunity_summary": {
+                    "title": opportunity.title or "N/A",
+                    "agency": opportunity.agency or "N/A",
+                    "description": opportunity.description[:500] if opportunity.description else "No description available",
+                    "solicitation_number": opportunity.solicitation_number or "N/A",
+                    "response_deadline": opportunity.response_deadline.isoformat() if opportunity.response_deadline else "N/A",
+                    "estimated_value": opportunity.estimated_value or "Not specified",
+                },
+                "recommendation": "Please upload documents or sync from SAM.gov for detailed SOW analysis"
+            }
+            
+            # Log basic summary creation
+            _log_analysis(
+                session,
+                analysis_result_id,
+                "INFO",
+                f"Doküman olmadığı için fırsat meta datalarından temel özet oluşturuldu: {opportunity.title}",
+                step="analyze",
+                agent_run_id=agent_run_id
+            )
 
         attachment_details = []
         analyzed_documents = []
@@ -721,11 +748,17 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
         
         if send_email_now:
             try:
+                # Import settings here to get fresh config (in case .env was updated after backend started)
                 from ..config import settings
                 from ..services.mail_service import build_mail_package, send_email_via_smtp
                 
+                logger.info(f"[Pipeline {analysis_result_id}] Email config check: smtp_host={settings.smtp_host}, notification_email={settings.pipeline_notification_email}")
+                
                 if not (settings.pipeline_notification_email and settings.smtp_host and settings.smtp_username):
                     logger.info(f"[Pipeline {analysis_result_id}] Email notification not configured (missing SMTP settings or notification email)")
+                    logger.info(f"[Pipeline {analysis_result_id}] - pipeline_notification_email: {settings.pipeline_notification_email}")
+                    logger.info(f"[Pipeline {analysis_result_id}] - smtp_host: {settings.smtp_host}")
+                    logger.info(f"[Pipeline {analysis_result_id}] - smtp_username: {settings.smtp_username}")
                 else:
                     _log_analysis(
                         session,
@@ -939,6 +972,42 @@ def run_pipeline_job(analysis_result_id: int, payload: Dict[str, Any]) -> None:
                         agent_run_id=agent_run_id,
                     )
                     logger.info(f"[Pipeline {analysis_result_id}] Email notification sent successfully")
+                    
+                    # ✅ KAYIP HALKAYI BAĞLAMA: Email'i veritabanına loglama
+                    try:
+                        from ..models import EmailLog
+                        
+                        # Email body'den özet oluştur (ilk 200 karakter)
+                        email_summary = mail_package.get('text_body', '')[:200] + '...' if len(mail_package.get('text_body', '')) > 200 else mail_package.get('text_body', '')
+                        
+                        email_log = EmailLog(
+                            opportunity_id=opportunity.id,
+                            direction="outgoing",
+                            subject=mail_package.get('subject', 'SOW Analysis Report'),
+                            from_address=mail_package.get('from', settings.smtp_from_email),
+                            to_address=mail_package.get('to', settings.pipeline_notification_email),
+                            message_id=None,  # SMTP response'dan alınabilir ileride
+                            raw_body=mail_package.get('text_body', ''),
+                            parsed_summary=email_summary,
+                            related_agent_run_id=agent_run_id,
+                        )
+                        session.add(email_log)
+                        session.commit()
+                        session.refresh(email_log)
+                        
+                        logger.info(f"[Pipeline {analysis_result_id}] ✅ Email logged to database: EmailLog ID {email_log.id}")
+                        _log_analysis(
+                            session,
+                            analysis_result_id,
+                            "INFO",
+                            f"Email kaydedildi: EmailLog ID {email_log.id}",
+                            step="email",
+                            agent_run_id=agent_run_id,
+                        )
+                    except Exception as log_error:
+                        logger.error(f"[Pipeline {analysis_result_id}] Email logging to database failed: {log_error}", exc_info=True)
+                        # Email gönderildi ama loglama başarısız - devam et
+                    
                 else:
                     _log_analysis(
                         session,

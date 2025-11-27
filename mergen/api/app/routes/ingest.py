@@ -6,7 +6,7 @@ import shutil
 from ..db import get_db
 from ..models import Document
 from ..schemas import Document as DocumentSchema
-from ..services.parsing.pdf_utils import process_pdf
+from ..services.parsing.document_analyzer import analyze_document
 from ..services.parsing.excel_reader import process_excel
 
 router = APIRouter()
@@ -43,7 +43,8 @@ async def upload_document(
     
     # Process document in background
     if kind in ["rfq", "sow", "facility", "past_performance"]:
-        background_tasks.add_task(process_pdf, document.id, file_path, kind)
+        # Process document in background
+        background_tasks.add_task(analyze_document, file_path, kind)
     elif kind == "pricing":
         background_tasks.add_task(process_excel, document.id, file_path)
     

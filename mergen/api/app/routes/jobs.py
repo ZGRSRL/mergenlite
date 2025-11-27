@@ -14,6 +14,7 @@ from ..models import Opportunity, AIAnalysisResult
 from ..services.pipeline_service import create_pipeline_job, run_pipeline_job
 from ..services.sam_service import fetch_opportunities_from_sam
 from ..services.sam_gov.integration import SAMGovIntegration
+from ..services.sam_mapper import map_sam_record_to_opportunity
 from ..crud.opportunities import upsert_opportunity
 
 logger = logging.getLogger(__name__)
@@ -115,10 +116,15 @@ async def process_daily_scan_job(
                     # Map SAM data to Opportunity model
                     opp_dict = map_sam_record_to_opportunity(opp_data)
                     
-                    # Use upsert_opportunity from CRUD
+                    # Use upsert_opportunity from CRUD (it handles commit internally)
                     opportunity = upsert_opportunity(db, opp_dict)
                 except Exception as db_error:
                     logger.error(f"⚠️  İlan {notice_id} veritabanına kaydedilemedi: {db_error}")
+                    # upsert_opportunity already does rollback, but ensure clean state
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass  # Ignore if already rolled back
                     continue
                 
                 logger.info(f"📄 İlan {notice_id} analiz ediliyor (Opportunity ID: {opportunity.id})...")

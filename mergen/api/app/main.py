@@ -72,7 +72,7 @@ else:
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Frontend URLs
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],  # Frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,7 +115,22 @@ async def health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    """Startup tasks - migrations disabled for Cloud Run"""
+    """Startup tasks - run migrations if needed"""
     print("[startup] Application starting...")
-    print("[startup] Note: Database migrations should be run manually or via Cloud Build")
+    try:
+        # Run migrations on startup
+        import subprocess
+        import sys
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        if result.returncode == 0:
+            print("[startup] Database migrations completed successfully")
+        else:
+            print(f"[startup] Migration warning: {result.stderr}")
+    except Exception as e:
+        print(f"[startup] Migration error (continuing anyway): {e}")
     print("[startup] Application startup complete")

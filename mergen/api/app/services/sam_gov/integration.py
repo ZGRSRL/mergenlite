@@ -8,7 +8,7 @@ import asyncio
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import logging
-from ..parsing.pdf_utils import process_pdf
+from ..parsing.document_analyzer import analyze_document
 from ..parsing.excel_reader import process_excel
 from ...models import Document
 from ...db import get_db
@@ -189,7 +189,8 @@ class SAMGovIntegration:
             if file_info["file_type"] in ["rfq", "sow", "facility", "past_performance"]:
                 # Process PDF in background
                 asyncio.create_task(
-                    process_pdf(document.id, file_info["file_path"], file_info["file_type"])
+                    # Analyze document (process_pdf was removed, use analyze_document instead)
+                    analyze_document(file_info["file_path"], file_info.get("file_type", "application/pdf"))
                 )
             elif file_info["file_type"] == "pricing":
                 # Process Excel in background
