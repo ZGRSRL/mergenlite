@@ -1,93 +1,93 @@
 #!/usr/bin/env python3
-"""Check AutoGen and pipeline dependencies"""
+"""Check AutoGen installation and compatibility"""
 import sys
-from pathlib import Path
 
-print("=" * 60)
-print("AUTOGEN & PIPELINE DURUM KONTROLÜ")
-print("=" * 60)
+print("=== AutoGen Compatibility Check ===\n")
 
-# 1. AutoGen kontrolü
-print("\n1. AutoGen Modülü:")
+# 1. Check autogen version
 try:
     import autogen
-    version = getattr(autogen, '__version__', 'mevcut')
-    print(f"   [OK] AutoGen yüklü: {version}")
-except ImportError:
-    print("   [ERROR] AutoGen yüklü değil")
-    print("   Kurulum: pip install pyautogen")
+    try:
+        version = autogen.__version__
+        print(f"1. autogen version: {version}")
+    except AttributeError:
+        print("1. autogen version: (__version__ not found)")
+    print("   [OK] autogen imported successfully")
+except ImportError as e:
+    print(f"1. autogen import error: {e}")
+    sys.exit(1)
 
-# 2. D:/RFQ klasörü kontrolü
-print("\n2. Pipeline Bağımlılıkları:")
-rfq_path = Path("D:/RFQ")
-if rfq_path.exists():
-    print(f"   [OK] D:/RFQ klasörü mevcut: {rfq_path}")
-    
-    # Alt klasörleri kontrol et
-    backend_services = rfq_path / "backend" / "services"
-    backend_agents = rfq_path / "backend" / "agents"
-    agents_dir = rfq_path / "agents"
-    
-    print(f"   Backend/services: {'[OK]' if backend_services.exists() else '[YOK]'}")
-    print(f"   Backend/agents: {'[OK]' if backend_agents.exists() else '[YOK]'}")
-    print(f"   Agents: {'[OK]' if agents_dir.exists() else '[YOK]'}")
-    
-    # Önemli dosyaları kontrol et
-    important_files = [
-        "backend/services/sow_pipeline_enhanced.py",
-        "backend/agents/pipeline_v3.py",
-        "agents/analyzer_agent.py",
-        "agents/reviewer_agent.py",
-        "backend/agents/sow_generator_agent_v3.py"
-    ]
-    
-    print("\n   Önemli dosyalar:")
-    for file_path in important_files:
-        full_path = rfq_path / file_path
-        status = "[OK]" if full_path.exists() else "[YOK]"
-        print(f"     {status} {file_path}")
-else:
-    print(f"   [WARNING] D:/RFQ klasörü bulunamadı")
-    print("   Pipeline çalışmayacak, PIPELINE_AVAILABLE=False olacak")
-
-# 3. Mevcut agent dosyaları
-print("\n3. Mevcut Agent Dosyaları (proje içi):")
-agents_dir = Path("agents")
-if agents_dir.exists():
-    agent_files = list(agents_dir.glob("*.py"))
-    if agent_files:
-        print(f"   [OK] {len(agent_files)} agent dosyası bulundu:")
-        for agent_file in agent_files[:5]:
-            print(f"     - {agent_file.name}")
-    else:
-        print("   [WARNING] Agent dosyası bulunamadı")
-else:
-    print("   [WARNING] agents/ klasörü bulunamadı")
-
-# 4. Pipeline import testi
-print("\n4. Pipeline Import Testi:")
+# 2. Check imports
 try:
-    sys.path.insert(0, str(rfq_path))
-    sys.path.insert(0, str(rfq_path / "backend" / "services"))
-    sys.path.insert(0, str(rfq_path / "backend" / "agents"))
-    sys.path.insert(0, str(rfq_path / "agents"))
-    
-    try:
-        from backend.services.sow_pipeline_enhanced import process_rfq_to_sow_enhanced
-        print("   [OK] sow_pipeline_enhanced import edildi")
-    except ImportError as e:
-        print(f"   [ERROR] sow_pipeline_enhanced import hatası: {e}")
-    
-    try:
-        from backend.agents.pipeline_v3 import run_enterprise_pipeline
-        print("   [OK] pipeline_v3 import edildi")
-    except ImportError as e:
-        print(f"   [ERROR] pipeline_v3 import hatası: {e}")
-        
+    from autogen import AssistantAgent, UserProxyAgent
+    print("2. [OK] from autogen import AssistantAgent, UserProxyAgent")
+except ImportError as e:
+    print(f"2. [X] Import error: {e}")
+    sys.exit(1)
+
+# 3. Check autogen_agentchat
+try:
+    from autogen_agentchat.agents import AssistantAgent as NewAssistantAgent
+    print("3. [INFO] autogen_agentchat available")
+except ImportError:
+    print("3. [INFO] autogen_agentchat not available")
+
+# 4. Check AssistantAgent parameters
+try:
+    from autogen import AssistantAgent
+    import inspect
+    sig = inspect.signature(AssistantAgent.__init__)
+    print("\n4. AssistantAgent.__init__ parameters:")
+    for param_name, param in sig.parameters.items():
+        if param_name != 'self':
+            print(f"   {param_name}: {param.kind}")
 except Exception as e:
-    print(f"   [ERROR] Pipeline import testi başarısız: {e}")
+    print(f"4. [ERROR] Could not inspect AssistantAgent: {e}")
 
-print("\n" + "=" * 60)
-print("KONTROL TAMAMLANDI")
-print("=" * 60)
+# 5. Check API key
+import os
+api_key = os.getenv("OPENAI_API_KEY")
+if api_key:
+    print(f"\n5. [OK] OPENAI_API_KEY present (first 10 chars: {api_key[:10]}...)")
+else:
+    print("\n5. [X] OPENAI_API_KEY not found")
 
+# 6. Test AssistantAgent creation
+print("\n6. Testing AssistantAgent creation...")
+try:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        print("   [SKIP] No API key, skipping test")
+    else:
+        llm_config = {
+            "config_list": [{
+                "model": "gpt-4o-mini",
+                "api_key": api_key,
+            }],
+            "temperature": 0.2,
+        }
+        
+        # Try with llm_config
+        try:
+            agent = AssistantAgent(
+                name="TestAgent",
+                system_message="Test",
+                llm_config=llm_config,
+            )
+            print("   [OK] AssistantAgent created with llm_config")
+        except TypeError as e:
+            print(f"   [X] llm_config failed: {e}")
+            # Try without tools
+            try:
+                agent = AssistantAgent(
+                    name="TestAgent",
+                    system_message="Test",
+                    llm_config=llm_config,
+                )
+                print("   [OK] AssistantAgent created (retry)")
+            except Exception as e2:
+                print(f"   [X] Retry failed: {e2}")
+except Exception as e:
+    print(f"   [ERROR] Test failed: {e}")
+
+print("\n=== Check Complete ===")

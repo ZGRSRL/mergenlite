@@ -90,3 +90,5 @@ self.min_interval = 3.0  # 3 saniye bekle
 
 
 
+
+

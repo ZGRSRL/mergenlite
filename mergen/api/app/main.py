@@ -46,7 +46,7 @@ except Exception as e:
 
 # Import routes (lazy loading - database connections happen on request, not at startup)
 try:
-    from .routes import health, ingest, compliance, proposal, search, opportunities, proxy, pipeline, dashboard, jobs
+    from .routes import health, ingest, compliance, proposal, search, opportunities, proxy, pipeline, dashboard, jobs, communications
     print("[main.py] All routes imported successfully")
 except Exception as e:
     print(f"[main.py] ERROR: Failed to import routes: {e}")
@@ -91,6 +91,7 @@ try:
     app.include_router(pipeline.router, tags=["pipeline"])
     app.include_router(dashboard.router, tags=["dashboard"])
     app.include_router(jobs.router, tags=["jobs"])
+    app.include_router(communications.router, prefix="/api/communications", tags=["communications"])
     print("[main.py] All routers included successfully")
 except Exception as e:
     print(f"[main.py] ERROR: Failed to include routers: {e}")

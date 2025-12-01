@@ -13,10 +13,10 @@ DB_PORT=${POSTGRES_PORT:-${DB_PORT:-5432}}
 # Cloud SQL uses Unix socket path (/cloudsql/...) which doesn't need pg_isready
 if [ "$DB_HOST" = "db" ] || [ "$DB_HOST" = "localhost" ]; then
   if command -v pg_isready >/dev/null 2>&1; then
-    echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
-    until pg_isready -h "$DB_HOST" -p "$DB_PORT" >/dev/null 2>&1; do
-      sleep 1
-    done
+echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
+until pg_isready -h "$DB_HOST" -p "$DB_PORT" >/dev/null 2>&1; do
+  sleep 1
+done
     echo "Database is ready!"
   else
     echo "Warning: pg_isready not found. Skipping database readiness check."

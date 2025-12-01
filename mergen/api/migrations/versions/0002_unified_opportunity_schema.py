@@ -43,6 +43,14 @@ def upgrade() -> None:
         if 'office' not in existing_columns:
             op.add_column('opportunities', sa.Column('office', sa.Text(), nullable=True))
         
+        # Add organization_type if missing
+        if 'organization_type' not in existing_columns:
+            op.add_column('opportunities', sa.Column('organization_type', sa.String(length=100), nullable=True))
+        
+        # Add point_of_contact if missing
+        if 'point_of_contact' not in existing_columns:
+            op.add_column('opportunities', sa.Column('point_of_contact', sa.Text(), nullable=True))
+        
         # Ensure raw_data column exists (might be named raw_json in old schema)
         if 'raw_data' not in existing_columns:
             if 'raw_json' in existing_columns:

@@ -70,6 +70,11 @@ class Opportunity(Base):
         back_populates="opportunity",
         cascade="all, delete-orphan",
     )
+    hotels = relationship(
+        "Hotel",
+        back_populates="opportunity",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def raw_json(self):
@@ -336,7 +341,7 @@ class EmailLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     opportunity_id = Column(Integer, ForeignKey("opportunities.id", ondelete="SET NULL"), nullable=True, index=True)
-    hotel_id = Column(Integer, nullable=True)
+    hotel_id = Column(Integer, ForeignKey("hotels.id", ondelete="SET NULL"), nullable=True)
     direction = Column(String(20), nullable=False)
     subject = Column(String(512), nullable=True)
     from_address = Column(String(255), nullable=True)
@@ -350,8 +355,37 @@ class EmailLog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     opportunity = relationship("Opportunity", foreign_keys=[opportunity_id])
+    hotel = relationship("Hotel", back_populates="email_logs")
     agent_run = relationship("AgentRun", foreign_keys=[related_agent_run_id])
     llm_call = relationship("LLMCall", foreign_keys=[related_llm_call_id])
+
+
+class Hotel(Base):
+    """Target entity (Hotel) for an opportunity outreach."""
+
+    __tablename__ = "hotels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    opportunity_id = Column(Integer, ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    name = Column(String(255), nullable=False)
+    manager_name = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=True)
+    phone = Column(String(50), nullable=True)
+    address = Column(Text, nullable=True)
+
+    status = Column(String(50), default="queued", index=True)  # queued, sent, replied, negotiating, rejected, booked
+    rating = Column(Float, nullable=True)
+    price_quote = Column(String(100), nullable=True)
+
+    unread_count = Column(Integer, default=0)
+    last_contact_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+    opportunity = relationship("Opportunity", back_populates="hotels")
+    email_logs = relationship("EmailLog", back_populates="hotel", cascade="all, delete-orphan")
 
 
 class DecisionCache(Base):

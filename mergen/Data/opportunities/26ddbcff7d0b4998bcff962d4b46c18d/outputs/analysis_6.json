@@ -1,0 +1,25 @@
+{
+  "opportunity": {
+    "id": 277,
+    "notice_id": "26ddbcff7d0b4998bcff962d4b46c18d",
+    "title": "179 CW Lodging",
+    "agency": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO OH.USPFO OH PROCUREMENT.W7NU USPFO ACTIVITY OHANG 179",
+    "naics_code": "721110"
+  },
+  "analysis_type": "sow_draft",
+  "pipeline_version": "v1",
+  "options": {},
+  "attachment_count": 0,
+  "attachments": [],
+  "analyzed_documents": [],
+  "document_analysis": {
+    "total_text_length": 0,
+    "total_word_count": 0,
+    "total_tables": 0,
+    "documents_analyzed": 0,
+    "combined_text_preview": ""
+  },
+  "sow_analysis": null,
+  "generated_at": "2025-11-27T12:27:26.650179",
+  "notes": "No documents analyzed. Text extracted: 0 chars. Please ensure attachments are downloaded and files exist on disk."
+}

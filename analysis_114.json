@@ -1,0 +1,54 @@
+﻿{
+    "opportunity":  {
+                        "id":  3,
+                        "notice_id":  "97c450b7d3554a738d0d4de07ffa0e0a",
+                        "title":  "2026 FIFA World Cup Lodging - Hotel Room Block",
+                        "agency":  "HOMELAND SECURITY, DEPARTMENT OF.OFFICE OF PROCUREMENT OPERATIONS.DEPARTMENTAL OPERATIONS ACQUISITION DIVISION II",
+                        "naics_code":  "721110"
+                    },
+    "analysis_type":  "sow_draft",
+    "pipeline_version":  "v1",
+    "options":  {
+
+                },
+    "attachment_count":  3,
+    "attachments":  [
+                        {
+                            "id":  1,
+                            "name":  "download",
+                            "downloaded":  true,
+                            "local_path":  "data/opportunities/97c450b7d3554a738d0d4de07ffa0e0a/attachments/download",
+                            "source_url":  "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ab5534202d964166bd0483de0ddc2729/download",
+                            "size_bytes":  191559
+                        },
+                        {
+                            "id":  2,
+                            "name":  "download",
+                            "downloaded":  true,
+                            "local_path":  "data/opportunities/97c450b7d3554a738d0d4de07ffa0e0a/attachments/download",
+                            "source_url":  "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/da0e94999c8f44d6aaa25dd3952d8941/download",
+                            "size_bytes":  191559
+                        },
+                        {
+                            "id":  3,
+                            "name":  "download",
+                            "downloaded":  true,
+                            "local_path":  "data/opportunities/97c450b7d3554a738d0d4de07ffa0e0a/attachments/download",
+                            "source_url":  "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e3636a0dc8764576b410d5cf720c5b5b/download",
+                            "size_bytes":  191559
+                        }
+                    ],
+    "analyzed_documents":  [
+
+                           ],
+    "document_analysis":  {
+                              "total_text_length":  0,
+                              "total_word_count":  0,
+                              "total_tables":  0,
+                              "documents_analyzed":  0,
+                              "combined_text_preview":  ""
+                          },
+    "sow_analysis":  null,
+    "generated_at":  "2025-11-21T14:29:35.083910",
+    "notes":  "No documents analyzed. Placeholder output."
+}
