@@ -55,7 +55,7 @@ except ImportError:
 try:
     from sqlalchemy import create_engine, text
     from sqlalchemy.orm import sessionmaker
-    from mergenlite_models import Opportunity, Base
+    from mergenlite_models import Opportunity, Base, Hotel, EmailLog
     DB_AVAILABLE = True
 except ImportError:
     DB_AVAILABLE = False
@@ -835,210 +835,259 @@ def get_dashboard_kpis():
             'avg_time': 'N/A'
         }
 
+@st.cache_resource(ttl=3600)
+def check_api_connection_cached():
+    """API bağlantısını kontrol eder ve sonucu önbelleğe alır (1 saat)"""
+    sam = SAMIntegration()
+    return sam.test_connection()
+
+@st.cache_resource(ttl=60)
+def check_db_connection_cached():
+    """DB bağlantısını kontrol eder ve sonucu önbelleğe alır (1 dakika)"""
+    if not DB_AVAILABLE:
+        return False, "Veritabanı modülü yüklü değil"
+    
+    try:
+        db_check = get_db_session()
+        if db_check:
+            from sqlalchemy import text
+            db_check.execute(text("SELECT 1"))
+            db_check.close()
+            return True, "Bağlantı başarılı"
+        return False, "Session oluşturulamadı"
+    except Exception as e:
+        return False, str(e)
+
+@st.cache_resource(ttl=3600)
+def check_api_connection_cached():
+    """API bağlantısını kontrol eder ve sonucu önbelleğe alır (1 saat)"""
+    sam = SAMIntegration()
+    return sam.test_connection()
+
+@st.cache_resource(ttl=60)
+def check_db_connection_cached():
+    """DB bağlantısını kontrol eder ve sonucu önbelleğe alır (1 dakika)"""
+    if not DB_AVAILABLE:
+        return False, "Veritabanı modülü yüklü değil"
+    
+    try:
+        db_check = get_db_session()
+        if db_check:
+            from sqlalchemy import text
+            db_check.execute(text("SELECT 1"))
+            db_check.close()
+            return True, "Bağlantı başarılı"
+        return False, "Session oluşturulamadı"
+    except Exception as e:
+        return False, str(e)
+
 def render_dashboard():
     """Modern Dashboard - KPI'lar ve hızlı aksiyonlar"""
-    st.markdown('<h1 class="main-header" style="text-align: left;">🏠 MergenLite Dashboard</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">🏠 MergenLite Dashboard</h1>', unsafe_allow_html=True)
+    
+    # API Bağlantı Testi (Cached)
+    api_status_html = ""
+    try:
+        connection_result = check_api_connection_cached()
+        
+        if connection_result["success"]:
+            api_status_html = """
+            <div class="alert alert-success" style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 20px;">✅</span>
+                <div>
+                    <strong>SAM.gov Bağlantısı Aktif</strong>
+                    <div style="font-size: 12px; opacity: 0.8;">API Key geçerli ve servis yanıt veriyor.</div>
+                </div>
+            </div>
+            """
+        else:
+            api_status_html = f"""
+            <div class="alert alert-danger" style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 20px;">❌</span>
+                <div>
+                    <strong>Bağlantı Hatası (403):</strong> {connection_result.get('error')}
+                </div>
+            </div>
+            """
+    except Exception as e:
+        api_status_html = f"""
+        <div class="alert alert-danger" style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">⚠️</span>
+            <div>
+                <strong>API Kontrol Hatası:</strong> {str(e)}
+            </div>
+        </div>
+        """
+    
+    st.markdown(api_status_html, unsafe_allow_html=True)
+    
+    # DB Bağlantı Testi (Cached)
+    db_status_html = ""
+    is_db_connected, db_msg = check_db_connection_cached()
+    
+    if is_db_connected:
+        db_status_html = """
+        <div class="alert alert-success" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+            <span style="font-size: 20px;">🗄️</span>
+            <div>
+                <strong>Veritabanı Bağlantısı Aktif</strong>
+                <div style="font-size: 12px; opacity: 0.8;">PostgreSQL bağlantısı çalışıyor.</div>
+            </div>
+        </div>
+        """
+    else:
+        db_status_html = f"""
+        <div class="alert alert-danger" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+            <span style="font-size: 20px;">❌</span>
+            <div>
+                <strong>Veritabanı Hatası:</strong> {db_msg}
+            </div>
+        </div>
+        """
+    
+    st.markdown(db_status_html, unsafe_allow_html=True)
     
     # KPI Data - Database'den çek
     kpis = get_dashboard_kpis()
     total_cnt = kpis['total_cnt']
-    saved_cnt = kpis['today_new']  # Bugün eklenenler
+    saved_cnt = kpis['today_new']
     analyzed_count = kpis['analyzed_count']
     avg_time = kpis['avg_time']
     
-    last_sync = st.session_state.get('last_sync_at', '-')
-    try:
-        sam = SAMIntegration()
-        api_key_ok = bool(sam.api_key)
-    except Exception:
-        api_key_ok = False
-    
-    # Modern KPI Cards (theme.css kullanarak) - düzeltilmiş hizalama
+    # Modern KPI Cards
     st.markdown("### 📊 Sistem Durumu")
     c1, c2, c3, c4 = st.columns(4)
     
-    with c1:
-        st.markdown(f"""
-        <div class="kpi-card kpi-blue" style="position: relative; z-index: 1;">
-          <div style="display: flex; align-items: start; justify-content: space-between; height: 100%;">
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-              <div style="font-size:12px;opacity:.8; margin-bottom: 8px;">Toplam Fırsat Sayısı</div>
-              <div style="font-size:32px;font-weight:700; color: white; line-height: 1.2;">{total_cnt:,}</div>
-            </div>
-            <div style="font-size: 24px; opacity: 0.8; flex-shrink: 0; margin-left: 8px;">📊</div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"""
-        <div class="kpi-card kpi-emerald" style="position: relative; z-index: 1;">
-          <div style="display: flex; align-items: start; justify-content: space-between; height: 100%;">
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-              <div style="font-size:12px;opacity:.8; margin-bottom: 8px;">Bugün Yeni Eklenenler</div>
-              <div style="font-size:32px;font-weight:700; color: white; line-height: 1.2;">{saved_cnt:,}</div>
-            </div>
-            <div style="font-size: 24px; opacity: 0.8; flex-shrink: 0; margin-left: 8px;">📈</div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"""
-        <div class="kpi-card kpi-purple" style="position: relative; z-index: 1;">
-          <div style="display: flex; align-items: start; justify-content: space-between; height: 100%;">
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-              <div style="font-size:12px;opacity:.8; margin-bottom: 8px;">Tamamlanan Analiz</div>
-              <div style="font-size:32px;font-weight:700; color: white; line-height: 1.2;">{analyzed_count:,}</div>
-            </div>
-            <div style="font-size: 24px; opacity: 0.8; flex-shrink: 0; margin-left: 8px;">✅</div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with c4:
-        st.markdown(f"""
-        <div class="kpi-card kpi-orange" style="position: relative; z-index: 1;">
-          <div style="display: flex; align-items: start; justify-content: space-between; height: 100%;">
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-              <div style="font-size:12px;opacity:.8; margin-bottom: 8px;">Ortalama Analiz Süresi</div>
-              <div style="font-size:32px;font-weight:700; color: white; line-height: 1.2;">{avg_time}</div>
-            </div>
-            <div style="font-size: 24px; opacity: 0.8; flex-shrink: 0; margin-left: 8px;">⏱️</div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+    kpi_cards = [
+        ("Toplam Fırsat", total_cnt, "📊", "kpi-blue"),
+        ("Bugün Eklenen", saved_cnt, "📈", "kpi-emerald"),
+        ("Tamamlanan Analiz", analyzed_count, "✅", "kpi-purple"),
+        ("Ort. Analiz Süresi", avg_time, "⏱️", "kpi-orange")
+    ]
     
-    st.markdown("---")
-    
-    # AI Ajan Durumu ve Son Aktiviteler
-    col_left, col_right = st.columns([1, 2])
-    
-    with col_left:
-        st.markdown("### 🤖 AI Ajanlar")
-        agents = [
-            {"name": "Document Processor", "icon": "📄"},
-            {"name": "Requirements Extractor", "icon": "🔍"},
-            {"name": "Compliance Analyst", "icon": "🛡️"},
-            {"name": "Proposal Writer", "icon": "✍️"}
-        ]
-        for agent in agents:
+    for col, (label, value, icon, color_class) in zip([c1, c2, c3, c4], kpi_cards):
+        with col:
             st.markdown(f"""
-            <div class="modern-card" style="margin-bottom: 10px; padding: 14px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 18px;">{agent['icon']}</span>
-                    <span style="color: var(--text-300); font-size: 14px; font-weight: 500;">{agent['name']}</span>
+            <div class="kpi-card {color_class}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">{label}</div>
+                        <div style="font-size: 28px; font-weight: 800; line-height: 1.1;">{value}</div>
+                    </div>
+                    <div style="font-size: 24px; opacity: 0.8;">{icon}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
     
+    st.markdown("---")
+    
+    # Alt Bölüm: Ajanlar ve Aktiviteler
+    col_left, col_right = st.columns([1, 2])
+    
+    with col_left:
+        st.markdown("### 🤖 Aktif Ajanlar")
+        agents = [
+            {"name": "Mergen Core", "role": "Orchestrator", "status": "active", "icon": "🧠"},
+            {"name": "Data Miner", "role": "SAM.gov Integration", "status": "active", "icon": "⛏️"},
+            {"name": "Analyst", "role": "Opportunity Evaluation", "status": "idle", "icon": "📊"},
+            {"name": "Reporter", "role": "Output Generation", "status": "idle", "icon": "📝"}
+        ]
+        
+        for agent in agents:
+            status_color = "#10b981" if agent["status"] == "active" else "#64748b"
+            st.markdown(f"""
+            <div class="modern-card" style="margin-bottom: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 20px;">{agent['icon']}</div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; font-size: 14px; color: var(--text);">{agent['name']}</div>
+                    <div style="font-size: 11px; color: var(--text-400);">{agent['role']}</div>
+                </div>
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: {status_color}; box-shadow: 0 0 8px {status_color}40;"></div>
+            </div>
+            """, unsafe_allow_html=True)
+
     with col_right:
         st.markdown("### 📋 Son Aktiviteler")
-        # Gerçek database'den son aktiviteleri yükle
-        recent_opportunities = load_opportunities_from_db(limit=5)
+        recent_opportunities = load_opportunities_from_db(limit=4)
+        
         if recent_opportunities:
             for opp in recent_opportunities:
-                # Risk seviyesi hesapla
-                days_left = 0
-                if opp.get('response_deadline'):
-                    try:
-                        if isinstance(opp['response_deadline'], str):
-                            deadline_date = datetime.strptime(opp['response_deadline'][:10], '%Y-%m-%d')
-                        else:
-                            deadline_date = opp['response_deadline']
-                        days_left = (deadline_date - datetime.now()).days
-                    except:
-                        pass
-                
-                if days_left <= 5:
-                    risk = "high"
-                elif days_left <= 15:
-                    risk = "medium"
-                else:
-                    risk = "low"
-                
-                risk_class = {
-                    "low": "badge-risk-low",
-                    "medium": "badge-risk-medium",
-                    "high": "badge-risk-high"
-                }[risk]
-                risk_label = {
-                    "low": "Düşük Risk",
-                    "medium": "Orta Risk",
-                    "high": "Yüksek Risk"
-                }[risk]
-                
-                # Opportunity ID gösterimi: opportunityId veya noticeId'den hangisi varsa
-                opp_id = opp.get('opportunityId') or opp.get('noticeId') or opp.get('opportunity_id', 'N/A')
+                # Risk ve gün hesaplamaları (basitleştirilmiş)
                 title = opp.get('title', 'Başlık Yok')
-                title_short = title[:60] + '...' if len(title) > 60 else title
+                if len(title) > 65: title = title[:65] + "..."
                 
-                # Gün sayısı hesapla ve göster (görsellerdeki gibi)
-                days_text = f"{days_left} gün kaldı" if days_left > 0 else "Geçmiş"
-                days_bg = {
-                    "low": "rgba(16, 185, 129, 0.2)",
-                    "medium": "rgba(234, 179, 8, 0.2)",
-                    "high": "rgba(239, 68, 68, 0.2)"
-                }[risk]
-                days_color = {
-                    "low": "#34d399",
-                    "medium": "#fbbf24",
-                    "high": "#f87171"
-                }[risk]
+                opp_id = opp.get('opportunityId') or opp.get('noticeId') or 'N/A'
                 
                 st.markdown(f"""
-                <div class="modern-card" style="margin-bottom: 10px; padding: 14px;">
-                    <div style="display: flex; align-items: start; justify-content: space-between; margin-bottom: 8px; gap: 12px; flex-wrap: wrap;">
-                        <p style="color: var(--blue-400); font-size: 13px; margin: 0; flex: 1; font-weight: 500;">{opp_id}</p>
-                        <span style="display: inline-flex; align-items: center; padding: 4px 10px; background: {days_bg}; color: {days_color}; border-radius: 8px; font-size: 11px; font-weight: 600; margin-right: 8px;">{days_text}</span>
-                        <span class="badge {risk_class}" style="flex-shrink: 0; font-size: 11px;">{risk_label}</span>
+                <div class="modern-card" style="margin-bottom: 10px; padding: 12px 16px; transition: transform 0.2s;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-family: monospace; font-size: 11px; color: var(--blue-400); background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px;">{opp_id}</span>
+                        <span style="font-size: 11px; color: var(--text-400);">{str(opp.get('created_at', ''))[:10]}</span>
                     </div>
-                    <p style="color: var(--text-300); font-size: 14px; margin: 0; line-height: 1.5;">{title_short}</p>
+                    <div style="font-size: 14px; font-weight: 500; color: var(--text-200);">{title}</div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("Henüz aktivite yok.")
-    
+            st.info("Henüz görüntülenecek aktivite yok. Yeni fırsat araması yapın.")
+
+    # Hızlı Aksiyonlar (Fab Button Inspired)
     st.markdown("---")
-    
-    # Hızlı Başlangıç
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔄 Yeni İlanları Senkronize Et", use_container_width=True, key="dashboard_sync_btn"):
-            sync_opportunities_from_sam("721110")
-            st.rerun()
-    with col2:
-        if st.button("🔍 Fırsat Ara", use_container_width=True, key="dashboard_search_btn"):
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🚀 Hızlı Analiz Başlat", use_container_width=True, type="primary"):
             st.session_state.current_page = 'OPPORTUNITY_CENTER'
+            st.rerun()
+    with c2:
+        if st.button("🔄 Verileri Yenile", use_container_width=True):
             st.rerun()
 
 def render_opportunity_center():
     """Opportunity Center - İlan Merkezi (Figma tasarımına uygun)"""
     st.markdown('<h1 class="main-header" style="text-align: left;">📋 İlan Merkezi</h1>', unsafe_allow_html=True)
+
+    # API Bağlantı Durumu (En üstte göster)
+    try:
+        sam = SAMIntegration()
+        connection_result = sam.test_connection()
+        if not connection_result["success"]:
+             st.markdown(f"""
+            <div class="alert alert-danger" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <span style="font-size: 20px;">❌</span>
+                <div>
+                    <strong>API Bağlantı Hatası:</strong> {connection_result.get('error')}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    except:
+        pass
     
     # Arama ve Filtreleme Bölümü
     st.markdown("""
-    <div class="modern-card" style="margin-bottom: 16px; padding: 24px;">
+    <div class="modern-card" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid var(--border-700);">
+        <div style="font-size: 14px; font-weight: 600; color: var(--text-300); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <span>🔍</span> Fırsat Arama Kriterleri
+        </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
+    col1, col2, col3, col4, col5 = st.columns([1.2, 0.8, 1.5, 1, 1])
     
     with col1:
-        notice_id = st.text_input("Notice ID", placeholder="SAM-721110-...", key="search_notice_id", label_visibility="visible")
+        notice_id = st.text_input("Notice ID", placeholder="SAM-...", key="search_notice_id")
     
     with col2:
-        naics_code = st.text_input("NAICS Kodu", value="721110", key="search_naics", label_visibility="visible")
+        naics_code = st.text_input("NAICS", value="721110", key="search_naics")
     
     with col3:
-        keyword = st.text_input("Anahtar Kelime", placeholder="Örn: hotel, lodging...", key="search_keyword", label_visibility="visible")
+        keyword = st.text_input("Anahtar Kelime", placeholder="Hotel, lodging...", key="search_keyword")
     
     with col4:
         # Tarih aralığı seçimi
         days_back = st.selectbox(
             "Tarih Aralığı",
             options=[7, 14, 30, 60, 90, 180, 365],
-            format_func=lambda x: f"Son {x} gün" if x < 365 else "Son 1 yıl",
-            index=3,  # Varsayılan: 60 gün (30 gün çok dar olabilir)
-            key="search_days_back",
-            label_visibility="visible",
-            help="Daha fazla sonuç için tarih aralığını genişletin"
+            format_func=lambda x: f"Son {x} gün",
+            index=3,  # Varsayılan: 60 gün
+            key="search_days_back"
         )
     
     with col5:
@@ -1335,109 +1384,58 @@ def render_opportunity_center():
     st.markdown(f"### 📋 Toplam {len(opportunities)} Fırsat Bulundu")
     
     for idx, opp in enumerate(opportunities):
-        # Risk badge
-        risk_html = ""
-        if opp['analyzed']:
-            risk_class = {
-                "low": "badge-risk-low",
-                "medium": "badge-risk-medium",
-                "high": "badge-risk-high"
-            }[opp['risk']]
-            risk_label = {
-                "low": "Düşük Risk",
-                "medium": "Orta Risk",
-                "high": "Yüksek Risk"
-            }[opp['risk']]
-            risk_html = f'<span class="badge {risk_class}" style="margin-top: 8px; display: inline-block;">{risk_label}</span>'
+        # Risk seviyesi ve renkler
+        risk_level = opp.get('risk', 'low')
+        if not opp.get('analyzed'): risk_level = 'unknown'
         
-        # Kart ve butonlar aynı column içinde
-        with st.container():
-            # SAM.gov view link
-            sam_link_html = ""
-            sam_gov_link = opp.get('samGovLink') or opp.get('sam_gov_link')
-            if sam_gov_link:
-                sam_link_html = f'<a href="{sam_gov_link}" target="_blank" style="color: var(--blue-400); text-decoration: none; font-size: 12px; margin-left: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">🔗 SAM.gov\'da Görüntüle</a>'
-            
-            # "Gün kaldı" label - Modern stil (2. resimdeki gibi: koyu teal arka plan, parlak yeşil metin)
-            days_left = opp['daysLeft']
-            if days_left <= 0:
-                days_left_text = "0 gün (Geçmiş)"
-                days_left_bg = "#7F1D1D"  # Koyu kırmızı
-                days_left_text_color = "#FCA5A5"  # Açık kırmızı
-            elif days_left <= 5:
-                days_left_text = f"{days_left} gün"
-                days_left_bg = "#7F1D1D"  # Koyu kırmızı
-                days_left_text_color = "#FCA5A5"  # Açık kırmızı
-            elif days_left <= 10:
-                days_left_text = f"{days_left} gün"
-                days_left_bg = "#78350F"  # Koyu turuncu
-                days_left_text_color = "#FCD34D"  # Açık sarı
-            else:
-                days_left_text = f"{days_left} gün"
-                days_left_bg = "#1A6A5B"  # Koyu teal (2. resimdeki gibi)
-                days_left_text_color = "#6EE7B7"  # Parlak yeşil (2. resimdeki gibi)
-            
-            days_left_label = f'<span style="display: inline-flex; align-items: center; padding: 4px 12px; background: {days_left_bg}; color: {days_left_text_color}; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 8px;">{days_left_text} kaldı</span>'
-            
-        # Fırsat Açıklaması
-        description = opp.get('description') or opp.get('descriptionText') or opp.get('summary') or opp.get('descriptionTextFull') or ''
-        description_html = ""
-        if description:
-            import re
-            # HTML etiketlerini temizle
-            clean_description = re.sub(r'<[^>]+>', '', str(description))
-            # Çok uzun ise kısalt
-            if len(clean_description) > 2000:
-                clean_description = clean_description[:2000] + "..."
-            description_html = f"""
-            <div style="background: rgba(17,24,39,.5); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 12px;">
-                <h5 style="color: var(--text); font-size: 14px; font-weight: 600; margin: 0 0 8px 0;">📝 Fırsat Açıklaması</h5>
-                <p style="color: var(--text-300); font-size: 13px; line-height: 1.6; margin: 0; white-space: pre-wrap;">{clean_description}</p>
-            </div>
-            """
+        # Gün sayısı badge
+        days_left = opp['daysLeft']
+        if days_left <= 0:
+            days_html = '<span class="badge badge-danger">Süresi Doldu</span>'
+        elif days_left <= 5:
+            days_html = f'<span class="badge badge-danger">{days_left} gün kaldı</span>'
+        elif days_left <= 15:
+            days_html = f'<span class="badge badge-warning">{days_left} gün kaldı</span>'
+        else:
+            days_html = f'<span class="badge badge-success">{days_left} gün kaldı</span>'
+
+        # SAM Link
+        sam_url = opp.get('samGovLink')
+        sam_link_html = f'<a href="{sam_url}" target="_blank" style="color:var(--blue-400);text-decoration:none;font-weight:600;">🔗 SAM.gov</a>' if sam_url else ""
         
+        # Ana Kart
         # Opportunity ID ve butonlar için - benzersiz key oluştur
         opp_id = opp.get('opportunityId') or opp.get('noticeId') or 'unknown'
         opportunity_code = opp_id if len(str(opp_id)) == 32 else (opp.get('noticeId') or opp.get('solicitationNumber') or opp_id)
         # Döngü indeksini ekleyerek benzersiz key oluştur
         unique_key_suffix = f"{opp_id}_{idx}"
-        
+
         st.markdown(f"""
-        <div class="op-card" style="margin-bottom: 16px; position: relative; z-index: 1; padding-bottom: 0;">
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px; flex-wrap: wrap;">
-                    <span style="font-size: 20px; flex-shrink: 0;">📄</span>
-                    <span style="color: var(--blue-400); font-size: 14px; font-weight: 500; flex-shrink: 0;">{opp.get('opportunityId') or opp.get('noticeId') or 'N/A'}</span>
-                    <span style="flex-shrink: 0;">{sam_link_html}</span>
-                    <span style="flex-shrink: 0;">{days_left_label}</span>
+        <div class="op-card" style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-300);">{opp.get('opportunityId') or opp.get('noticeId')}</span>
+                    {days_html}
                 </div>
-                <h4 style="color: var(--text); font-size: 18px; font-weight: 600; margin: 0 0 8px 0; line-height: 1.4;">{opp['title']}</h4>
-                <div style="display: flex; align-items: center; gap: 24px; color: var(--text-400); font-size: 14px; margin-bottom: 8px; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                        <span>Yayın: {opp.get('publishedDate', opp.get('postedDate', 'N/A'))}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                        <span>Yanıt: {opp.get('responseDeadline', opp.get('responseDeadLine', 'N/A'))}</span>
-                    </div>
-                </div>
-                {f'<div style="margin-top: 4px;">{risk_html}</div>' if risk_html else ''}
+                {sam_link_html}
+            </div>
+            
+            <h3 style="color:var(--text);font-size:18px;margin-bottom:8px;line-height:1.4;">{opp.get('title')}</h3>
+            
+            <div style="display:flex;gap:20px;font-size:13px;color:var(--text-400);margin-bottom:12px;">
+                <span>📅 Yayın: {opp.get('publishedDate')}</span>
+                <span>⏱️ Bitiş: {opp.get('responseDeadline', 'N/A')}</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Açıklama toggle (görsellerdeki gibi) - benzersiz key ile
-        if description_html:
-            desc_key = f"show_desc_{unique_key_suffix}"
-            if desc_key not in st.session_state:
-                st.session_state[desc_key] = False
-            
-            if st.button("▶ Açıklamayı Göster" if not st.session_state[desc_key] else "▼ Açıklamayı Gizle", 
-                        key=f"toggle_desc_{unique_key_suffix}", use_container_width=False):
-                st.session_state[desc_key] = not st.session_state[desc_key]
-                st.rerun()
-            
-            if st.session_state[desc_key]:
-                st.markdown(description_html, unsafe_allow_html=True)
+        # Action Buttons & Expanders (Container içinde değil ayrı, görsel olarak bütünleşik)
+        
+        # Açıklama
+        description = opp.get('description') or opp.get('summary') or ''
+        if description:
+            with st.expander("📄 Fırsat Detayları ve Açıklama"):
+                st.markdown(description, unsafe_allow_html=True)
         
         # Butonlar kartın hemen altında (görsel olarak kart içinde görünecek)
         st.markdown("""
@@ -2300,6 +2298,427 @@ def render_results_page():
             with st.expander("📋 Detaylı Teklif Bilgileri"):
                 st.json(proposal_data)
 
+def render_mail_dashboard():
+    """İletişim/Mail Dashboard Ekranı - Premium Dark Design"""
+    st.markdown("""
+    <style>
+        /* Dashboard Container */
+        .mail-dashboard-container {
+            font-family: 'Inter', sans-serif;
+            color: #e2e8f0;
+        }
+        
+        /* Panel Headers */
+        .panel-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Search Box Custom */
+        .custom-search input {
+            background: #0f172a !important;
+            border: 1px solid #1e293b !important;
+            color: #e2e8f0 !important;
+            border-radius: 8px !important;
+            padding: 10px 14px !important;
+        }
+        
+        /* Operation Card */
+        .op-list-item {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .op-list-item:hover {
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+        }
+        .op-list-item.active {
+            background: linear-gradient(145deg, rgba(59, 130, 246, 0.1), rgba(15, 23, 42, 0.6));
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Progress Bar */
+        .custom-progress {
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .custom-progress-bar {
+            height: 100%;
+            background: #10b981;
+            border-radius: 2px;
+        }
+        
+        /* Hotel List Item */
+        .hotel-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #1e293b;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .hotel-list-item:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .hotel-list-item.active {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+        }
+        
+        /* Status Badge */
+        .status-pill {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-sent { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .status-negotiating { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .status-replied { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .status-queued { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+        
+        /* Chat Area */
+        .chat-container {
+            background: #0b1120;
+            border-radius: 16px;
+            border: 1px solid #1e293b;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #1e293b;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        /* Chat Bubbles */
+        .msg-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+        }
+        .msg-out {
+            align_self: flex-end;
+            background: #3b82f6;
+            color: white;
+            border-bottom-right-radius: 4px;
+            margin-left: auto;
+        }
+        .msg-in {
+            align_self: flex-start;
+            background: #1e293b;
+            color: #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+        .msg-time {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-top: 4px;
+            text-align: right;
+        }
+        .msg-ai {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+        }
+        
+        /* Input Area */
+        .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid #1e293b;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 0 0 16px 16px;
+        }
+        
+        /* AI Suggestion Chip */
+        .ai-chip {
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            color: #a78bfa;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ai-chip:hover {
+            background: rgba(124, 58, 237, 0.2);
+            border-color: #7c3aed;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<h1 class="main-header">İletişim Merkezi</h1>', unsafe_allow_html=True)
+    st.markdown('<div style="color: #94a3b8; margin-top: -16px; margin-bottom: 24px; font-size: 14px;">Fırsat bazlı otel iletişim yönetimi</div>', unsafe_allow_html=True)
+    
+    col_ops, col_hotels, col_chat = st.columns([22, 28, 50], gap="medium")
+    
+    db = get_db_session()
+    if not db:
+        st.error("Veritabanı bağlantısı yok.")
+        return
+
+    # Initialize Session States
+    if 'mail_selected_opp_id' not in st.session_state:
+        st.session_state.mail_selected_opp_id = None
+    if 'mail_selected_hotel_id' not in st.session_state:
+        st.session_state.mail_selected_hotel_id = None
+
+    try:
+        # --- LEFT PANEL: Active Operations ---
+        with col_ops:
+            st.markdown('<div class="panel-header">📝 Aktif Operasyonlar</div>', unsafe_allow_html=True)
+            
+            # Custom Search Input
+            search_val = st.text_input("Fırsat Ara...", key="mail_opp_search", label_visibility="collapsed", placeholder="🔍 Fırsat Ara...")
+            
+            ops_query = db.query(Opportunity).filter(Opportunity.status != 'archived')
+            if search_val:
+                ops_query = ops_query.filter(Opportunity.title.ilike(f"%{search_val}%"))
+            
+            opportunities = ops_query.order_by(Opportunity.updated_at.desc()).limit(15).all()
+            
+            st.markdown('<div style="height: 650px; overflow-y: auto; padding-right: 4px;">', unsafe_allow_html=True)
+            
+            for opp in opportunities:
+                is_active = (st.session_state.mail_selected_opp_id == opp.id)
+                active_class = "active" if is_active else ""
+                
+                # Metrics (Mock logic for demo mostly, but connected to DB)
+                hotel_count = db.query(Hotel).filter(Hotel.opportunity_id == opp.id).count()
+                sent_count = db.query(Hotel).filter(Hotel.opportunity_id == opp.id, Hotel.status == 'sent').count()
+                progress_pct = int((sent_count / hotel_count * 100)) if hotel_count > 0 else 0
+                
+                # Card HTML
+                st.markdown(f"""
+                <div class="op-list-item {active_class}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 10px; color: #64748b; font-family: monospace;">{opp.opportunity_id[-12:] if opp.opportunity_id else 'N/A'}</span>
+                        <span style="font-size: 10px; background: #334155; padding: 2px 6px; border-radius: 4px; color: #f1f5f9;">{hotel_count} Otel</span>
+                    </div>
+                    <div style="font-size: 13px; font-weight: 600; color: #f8fafc; line-height: 1.4; margin-bottom: 12px;">
+                        {opp.title[:55]}...
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8;">
+                        <span>İletişim Kapsamı</span>
+                        <span>{sent_count}/{hotel_count} Gönderildi</span>
+                    </div>
+                    <div class="custom-progress">
+                        <div class="custom-progress-bar" style="width: {progress_pct}%;"></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Invisible full-overlay button for selection
+                if st.button(f"select_opp_{opp.id}", key=f"btn_opp_{opp.id}", use_container_width=True):
+                    st.session_state.mail_selected_opp_id = opp.id
+                    st.session_state.mail_selected_hotel_id = None
+                    st.rerun()
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # --- MIDDLE PANEL: Target Hotels ---
+        with col_hotels:
+            if st.session_state.mail_selected_opp_id:
+                # Header context
+                sel_opp = db.query(Opportunity).get(st.session_state.mail_selected_opp_id)
+                opp_title = sel_opp.title[:30] + "..." if sel_opp else "Seçili Fırsat"
+                
+                st.markdown(f"""
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div class="panel-header" style="margin-bottom: 0;">🏢 Hedef Oteller</div>
+                    <div style="font-size: 11px; color: #64748b;">{opp_title}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Hotel List
+                hotels = db.query(Hotel).filter(Hotel.opportunity_id == st.session_state.mail_selected_opp_id).all()
+                
+                if not hotels:
+                    st.info("Otel bulunamadı.")
+                
+                st.markdown('<div class="modern-card" style="padding: 0; background: #0f172a; border: 1px solid #1e293b; overflow: hidden; height: 650px; display: flex; flex-direction: column;">', unsafe_allow_html=True)
+                st.markdown('<div style="overflow-y: auto; flex: 1;">', unsafe_allow_html=True)
+                
+                for hotel in hotels:
+                    is_active = (st.session_state.mail_selected_hotel_id == hotel.id)
+                    active_class = "active" if is_active else ""
+                    
+                    status_map = {
+                        'queued': ('Sırada', 'status-queued'),
+                        'sent': ('İletildi', 'status-sent'),
+                        'replied': ('Yanıtladı', 'status-replied'),
+                        'negotiating': ('Pazarlık', 'status-negotiating'),
+                        'rejected': ('Red', 'badge-danger')
+                    }
+                    lbl, cls = status_map.get(hotel.status, ('Sırada', 'status-queued'))
+                    
+                    # Time formatting
+                    time_str = hotel.last_contact_at.strftime("%H:%M") if hotel.last_contact_at else "Now"
+                    if hotel.last_contact_at and (datetime.now() - hotel.last_contact_at).days > 0:
+                         time_str = hotel.last_contact_at.strftime("%d %b")
+
+                    st.markdown(f"""
+                    <div class="hotel-list-item {active_class}">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; font-size: 13px; color: #f1f5f9; margin-bottom: 4px;">{hotel.name}</div>
+                            <div style="font-size: 11px; color: #64748b;">{hotel.price_quote if hotel.price_quote else 'Fiyat Bekleniyor'}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 10px; color: #64748b; margin-bottom: 4px;">{time_str}</div>
+                            <span class="status-pill {cls}">{lbl}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if st.button(f"sel_hotel_{hotel.id}", key=f"btn_h_{hotel.id}", use_container_width=True):
+                        st.session_state.mail_selected_hotel_id = hotel.id
+                        st.rerun()
+                
+                st.markdown('</div></div>', unsafe_allow_html=True)
+            else:
+                st.info("👈 İşlem yapmak için soldan bir fırsat seçin.")
+
+        # --- RIGHT PANEL: Chat Interface ---
+        with col_chat:
+            if st.session_state.mail_selected_hotel_id:
+                hotel = db.query(Hotel).get(st.session_state.mail_selected_hotel_id)
+                
+                # Chat Container Start
+                st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+                
+                # Header
+                st.markdown(f"""
+                <div class="chat-header">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; color: white;">
+                            {hotel.name[:2].upper()}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; color: #f8fafc;">{hotel.name}</div>
+                            <div style="font-size: 11px; color: #94a3b8;">{hotel.manager_name or 'Resepsiyon'} • <span style="color: #fbbf24;">★ {hotel.rating or 4.5}</span></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button style="background: transparent; border: 1px solid #334155; border-radius: 8px; color: #94a3b8; padding: 6px 10px; cursor: pointer;">📞</button>
+                        <button style="background: transparent; border: 1px solid #334155; border-radius: 8px; color: #94a3b8; padding: 6px 10px; cursor: pointer;">📹</button>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Messages Area - We construct one big HTML block for the scrollable area
+                messages = db.query(EmailLog).filter(EmailLog.hotel_id == hotel.id).order_by(EmailLog.created_at.asc()).all()
+                
+                msgs_html = '<div class="chat-messages">'
+                
+                # Welcome placeholder if empty
+                if not messages:
+                    msgs_html += '<div style="text-align: center; color: #64748b; margin-top: 40px; font-size: 13px;">Görüşme henüz başlamadı.</div>'
+                
+                for msg in messages:
+                    is_out = (msg.direction == 'outbound')
+                    cls = "msg-out" if is_out else "msg-in"
+                    align_style = "margin-left: auto;" if is_out else "margin-right: auto;"
+                    
+                    time_s = msg.created_at.strftime('%H:%M') if msg.created_at else ''
+                    
+                    msgs_html += f"""
+                    <div class="msg-bubble {cls}" style="{align_style} width: fit-content; max-width: 75%;">
+                        {msg.raw_body or msg.subject}
+                        <div class="msg-time">{time_s}</div>
+                    </div>
+                    """
+                
+                msgs_html += '</div>' # End chat-messages
+                st.markdown(msgs_html, unsafe_allow_html=True)
+                
+                # Close Chat Container Div (visual wrapper only)
+                st.markdown('</div>', unsafe_allow_html=True) 
+                
+                # Input Area (Outside the visual wrapper because Streamlit forms cannot be nested perfectly in HTML blocks easily without custom components)
+                # But we style it to look attached
+                
+                st.markdown('<div style="margin-top: -65px; position: relative; z-index: 10; padding: 0 16px;">', unsafe_allow_html=True)
+                with st.form(key="chat_form", clear_on_submit=True):
+                    # AI Chips
+                    st.markdown("""
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto;">
+                        <span class="ai-chip">✨ Fiyat Teklifi İste</span>
+                        <span class="ai-chip">📅 Müsaitlik Sor</span>
+                        <span class="ai-chip">📄 SOW Gönder</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    cols = st.columns([10, 1])
+                    with cols[0]:
+                        txt = st.text_input("Mesaj", label_visibility="collapsed", placeholder="Mesajınızı yazın...")
+                    with cols[1]:
+                        sent = st.form_submit_button("➤")
+                    
+                    if sent and txt:
+                        new_log = EmailLog(
+                            hotel_id=hotel.id,
+                            opportunity_id=hotel.opportunity_id,
+                            direction='outbound',
+                            raw_body=txt,
+                            subject="Manual Chat",
+                            created_at=datetime.utcnow()
+                        )
+                        db.add(new_log)
+                        hotel.last_contact_at = datetime.utcnow()
+                        db.commit()
+                        st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            else:
+                 st.markdown("""
+                 <div style="background: #0b1120; border-radius: 16px; border: 1px solid #1e293b; height: 600px; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #475569;">
+                    <div style="font-size: 40px; margin-bottom: 16px; opacity: 0.5;">💬</div>
+                    <div>Görüşme geçmişini görüntülemek için bir otel seçin.</div>
+                 </div>
+                 """, unsafe_allow_html=True)
+
+    except Exception as e:
+        logger.error(f"Mail Dashboard Render Error: {e}", exc_info=True)
+        st.error(f"Görünüm hatası: {e}")
+    finally:
+        db.close()
+
 def render_top_navigation():
     """Üst navigasyon çubuğu - Figma tasarımına uygun"""
     try:
@@ -2323,7 +2742,8 @@ def render_top_navigation():
         {"icon": "🏠", "label": "Dashboard", "value": "DASHBOARD"},
         {"icon": "🔍", "label": "Fırsat Arama", "value": "OPPORTUNITY_CENTER"},
         {"icon": "🤖", "label": "AI Analiz", "value": "GUIDED_ANALYSIS"},
-        {"icon": "📄", "label": "Sonuçlar", "value": "RESULTS"}
+        {"icon": "📄", "label": "Sonuçlar", "value": "RESULTS"},
+        {"icon": "📨", "label": "İletişim Merkezi", "value": "MAIL_DASHBOARD"}
     ]
     
     # Navigation bar - Sola hizalı ve optimize edilmiş
@@ -2383,7 +2803,7 @@ def render_top_navigation():
         """, unsafe_allow_html=True)
     
     # Tab container - Streamlit columns ile
-    cols = st.columns(4)
+    cols = st.columns(5)
     for idx, page in enumerate(pages):
         with cols[idx]:
             is_active = current_page == page['value']
@@ -2462,6 +2882,8 @@ def main():
                         st.rerun()
             elif st.session_state.current_page == 'RESULTS':
                 render_results_page()
+            elif st.session_state.current_page == 'MAIL_DASHBOARD':
+                render_mail_dashboard()
             else:
                 render_dashboard()
         except Exception as page_error:

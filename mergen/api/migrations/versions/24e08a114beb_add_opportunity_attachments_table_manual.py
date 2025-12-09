@@ -44,7 +44,13 @@ def upgrade() -> None:
             sa.Column('cached_data', postgresql.JSON(astext_type=sa.Text()), nullable=True),
             sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
             sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+
         )
+    else:
+        # Check if id column exists in existing table
+        columns = [col['name'] for col in inspector.get_columns('opportunities')]
+        if 'id' not in columns:
+            op.execute("ALTER TABLE opportunities ADD COLUMN id SERIAL UNIQUE")
 
     # Create opportunity_attachments table
     op.create_table(

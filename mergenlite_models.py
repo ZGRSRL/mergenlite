@@ -3,7 +3,7 @@ MergenLite Sadeleştirilmiş Veritabanı Modelleri
 4 temel tablo için SQLAlchemy modelleri
 """
 
-from sqlalchemy import Column, String, Numeric, DateTime, Integer, ForeignKey, Text
+from sqlalchemy import Column, String, Numeric, DateTime, Integer, ForeignKey, Text, Float
 from sqlalchemy.dialects.postgresql import UUID, JSONB, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -20,22 +20,31 @@ class Opportunity(Base):
     """
     __tablename__ = "opportunities"
     
-    opportunity_id = Column(String(50), primary_key=True)  # GSA Opportunity ID (32 hex chars)
-    notice_id = Column(String(100), nullable=True, index=True)  # Notice ID / Solicitation Number
-    solicitation_number = Column(String(100), nullable=True, index=True)  # Solicitation Number (alternatif)
-    title = Column(String(512), nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    opportunity_id = Column(String(255), nullable=False, index=True)  # Artık PK değil
+    notice_id = Column(String(100), nullable=True, index=True)
+    solicitation_number = Column(String(100), nullable=True, index=True)
+    title = Column(Text, nullable=False)
+    description = Column(Text, nullable=True) # Added
+    
     notice_type = Column(String(100))
-    naics_code = Column(String(10))
-    response_deadline = Column(DateTime)
+    naics_code = Column(String(100)) # Increased length
+    response_deadline = Column(DateTime(timezone=True))
     estimated_value = Column(Numeric(15, 2))
-    place_of_performance = Column(String(255))
+    place_of_performance = Column(Text)
+    
+    agency = Column(String(255), nullable=True) # Added
+    office = Column(String(255), nullable=True) # Added
+    
     sam_gov_link = Column(String(512))
-    raw_data = Column(JSONB)  # SAM.gov API'den gelen ham verinin tamamı
+    status = Column(String(50), nullable=False, default="active")  # active, archived, etc.
+    raw_data = Column(JSONB)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships - lazy loading ile (tablo yapısı uyumsuz olabilir)
     documents = relationship("ManualDocument", back_populates="opportunity", cascade="all, delete-orphan", lazy='select')
+    hotels = relationship("Hotel", back_populates="opportunity", cascade="all, delete-orphan")
     # analyses relationship kaldırıldı - ai_analysis_results tablosunda FK yok, manuel join yapılıyor
     
     def __repr__(self):
@@ -102,4 +111,52 @@ class SystemSession(Base):
     
     def __repr__(self):
         return f"<SystemSession(session_id='{self.session_id}', user='{self.user_identifier}', analyses={self.analysis_count})>"
+
+
+class Hotel(Base):
+    """Target entity (Hotel) for an opportunity outreach."""
+    __tablename__ = "hotels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    opportunity_id = Column(Integer, ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    name = Column(String(255), nullable=False)
+    manager_name = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=True)
+    phone = Column(String(50), nullable=True)
+    address = Column(Text, nullable=True)
+
+    status = Column(String(50), default="queued", index=True)  # queued, sent, replied, negotiating, rejected, booked
+    rating = Column(Float, nullable=True)
+    price_quote = Column(String(100), nullable=True)
+
+    unread_count = Column(Integer, default=0)
+    last_contact_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+    opportunity = relationship("Opportunity", back_populates="hotels")
+    email_logs = relationship("EmailLog", back_populates="hotel", cascade="all, delete-orphan")
+
+
+class EmailLog(Base):
+    """Extended email log."""
+    __tablename__ = "email_log"
+
+    id = Column(Integer, primary_key=True, index=True)
+    opportunity_id = Column(Integer, ForeignKey("opportunities.id", ondelete="SET NULL"), nullable=True, index=True)
+    hotel_id = Column(Integer, ForeignKey("hotels.id", ondelete="SET NULL"), nullable=True)
+    direction = Column(String(20), nullable=False)
+    subject = Column(String(512), nullable=True)
+    from_address = Column(String(255), nullable=True)
+    to_address = Column(String(255), nullable=True)
+    message_id = Column(String(255), nullable=True)
+    in_reply_to = Column(String(255), nullable=True)
+    raw_body = Column(Text, nullable=True)
+    parsed_summary = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    opportunity = relationship("Opportunity", foreign_keys=[opportunity_id])
+    hotel = relationship("Hotel", back_populates="email_logs")
 

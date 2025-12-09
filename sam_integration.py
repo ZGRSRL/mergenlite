@@ -226,6 +226,60 @@ class SAMIntegration:
             self.attachment_url_template = SAM_ATTACHMENT_V2
             
         logger.info(f"🔄 Using SAM API {self.api_version}: {self.base_url}")
+
+    def test_connection(self) -> Dict[str, Any]:
+        """
+        API bağlantısını ve API Key geçerliliğini test et.
+        Minimal bir istek göndererek durumu kontrol eder.
+        """
+        if not self.api_key:
+            return {
+                "success": False, 
+                "error": "API Key bulunamadı (.env dosyasını kontrol edin)",
+                "status_code": None
+            }
+            
+        try:
+            # Minimal parametrelerle hızlı bir kontrol
+            # NAICS 721110 için son 2 gün
+            now = datetime.now()
+            params = {
+                'limit': 1,
+                'postedFrom': (now - timedelta(days=2)).strftime("%m/%d/%Y"),
+                'postedTo': now.strftime("%m/%d/%Y"),
+                'ncode': '721110',
+                'active': 'true'
+            }
+            
+            logger.info("🧪 Testing SAM.gov API connection...")
+            response = self.session.get(self.base_url, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                logger.info("✅ SAM.gov API connection successful")
+                return {"success": True, "error": None, "status_code": 200}
+            
+            error_msg = response.text
+            try:
+                err_json = response.json()
+                if "error" in err_json:
+                    error_msg = json.dumps(err_json["error"], indent=2)
+            except:
+                pass
+                
+            logger.warning(f"❌ SAM.gov API connection failed: {response.status_code} - {error_msg[:100]}")
+            return {
+                "success": False, 
+                "error": f"API Hatası ({response.status_code}): {error_msg}",
+                "status_code": response.status_code
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ SAM.gov API connection error: {e}")
+            return {
+                "success": False, 
+                "error": f"Bağlantı Hatası: {str(e)}",
+                "status_code": None
+            }
         
     def switch_to_v2(self):
         """v3'ten v2'ye geçiş yap"""
@@ -1102,7 +1156,6 @@ class SAMIntegration:
                     else:
                         # Notice ID ile deneme
                         endpoints_to_try = [
-                            (SAM_ATTACHMENT_V3, 'v3 attachments'),
                             (SAM_ATTACHMENT_V2, 'v2 attachments')
                         ]
                     
@@ -1374,26 +1427,20 @@ class SAMIntegration:
             
             logger.info(f"📎 {len(attachments)} attachment bulundu (get_opportunity_details'den - noticedesc)")
             
-            # Eğer attachments bulunamadıysa, SAM.gov Attachments API'yi dene
+            # Eğer attachments bulunamadıysa, SAM.gov Attachments API'yi dene (Sadece V2 - En stabil sürüm)
             if not attachments:
-                logger.info(f"🔄 Attachments API'den çekiliyor: {notice_id}")
+                logger.info(f"🔄 Attachments API'den çekiliyor: {notice_id} (V2)")
                 try:
                     import re
                     is_opportunity_id = re.fullmatch(r"[0-9a-fA-F]{32}", notice_id)
                     
+                    # Sadece V2 endpoints kullan - V3 çok fazla hata ve 429 veriyor
                     if is_opportunity_id:
-                        # Opportunity ID ile attachments metadata al
-                        # GET /prod/opportunity/v3/{opportunityId}/attachments/metadata
-                        endpoints_to_try = [
-                            (f"{SAM_OPPORTUNITY_V3}/{notice_id}/attachments/metadata", 'v3 metadata'),
-                            (f"{SAM_OPPORTUNITY_V2}/{notice_id}/attachments/metadata", 'v2 metadata')
-                        ]
+                        # GET /prod/opportunity/v2/{opportunityId}/attachments/metadata
+                        endpoints_to_try = [(f"{SAM_OPPORTUNITY_V2}/{notice_id}/attachments/metadata", 'v2 metadata')]
                     else:
-                        # Notice ID ile attachments al
-                        endpoints_to_try = [
-                            (SAM_ATTACHMENT_V3, 'v3 attachments'),
-                            (SAM_ATTACHMENT_V2, 'v2 attachments')
-                        ]
+                        # GET /prod/opportunities/v2/attachments (Notice ID ile)
+                        endpoints_to_try = [(SAM_ATTACHMENT_V2, 'v2 attachments')]
                     
                     for endpoint_url, version in endpoints_to_try:
                         try:
@@ -1417,22 +1464,22 @@ class SAMIntegration:
                                 )
                                 
                                 if attachments_data:
-                                    logger.info(f"✅ {len(attachments_data)} attachment metadata bulundu (Attachments API {version}'den)")
+                                    logger.info(f"✅ {len(attachments_data)} attachment metadata bulundu (Attachments API {version})")
                                     
                                     for att in attachments_data:
                                         # Metadata'dan URL oluştur veya direkt URL al
                                         resource_id = att.get('resourceId') or att.get('resourceID') or att.get('id')
                                         attachment_id = att.get('attachmentId') or att.get('attachmentID')
                                         
-                                        # URL oluştur: Download Attachment as Original File Type
-                                        if resource_id and is_opportunity_id:
-                                            download_url = f"{SAM_OPPORTUNITY_V3}/{notice_id}/attachments/{resource_id}"
-                                        elif attachment_id and is_opportunity_id:
-                                            download_url = f"{SAM_OPPORTUNITY_V3}/{notice_id}/attachments/{attachment_id}"
-                                        else:
-                                            # Direkt URL varsa kullan
-                                            download_url = att.get('url') or att.get('downloadUrl') or att.get('link') or att.get('href')
+                                        # URL oluştur
+                                        # NOT: V3 URL'leri yerine direkt linkleri tercih et
+                                        download_url = att.get('url') or att.get('downloadUrl') or att.get('link') or att.get('href')
                                         
+                                        # URL yoksa ve resource ID varsa, V2 link oluştur
+                                        if not download_url and (resource_id or attachment_id) and is_opportunity_id:
+                                            res_id = resource_id or attachment_id
+                                            download_url = f"{SAM_OPPORTUNITY_V2}/{notice_id}/attachments/{res_id}"
+
                                         title = (
                                             att.get('title') or 
                                             att.get('name') or 
@@ -1449,7 +1496,7 @@ class SAMIntegration:
                                                 'url': download_url,
                                                 'type': file_type
                                             })
-                                    break  # Başarılı olduysa diğer endpoint'i deneme
+                                    break  # Başarılı olduysa çık
                             elif response.status_code != 404:
                                 logger.debug(f"⚠️ Attachments API {version} hatası: {response.status_code}")
                         except Exception as e:

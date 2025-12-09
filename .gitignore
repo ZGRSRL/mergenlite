@@ -16,51 +16,47 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 venv/
+.venv/
 env/
-ENV/
-.venv
+.env/
 
-# Environment Variables
+# Environment Variables (CRITICAL)
 .env
-.env.local
-.env.production
-docker-compose.override.yml
+.env.*
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Next.js
+.next/
+out/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-
-# Streamlit
-.streamlit/
-
-# Cache
-.cache/
-
-# Logs
-*.log
-logs/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Temporary files
-*.tmp
-*.temp
+# Logs
+*.log
+logs/
+
+# Temporary
 temp/
 tmp/
-
-# Data files (optional - uncomment if needed)
-# *.pdf
-# *.docx
-# *.doc
-
+archive/

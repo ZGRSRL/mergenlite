@@ -77,11 +77,17 @@ def get_secret(key: str, default: str = '') -> str:
     
     return default
 
-def get_db_session():
-    """Database session oluştur"""
-    if not DB_AVAILABLE:
-        return None
+# Global DB Engine instance
+_db_engine = None
+_db_session_factory = None
+
+def _initialize_db_engine():
+    """Initialize the global database engine"""
+    global _db_engine, _db_session_factory
     
+    if _db_engine is not None:
+        return
+
     try:
         db_host = os.getenv('DB_HOST', 'localhost')
         env_mode = os.getenv('ENV', 'dev').lower().strip()
@@ -94,12 +100,39 @@ def get_db_session():
         db_name = os.getenv('DB_NAME', 'mergenlite')
         
         DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-        engine = create_engine(DATABASE_URL)
-        SessionLocal = sessionmaker(bind=engine)
-        return SessionLocal()
+        
+        # Connection pooling settings
+        _db_engine = create_engine(
+            DATABASE_URL,
+            pool_size=10,
+            max_overflow=20,
+            pool_timeout=30,
+            pool_recycle=1800
+        )
+        _db_session_factory = sessionmaker(bind=_db_engine)
+        logger.info("✅ Database engine initialized (Singleton)")
     except Exception as e:
-        logger.error(f"Database connection error: {e}")
+        logger.error(f"❌ Database engine initialization error: {e}")
+        _db_engine = None
+        _db_session_factory = None
+
+def get_db_session():
+    """Database session oluştur (Singleton Engine kullanır)"""
+    if not DB_AVAILABLE:
         return None
+    
+    global _db_session_factory
+    
+    if _db_session_factory is None:
+        _initialize_db_engine()
+    
+    if _db_session_factory:
+        try:
+            return _db_session_factory()
+        except Exception as e:
+            logger.error(f"Session creation error: {e}")
+            return None
+    return None
 
 def load_opportunities_from_db(limit: int = 100) -> List[Dict[str, Any]]:
     """Database'den fırsatları yükle - app.py'deki versiyonla uyumlu"""

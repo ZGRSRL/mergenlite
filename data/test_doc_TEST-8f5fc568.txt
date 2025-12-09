@@ -1,0 +1,5 @@
+This is a Statement of Work for catering services. 
+
+1. Scope: Provide breakfast and lunch.
+2. Quantity: 500 pax.
+3. Requirements: Vegetarian options required.

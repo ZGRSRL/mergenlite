@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 # Imports
 try:
     from sam_integration import SAMIntegration
+    from sow_pdf_generator import generate_gpt_style_sow_pdf
     SAM_INTEGRATION_AVAILABLE = True
 except ImportError:
     SAM_INTEGRATION_AVAILABLE = False
@@ -1216,6 +1217,36 @@ Her bölümü, her paragrafı, her maddeyi dikkatlice oku. Hiçbir gereksinimi a
             except Exception as e:
                 logger.error(f"PDF generation error: {e}", exc_info=True)
                 pdf_path = None
+        
+        # 3.5 Generate SOW PDF (Blue Band Style)
+        sow_pdf_path = self.output_dir / f"sow_hotel_{self.opportunity_id}.pdf"
+        try:
+            # Map analysis results to SOW data
+            # Use data from proposal writer if available, else defaults
+            prop_res = self.analysis_results.get("agents", {}).get("proposal_writer", {}).get("results", {})
+            
+            sow_data = {
+                "solicitation_number": self.opportunity_data.get("solicitationNumber", "N/A"),
+                "agency": self.opportunity_data.get("department", "Federal Agency"),
+                "event_title": self.opportunity_data.get("title", "Event Title"),
+                "meeting_name": self.opportunity_data.get("title", "Meeting"),
+                "background": prop_res.get("executive_summary", "")
+            }
+            
+            sow_success = generate_gpt_style_sow_pdf(
+                output_path=str(sow_pdf_path),
+                opportunity_code=self.opportunity_id,
+                sow_data=sow_data
+            )
+            
+            if sow_success:
+                logger.info(f"SOW PDF report saved: {sow_pdf_path}")
+            else:
+                sow_pdf_path = None
+                
+        except Exception as e:
+            logger.error(f"SOW PDF generation error: {e}", exc_info=True)
+            sow_pdf_path = None
         
         # 4. Save to database (if available)
         if DB_AVAILABLE:

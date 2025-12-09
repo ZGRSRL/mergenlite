@@ -408,12 +408,13 @@ class DocumentProcessor:
             logger.error(f"❌ Doküman indirme hatası {url}: {e}")
             return None
     
-    def process_opportunity_documents(self, opportunity_data: Dict[str, Any]) -> Dict[str, Any]:
+    def mock_process_opportunity_documents(self, opportunity_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Bir fırsat için tüm dokümanları işle - MergenLite çekirdek analiz akışı
+        [MOCK] Bir fırsat için tüm dokümanları işle - TEST AMAÇLIDIR
+        Contains HARDCODED/FAKE data. Do not use in production analysis.
         """
         notice_id = opportunity_data.get('noticeId', 'unknown')
-        logger.info(f"🔄 Doküman işleme başlatıldı: {notice_id}")
+        logger.warning(f"⚠️ USING MOCK DATA for notice: {notice_id} - This is not real analysis!")
         
         # Mock document URLs (gerçek SAM.gov entegrasyonu için sam_lite_client.py kullanılacak)
         mock_documents = [
@@ -428,6 +429,11 @@ class DocumentProcessor:
                 "type": "Amendment"
             }
         ]
+
+    def process_opportunity_documents(self, opportunity_data: Dict[str, Any]) -> Dict[str, Any]:
+        """DEPRECATED: Use mock_process_opportunity_documents instead"""
+        logger.warning("🚨 DEPRECATED FUNCTION CALLED: process_opportunity_documents returns MOCK DATA!")
+        return self.mock_process_opportunity_documents(opportunity_data)
         
         processed_documents = []
         all_text = ""

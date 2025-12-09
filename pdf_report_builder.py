@@ -229,6 +229,76 @@ def build_pdf_report(
             story.append(req_table)
             story.append(Spacer(1, 0.3*inch))
         
+        # DETAILED REQUIREMENTS ANALYSIS (NEW SECTION)
+        # report_json['requirements'] contains the full list from agents
+        all_requirements = report_json.get('requirements', [])
+        
+        if all_requirements:
+            story.append(PageBreak())
+            story.append(Paragraph("Detailed Requirements Analysis", heading_style))
+            story.append(Paragraph("The following requirements were extracted by AI agents from the solicitation documents.", normal_style))
+            story.append(Spacer(1, 0.2*inch))
+            
+            # Group by category
+            grouped_reqs = {}
+            for req in all_requirements:
+                cat = req.get('category', 'General')
+                # Clean up category name (e.g. "lodging_requirements" -> "Lodging")
+                if '_' in cat:
+                    cat = cat.replace('_requirements', '').replace('_', ' ').title()
+                else:
+                    cat = cat.title()
+                
+                if cat not in grouped_reqs:
+                    grouped_reqs[cat] = []
+                grouped_reqs[cat].append(req)
+            
+            # Create a table for each category
+            for category, reqs in grouped_reqs.items():
+                story.append(Paragraph(f"{category} Requirements", subheading_style))
+                
+                # Table Header
+                req_table_data = [
+                    ["Requirement Details", "Priority", "Source"]
+                ]
+                
+                # Table Rows
+                for req in reqs:
+                    text = req.get('text', 'N/A')
+                    priority = req.get('priority', 'Medium').capitalize()
+                    source = req.get('source', 'Unknown')
+                    
+                    # Ensure properly encoded text
+                    if isinstance(text, str):
+                         text = text.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+                    
+                    # Wrap long text
+                    text_para = Paragraph(text, normal_style)
+                    
+                    req_table_data.append([text_para, priority, source])
+                
+                # Build Table
+                # Columns: Details (wide), Priority (narrow), Source (narrow)
+                t = Table(req_table_data, colWidths=[4.2*inch, 0.8*inch, 1.2*inch], repeatRows=1)
+                t.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                    ('TOPPADDING', (0, 0), (-1, 0), 8),
+                    # Content Rows
+                    ('VALIGN', (0, 1), (-1, -1), 'TOP'),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+                ]))
+                
+                story.append(t)
+                story.append(Spacer(1, 0.2*inch))
+            
+            story.append(PageBreak())
+        
         # Commercial Terms
         commercial = report_json.get('commercial_terms', {})
         if commercial:

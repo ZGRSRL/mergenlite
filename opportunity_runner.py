@@ -359,6 +359,12 @@ def download_from_database_raw_data(
             processed = []
             for doc_info in result:
                 file_path = doc_info.get('path', '')
+                
+                # VALIDATION: Dosya var mı ve boyutu > 0 mı?
+                if not file_path or not Path(file_path).exists() or Path(file_path).stat().st_size == 0:
+                    logger.warning(f"[Database] Skipped empty/missing file: {file_path}")
+                    continue
+
                 filename = doc_info.get('name', Path(file_path).name if file_path else 'document.pdf')
                 
                 # Dosyayı işle
@@ -387,7 +393,7 @@ def download_from_database_raw_data(
                     "page_count": page_count
                 })
             
-            logger.info(f"[Database] Downloaded {len(processed)} document(s) from raw_data URLs")
+            logger.info(f"[Database] Downloaded and validated {len(processed)} document(s) from raw_data URLs")
             return processed
             
         finally:
@@ -447,6 +453,12 @@ def download_from_sam(
         result = []
         for doc_info in downloaded:
             file_path = doc_info.get('path') or doc_info.get('file_path', '')
+            
+            # VALIDATION: Dosya var mı ve boyutu > 0 mı?
+            if not file_path or not Path(file_path).exists() or Path(file_path).stat().st_size == 0:
+                logger.warning(f"[SAM.gov] Skipped empty/missing file: {file_path}")
+                continue
+
             filename = doc_info.get('filename', Path(file_path).name if file_path else 'document.pdf')
             text = doc_info.get('text', '')
             

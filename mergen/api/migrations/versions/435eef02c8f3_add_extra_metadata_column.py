@@ -19,12 +19,18 @@ depends_on = None
 from sqlalchemy.dialects import postgresql
 
 def upgrade() -> None:
-    # Check if column exists before adding to avoid errors if it was partially applied
-    # But alembic doesn't support 'if not exists' easily in op.add_column without raw SQL
-    # We will just try to add it. If it fails, we might need to handle it manually.
-    # However, since 'rename' failed (likely because 'metadata' didn't exist), 'add' should work.
-    op.add_column('agent_runs', sa.Column('extra_metadata', postgresql.JSON(astext_type=sa.Text()), nullable=True))
-    op.add_column('decision_cache', sa.Column('extra_metadata', postgresql.JSON(astext_type=sa.Text()), nullable=True))
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    # Check agent_runs
+    columns = [col['name'] for col in inspector.get_columns('agent_runs')]
+    if 'extra_metadata' not in columns:
+        op.add_column('agent_runs', sa.Column('extra_metadata', postgresql.JSON(astext_type=sa.Text()), nullable=True))
+
+    # Check decision_cache
+    columns = [col['name'] for col in inspector.get_columns('decision_cache')]
+    if 'extra_metadata' not in columns:
+        op.add_column('decision_cache', sa.Column('extra_metadata', postgresql.JSON(astext_type=sa.Text()), nullable=True))
 
 
 def downgrade() -> None:

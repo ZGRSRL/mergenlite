@@ -1,0 +1,51 @@
+{
+  "opportunity": {
+    "id": 7,
+    "notice_id": "TEST-ab0558ef",
+    "title": "E2E Test Opportunity - Catering Services",
+    "agency": "Test Agency",
+    "naics_code": null
+  },
+  "analysis_type": "sow_draft",
+  "pipeline_version": "v2-test",
+  "options": {
+    "max_text_length": 1000
+  },
+  "attachment_count": 1,
+  "attachments": [
+    {
+      "id": 7,
+      "name": "SOW.txt",
+      "downloaded": true,
+      "local_path": "D:\\Mergenlite\\data\\test_doc_TEST-ab0558ef.txt",
+      "source_url": null,
+      "size_bytes": 163
+    }
+  ],
+  "analyzed_documents": [
+    {
+      "extracted_text": "",
+      "tables": [],
+      "metadata": {},
+      "document_type": "unknown",
+      "file_path": "D:\\Mergenlite\\data\\test_doc_TEST-ab0558ef.txt",
+      "file_size": 163,
+      "error": "Unsupported file type: .txt",
+      "text_length": 0,
+      "word_count": 0,
+      "line_count": 0,
+      "attachment_id": 7,
+      "attachment_name": "SOW.txt"
+    }
+  ],
+  "document_analysis": {
+    "total_text_length": 0,
+    "total_word_count": 0,
+    "total_tables": 0,
+    "documents_analyzed": 1,
+    "combined_text_preview": ""
+  },
+  "sow_analysis": null,
+  "generated_at": "2025-12-08T11:12:00.143043",
+  "notes": "Analyzed 1 documents. Total: 0 words, 0 tables extracted. Basic extraction only."
+}

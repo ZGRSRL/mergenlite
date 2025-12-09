@@ -37,11 +37,8 @@
 
 ## 🔄 Yapılması Gerekenler
 
-### 1. Migration'ları Uygula ⚠️
-```bash
-cd mergen/api
-python -m alembic upgrade head
-```
+### 1. Migration'ları Uygula ✅
+Migration'lar başarıyla uygulandı (`head` revizyonu: `35fa6f5a770b`).
 
 ### 2. AutoGen Pipeline Entegrasyonu 📋
 - [ ] D:/RFQ bağımlılıklarını repo içine taşı veya servisle değiştir

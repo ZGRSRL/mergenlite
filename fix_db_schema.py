@@ -1,131 +1,75 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Database schema düzeltme scripti"""
 
+from sqlalchemy import create_engine, text, inspect
+from mergenlite_models import Base, Hotel, EmailLog
 import os
 from dotenv import load_dotenv
 
-load_dotenv('mergen/.env', override=True)
+# Load env
+env_paths = ['mergen/.env', 'mergenlite/.env', '.env']
+for env_path in env_paths:
+    if os.path.exists(env_path):
+        load_dotenv(env_path, override=True)
+        print(f"Loaded .env from {env_path}")
+        break
 
-from app import get_db_engine, DB_AVAILABLE
-from sqlalchemy import text
+def get_engine():
+    db_host = os.getenv('DB_HOST', 'localhost')
+    db_user = os.getenv('DB_USER', 'postgres')
+    db_password = os.getenv('DB_PASSWORD', 'postgres')
+    db_port = os.getenv('DB_PORT', '5432')
+    db_name = os.getenv('DB_NAME', 'mergenlite')
+    
+    url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    print(f"Connecting to: postgresql://{db_user}:***@{db_host}:{db_port}/{db_name}")
+    return create_engine(url)
 
-if not DB_AVAILABLE:
-    print("UYARI: Database baglantisi yok!")
-    exit(1)
-
-engine = get_db_engine()
-if not engine:
-    print("HATA: Database engine olusturulamadi!")
-    exit(1)
-
-# SQL komutları
-sql_commands = [
-    # notice_type kolonu ekle (eğer yoksa)
-    """
-    DO $$ 
-    BEGIN 
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='notice_type'
-        ) THEN
-            ALTER TABLE opportunities ADD COLUMN notice_type VARCHAR(100);
-            RAISE NOTICE 'notice_type kolonu eklendi';
-        ELSE
-            RAISE NOTICE 'notice_type kolonu zaten var';
-        END IF;
-    END $$;
-    """,
-    # response_dead_line -> response_deadline (eğer response_dead_line varsa)
-    """
-    DO $$ 
-    BEGIN 
-        IF EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='response_dead_line'
-        ) AND NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='response_deadline'
-        ) THEN
-            ALTER TABLE opportunities RENAME COLUMN response_dead_line TO response_deadline;
-            RAISE NOTICE 'response_dead_line -> response_deadline olarak degistirildi';
-        ELSE
-            RAISE NOTICE 'response_deadline kolonu zaten dogru';
-        END IF;
-    END $$;
-    """,
-    # Eksik kolonları ekle
-    """
-    DO $$ 
-    BEGIN 
-        -- estimated_value
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='estimated_value'
-        ) THEN
-            ALTER TABLE opportunities ADD COLUMN estimated_value NUMERIC(15, 2);
-        END IF;
-        
-        -- place_of_performance
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='place_of_performance'
-        ) THEN
-            ALTER TABLE opportunities ADD COLUMN place_of_performance VARCHAR(255);
-        END IF;
-        
-        -- sam_gov_link
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='sam_gov_link'
-        ) THEN
-            ALTER TABLE opportunities ADD COLUMN sam_gov_link VARCHAR(512);
-        END IF;
-        
-        -- raw_data (JSONB)
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='raw_data'
-        ) THEN
-            ALTER TABLE opportunities ADD COLUMN raw_data JSONB;
-        END IF;
-        
-        -- created_at
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='created_at'
-        ) THEN
-            ALTER TABLE opportunities ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
-        END IF;
-        
-        -- updated_at
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='opportunities' AND column_name='updated_at'
-        ) THEN
-            ALTER TABLE opportunities ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
-        END IF;
-        
-        RAISE NOTICE 'Eksik kolonlar kontrol edildi ve eklendi';
-    END $$;
-    """
-]
-
-try:
+def fix_schema():
+    engine = get_engine()
+    inspector = inspect(engine)
+    
     with engine.connect() as conn:
-        for i, sql in enumerate(sql_commands, 1):
-            if i == 1:
-                print("notice_type kolonu kontrol ediliyor...")
-            elif i == 2:
-                print("response_deadline kolonu kontrol ediliyor...")
-            elif i == 3:
-                print("Eksik kolonlar kontrol ediliyor...")
-            result = conn.execute(text(sql))
-            conn.commit()
-            print("Tamamlandi!")
-        print("\nDatabase schema duzeltmesi tamamlandi!")
-except Exception as e:
-    print(f"HATA: {str(e)}")
-    import traceback
-    traceback.print_exc()
+        conn.execution_options(isolation_level="AUTOCOMMIT")
+        
+        # 1. Check/Add status column to opportunities
+        columns = [c['name'] for c in inspector.get_columns('opportunities')]
+        if 'status' not in columns:
+            print("Adding 'status' column to opportunities...")
+            conn.execute(text("ALTER TABLE opportunities ADD COLUMN status VARCHAR(50) DEFAULT 'active'"))
+            print("✅ 'status' column added.")
+        else:
+            print("ℹ️ 'status' column already exists.")
 
+        # 2. Check/Add agency, office, description if missing (just in case)
+        if 'agency' not in columns:
+            print("Adding 'agency' column...")
+            conn.execute(text("ALTER TABLE opportunities ADD COLUMN agency VARCHAR(255)"))
+        if 'office' not in columns:
+             print("Adding 'office' column...")
+             conn.execute(text("ALTER TABLE opportunities ADD COLUMN office VARCHAR(255)"))
+        if 'description' not in columns:
+             print("Adding 'description' column...")
+             conn.execute(text("ALTER TABLE opportunities ADD COLUMN description TEXT"))
+
+        # 3. Create missing tables (Hotel, EmailLog)
+        existing_tables = inspector.get_table_names()
+        
+        if 'hotels' not in existing_tables:
+            print("Creating 'hotels' table...")
+            Hotel.__table__.create(engine)
+            print("✅ 'hotels' table created.")
+        else:
+            print("ℹ️ 'hotels' table already exists.")
+            
+        if 'email_log' not in existing_tables:
+            print("Creating 'email_log' table...")
+            EmailLog.__table__.create(engine)
+            print("✅ 'email_log' table created.")
+        else:
+             print("ℹ️ 'email_log' table already exists.")
+
+if __name__ == "__main__":
+    try:
+        fix_schema()
+        print("\n✅ Database schema fixed successfully!")
+    except Exception as e:
+        print(f"\n❌ Error fixing schema: {e}")

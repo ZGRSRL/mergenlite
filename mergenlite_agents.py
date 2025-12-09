@@ -741,6 +741,8 @@ class MergenLiteOrchestrator:
             
             # Document processor kullan
             if process_documents_for_opportunity:
+                # NOTE: This uses MOCK DATA by default unless updated to use real files
+                logger.warning("⚠️ Running analysis with MOCK document processor")
                 doc_result = process_documents_for_opportunity(opportunity_data)
             else:
                 # Fallback mock data
