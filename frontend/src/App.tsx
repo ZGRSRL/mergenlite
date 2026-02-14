@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Home, Search, Bot, FileText, MessageSquare,
   LogOut, Bell
@@ -7,6 +7,10 @@ import { Button } from "./components/ui/button";
 import { ScrollArea } from "./components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "./components/ui/avatar";
 import { Badge } from "./components/ui/badge";
+
+// Auth
+import LoginPage from "./components/LoginPage";
+import { clearCredentials } from "./api/client";
 
 // Page Components
 import Dashboard from "./components/Dashboard";
@@ -17,6 +21,32 @@ import Communication from "./components/Communication";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [user, setUser] = useState<string | null>(null);
+
+  // Check if already logged in
+  useEffect(() => {
+    const savedAuth = localStorage.getItem("mergenlite_auth");
+    const savedUser = localStorage.getItem("mergenlite_user");
+    if (savedAuth && savedUser) {
+      setUser(savedUser);
+    }
+  }, []);
+
+  const handleLogin = (username: string) => {
+    localStorage.setItem("mergenlite_user", username);
+    setUser(username);
+  };
+
+  const handleLogout = () => {
+    clearCredentials();
+    localStorage.removeItem("mergenlite_user");
+    setUser(null);
+  };
+
+  // --- LOGIN PAGE ---
+  if (!user) {
+    return <LoginPage onLoginSuccess={handleLogin} />;
+  }
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
@@ -26,22 +56,22 @@ export default function App() {
     { id: "communication", label: "Communication", icon: MessageSquare, badge: 3 },
   ];
 
+  const userInitials = user.slice(0, 2).toUpperCase();
+
   return (
     // Root container must be h-screen and overflow-hidden to act as the app window
     <div
       className="flex h-screen w-full bg-slate-950 text-slate-200 font-sans overflow-hidden selection:bg-blue-500/30"
       style={{ backgroundColor: '#020617', color: '#e2e8f0' }}
     >
-      {/* GLOBAL STYLE INJECTION 
-         This fixes the "white screen" issue on overscroll or partial content rendering 
-      */}
+      {/* GLOBAL STYLE INJECTION */}
       <style>{`
         html, body, #root {
           height: 100%;
           margin: 0;
           padding: 0;
           background-color: #020617 !important;
-          overflow: hidden; /* Prevent body scroll, let React handle it */
+          overflow: hidden;
         }
         ::-webkit-scrollbar {
           width: 6px;
@@ -103,13 +133,19 @@ export default function App() {
         <div className="p-4 border-t border-slate-800/60 bg-slate-950/50">
           <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-900 cursor-pointer transition-colors border border-transparent hover:border-slate-800">
             <Avatar className="w-8 h-8 border border-slate-700 bg-slate-800">
-              <AvatarFallback className="text-xs bg-slate-800 text-slate-300">OS</AvatarFallback>
+              <AvatarFallback className="text-xs bg-slate-800 text-slate-300">{userInitials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate text-slate-200">Ozgur Sarli</p>
+              <p className="text-sm font-medium truncate text-slate-200">{user}</p>
               <p className="text-xs text-slate-500 truncate">Admin</p>
             </div>
-            <LogOut className="w-4 h-4 text-slate-500 hover:text-slate-300 transition-colors" />
+            <button
+              onClick={handleLogout}
+              className="p-1 rounded hover:bg-slate-800 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4 text-slate-500 hover:text-slate-300 transition-colors" />
+            </button>
           </div>
         </div>
       </aside>
@@ -131,15 +167,11 @@ export default function App() {
           </div>
         </header>
 
-        {/* Content Container 
-            - 'overflow-y-auto' handles the vertical scrolling of the content
-            - 'bg-slate-950' ensures background is dark even if content is short
-        */}
+        {/* Content Container */}
         <div
           className={`flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth ${activeTab === 'communication' ? 'p-0' : 'p-6'}`}
           style={{ backgroundColor: '#020617' }}
         >
-          {/* Inner Content Wrapper - Ensures min-height is satisfied */}
           <div
             className="min-h-full w-full animate-in fade-in zoom-in-[0.99] duration-300"
             style={{ backgroundColor: '#020617' }}
