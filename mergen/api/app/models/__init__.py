@@ -1,7 +1,7 @@
 """
-Models package for database models and SOW data structures.
+Models package — re-exports from db_models.py (Single Source of Truth).
 """
-# Import database models from db_models.py
+
 from .db_models import (
     Opportunity,
     OpportunityAttachment,
@@ -13,6 +13,7 @@ from .db_models import (
     Document,
     LLMCall,
     EmailLog,
+    Hotel,
     DecisionCache,
     TrainingExample,
     SyncJob,
@@ -28,27 +29,23 @@ from .db_models import (
     VectorChunk,
 )
 
-# Import SOW data models
+# SOW data models (Pydantic, not SQLAlchemy)
 from .sow_data_model import SOWDataModel, CalendarDay, SeatingLayout
 
 __all__ = [
-    # Database models
+    # Core
     "Opportunity",
-    "OpportunityAttachment", 
+    "OpportunityAttachment",
     "OpportunityHistory",
+    # Analysis
     "AIAnalysisResult",
     "AnalysisLog",
+    # Agents
     "AgentRun",
     "AgentMessage",
-    "Document",
     "LLMCall",
-    "EmailLog",
-    "DecisionCache",
-    "TrainingExample",
-    "SyncJob",
-    "SyncLog",
-    "DownloadJob",
-    "DownloadLog",
+    # Documents & RAG
+    "Document",
     "Requirement",
     "Evidence",
     "FacilityFeature",
@@ -56,9 +53,19 @@ __all__ = [
     "PastPerformance",
     "Clause",
     "VectorChunk",
-    # SOW data models
+    # Hotel & Email
+    "Hotel",
+    "EmailLog",
+    # Jobs
+    "SyncJob",
+    "SyncLog",
+    "DownloadJob",
+    "DownloadLog",
+    # Learning
+    "DecisionCache",
+    "TrainingExample",
+    # SOW
     "SOWDataModel",
     "CalendarDay",
-    "SeatingLayout"
+    "SeatingLayout",
 ]
-

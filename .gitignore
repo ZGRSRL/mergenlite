@@ -1,4 +1,8 @@
-# Python
+# ===========================================================================
+# MergenLite .gitignore
+# ===========================================================================
+
+# ---------- Python ----------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,7 +11,6 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
 eggs/
 .eggs/
 lib/
@@ -22,41 +25,52 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Virtual Environment
+# ---------- Virtual Environment ----------
 venv/
 .venv/
 env/
-.env/
 
-# Environment Variables (CRITICAL)
+# ---------- Environment Variables (CRITICAL — never commit secrets) ----------
 .env
 .env.*
 !.env.example
+mergen/.env
+mergen/.env.*
 
-# Node
+# ---------- Node ----------
 node_modules/
 npm-debug.log
 yarn-error.log
 
-# Next.js
-.next/
-out/
+# ---------- Frontend build ----------
+frontend/dist/
 
-# IDE
+# ---------- IDE ----------
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS
+# ---------- OS ----------
 .DS_Store
 Thumbs.db
 
-# Logs
+# ---------- Logs ----------
 *.log
 logs/
 
-# Temporary
+# ---------- Temporary / Cache ----------
 temp/
 tmp/
 archive/
+.cache/
+
+# ---------- Docker volumes ----------
+db_data/
+
+# ---------- Legacy (archived) ----------
+legacy_files/
+
+# ---------- Generated outputs ----------
+opportunities/*/
+mergen/Data/opportunities/*/outputs/

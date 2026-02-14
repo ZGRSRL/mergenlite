@@ -1,36 +1,66 @@
+# ============================================================================
+# MergenLite — Production Docker Compose
+# ============================================================================
+# Stack: PostgreSQL 15 (+ pgvector) • FastAPI Backend • React/Vite Frontend
+#
+# Usage:
+#   docker compose up -d --build       # Build & start all services
+#   docker compose logs -f backend     # Tail backend logs
+#   docker compose down -v             # Stop & remove volumes
+# ============================================================================
+
 services:
+  # --------------------------------------------------------------------------
+  # PostgreSQL 15 with pgvector
+  # --------------------------------------------------------------------------
   db:
-    image: postgres:15
+    image: pgvector/pgvector:pg15
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-ZGR_AI}
+      POSTGRES_DB: ${POSTGRES_DB:-mergenlite}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
+  # --------------------------------------------------------------------------
+  # FastAPI Backend
+  # --------------------------------------------------------------------------
   backend:
     build:
       context: ./mergen/api
       dockerfile: Dockerfile
+    restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - ./mergen/api/app:/app/app
+      - ./mergen/Data:/app/data
     environment:
+      # Database
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-ZGR_AI}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ZGR_AI}
+      POSTGRES_DB: ${POSTGRES_DB:-mergenlite}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mergenlite}
+
+      # API Keys
       SAM_API_KEY: ${SAM_API_KEY:-}
-      AMADEUS_API_KEY: ${AMADEUS_API_KEY}
-      AMADEUS_API_SECRET: ${AMADEUS_API_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AMADEUS_API_KEY: ${AMADEUS_API_KEY:-}
+      AMADEUS_API_SECRET: ${AMADEUS_API_SECRET:-}
       AMADEUS_ENV: ${AMADEUS_ENV:-production}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+
+      # Email / SMTP
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
@@ -38,20 +68,31 @@ services:
       SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@mergenlite.com}
       PIPELINE_NOTIFICATION_EMAIL: ${PIPELINE_NOTIFICATION_EMAIL:-}
-      PORT: 8080  # Cloud Run compatibility
-    ports:
-      - "8000:8080"  # Map host 8000 to container 8080 (Cloud Run compatible)
 
+      # Application
+      PORT: 8080
+      ENV: ${ENV:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8080"
+
+  # --------------------------------------------------------------------------
+  # React / Vite Frontend  (nginx serves static build)
+  # --------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    restart: unless-stopped
     depends_on:
       - backend
     ports:
       - "3000:80"
 
+# ----------------------------------------------------------------------------
+# Named volumes
+# ----------------------------------------------------------------------------
 volumes:
   db_data:

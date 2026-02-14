@@ -1,341 +1,144 @@
-# Mimari Plan - React Odaklı Geliştirme
+# MergenLite — Architecture Overhaul Plan
 
-## 🎯 Genel Strateji
-
-**React: Primary Product UI**  
-**Streamlit: Admin/PoC/Internal Debug (Opsiyonel)**
-
-Tüm fonksiyonel akış React + FastAPI üzerinden çalışacak.
+> **Status:** In Progress  
+> **Last Updated:** 2026-02-14  
+> **Goal:** Remove Supabase/Streamlit dependencies; adopt React + FastAPI + Docker PostgreSQL
 
 ---
 
-## 📊 Veri Modeli Tekleştirme
+## ✅ Completed Steps
 
-### Mevcut Durum
-- `mergenlite_models.py`: `opportunity_id` primary key, minimal şema
-- `mergen/api/app/models.py`: `id` primary key, genişletilmiş şema
+### Step 1: Folder Structure & Legacy Cleanup
+- [x] Legacy Streamlit/NiceGUI files moved to `legacy_files/`
+  - `app.py`, `app_nicegui*.py`, `mergenlite_app.py`
+  - `test_streamlit.py`, `test_nicegui_simple.py`
+  - `theme.css`, `theme_loader.py`, `backend_utils.py`
+  - `guided_analysis.py`, `mergenlite_ui_components.py`
+  - `Dockerfile` (Streamlit), `streamlit.Dockerfile`
+  - `temp_*` folders, `Mergenliteuiuxtasarmcopy/`
+- [x] Duplicate model files deprecated
+  - `models_unified.py` → moved to `legacy_files/`
+  - `mergenlite_models.py` → replaced with compatibility shim (re-exports from `db_models.py`)
+- [x] Root agents (`agents/`) copied into `mergen/api/app/agents/`
 
-### Unified Schema (models_unified.py)
+### Step 2: Database & Docker Configuration
+- [x] `docker-compose.yml` (root) — uses `pgvector/pgvector:pg15` image
+  - db healthcheck with `pg_isready`
+  - Backend depends on db with `condition: service_healthy`
+  - Default DB name: `mergenlite`
+- [x] `mergen/docker-compose.yml` — cleaned, removed Streamlit/Redis/worker
+- [x] `mergen/api/app/db.py` — modernized
+  - Connection pool: `pool_size=10`, `max_overflow=20`, `pool_pre_ping`, `pool_recycle=300`
+  - `get_db()` for FastAPI, `get_db_session()` context manager for scripts
+  - `init_pgvector()` — enables pgvector extension on startup
+  - `check_db_health()` — SELECT 1 probe
+- [x] `mergen/api/app/config.py` — cleaned up
+  - Single `.env` loading, no duplicate `model_post_init` hacks
+  - `database_url` property: DATABASE_URL env > individual vars
+  - Added `is_production`, `log_level`, LLM settings
+- [x] `.env` files organized with `DATABASE_URL`, `PIPELINE_NOTIFICATION_EMAIL`
+- [x] Alembic `env.py` — all models imported for autogenerate (including Hotel)
 
-```python
-Opportunity:
-  - id (int PK)
-  - opportunity_id (string, indexed, not unique - fallback için)
-  - notice_id (string, indexed)
-  - title, description
-  - posted_date, response_deadline
-  - naics_code, psc_code
-  - agency, office
-  - raw_data (JSON)
-  - cached_data (JSON)
-  
-OpportunityAttachment:
-  - id (int PK)
-  - opportunity_id (FK)
-  - name, source_url
-  - local_path, storage_path
-  - downloaded, mime_type
-  
-AIAnalysisResult:
-  - id (int PK)
-  - opportunity_id (FK)
-  - analysis_type, status
-  - result_json, pdf_path
-  - created_at, completed_at
-  
-AnalysisLog:
-  - id (int PK)
-  - analysis_result_id (FK)
-  - step, level, message
-  - timestamp
-```
+### Step 3: Unified Data Model
+- [x] `mergen/api/app/models/db_models.py` = **Single Source of Truth**
+  - 20+ tables: Opportunity, Attachments, Analysis, Jobs, Hotels, Agents, Documents, RAG, Meta
+  - `VectorChunk.embedding` → native pgvector `Vector(1536)` (falls back to JSON)
+  - Added `token_count` column for cost tracking
+- [x] `models/__init__.py` — all models re-exported (Hotel was missing, now fixed)
+- [x] Compatibility shim at root (`mergenlite_models.py`) for legacy scripts
 
-### Migration Stratejisi
+### Step 4: Backend (FastAPI) Workflows
+- [x] `mergen/api/app/main.py` — rewritten
+  - Clean startup: migrations → pgvector init
+  - `/health` includes DB status
+  - Version bumped to `2.0.0`
+  - Logging instead of print()
+- [x] `mergen/api/app/deps.py` — Simple HTTP Basic auth
+  - Users from `AUTH_USER_1=admin:pass` env vars
+  - Falls back to demo user when no auth header (gradual migration)
+  - `require_admin` guard
+- [x] `routes/health.py` — checks DB connectivity
 
-1. **Mevcut veriyi koru**: `opportunity_id` değerlerini kullan
-2. **Yeni kolonlar ekle**: `agency`, `office`, `psc_code` gibi
-3. **Attachment tablosu oluştur**: Mevcut `raw_data` içindeki `resourceLinks`'i parse et
-4. **Analysis tablosunu genişlet**: `status`, `pdf_path` gibi alanlar ekle
+### Step 5: Frontend (React/Vite) Integration
+- [x] `frontend/src/api/client.ts` — enhanced
+  - 60s timeout (for long pipelines)
+  - Optional Basic auth from localStorage
+  - Dev-only logging
+  - `setCredentials()` / `clearCredentials()` helpers
+- [x] `opportunities.ts`, `pipeline.ts`, `dashboard.ts` — already well-structured ✓
 
----
-
-## 🔄 SAM Entegrasyonu Merkezileştirme
-
-### Backend Endpoint: `/api/opportunities/sync`
-
-**Akış:**
-1. SAM/GSA API'den veri çek
-2. `opportunities` tablosuna yaz
-3. `resourceLinks` ve `attachments` bilgisini `opportunity_attachments` tablosuna kaydet
-4. Response: `{success, count_new, count_updated, total_processed}`
-
-### Streamlit Değişiklikleri
-
-**Önce:**
-```python
-sam = SAMIntegration()
-opportunities = sam.fetch_opportunities(...)
-```
-
-**Sonra:**
-```python
-response = requests.post("http://localhost:8000/api/opportunities/sync", params={...})
-```
-
-### Attachment Download Servisi
-
-**Dosya:** `mergen/api/app/services/attachment_service.py`
-
-```python
-async def download_and_store_attachments(opportunity_id: str) -> List[Dict]:
-    """
-    1. opportunity_attachments tablosundan source_url'leri çek
-    2. Her attachment'ı indir
-    3. /data/opportunities/{notice_id}/attachments/ altına kaydet
-    4. local_path kolonunu güncelle
-    5. downloaded=True yap
-    """
-```
-
-**Endpoint:** `POST /api/opportunities/{id}/download-attachments`
+### Step 6: Internal RAG & Vector DB
+- [x] pgvector enabled via `pgvector/pgvector:pg15` Docker image
+- [x] `mergen/api/app/services/llm/rag.py` — rewritten
+  - OpenAI `text-embedding-3-small` (1536 dims), falls back to sentence-transformers
+  - `chunk_text()` — overlapping word-based chunking
+  - `ingest_document()` — chunk → embed → INSERT
+  - `search_documents()` — pgvector `<=>` cosine distance (falls back to numpy)
+  - Higher-level: `retrieve_context()`, `find_similar_chunks()`, `build_context_for_requirement()`
 
 ---
 
-## 🤖 Pipeline & AutoGen Entegrasyonu
+## 🔄 Remaining Tasks
 
-### D:/RFQ Bağımlılığını Temizle
+### Migration & Schema Sync
+- [ ] Generate fresh Alembic migration: `alembic revision --autogenerate -m "v2.0 unified schema"`
+- [ ] Test migration against clean database
+- [ ] Test migration against existing database (backward compat)
 
-**Seçenek 1: Repo İçine Taşı**
-- `D:/RFQ/backend/services/` → `mergen/api/services/pipeline/`
-- `D:/RFQ/backend/agents/` → `mergen/api/services/agents/`
-- `D:/RFQ/agents/` → `mergen/api/services/agents/`
+### Auth UI
+- [ ] Add Login page to React frontend
+- [ ] Wire `setCredentials()` to login form
+- [ ] Protect routes in frontend with auth check
 
-**Seçenek 2: Import Path Düzelt**
-- `sys.path`'e D:/RFQ eklemek yerine
-- Pipeline modüllerini `mergen/api/services/` altına kopyala
-- Import'ları güncelle
+### Local Dependency Cleanup
+- [ ] Remove any `D:/RFQ` references from pipeline code
+- [ ] Ensure all agent imports resolve within project tree
 
-### `/api/pipeline/run` Endpoint
+### Testing
+- [ ] `docker compose up --build` smoke test
+- [ ] SAM sync end-to-end test
+- [ ] Pipeline analysis end-to-end test
+- [ ] PDF generation test
+- [ ] RAG ingest + search test
 
-**Request Body:**
-```json
-{
-  "opportunity_id": "abc123...",
-  "selected_documents": ["attachment_id_1", "attachment_id_2"],
-  "pipeline_version": "v3",
-  "use_template_engine": true,
-  "pricing_inputs": {...},
-  "strategy_notes": "..."
-}
-```
-
-**Response (202 Accepted):**
-```json
-{
-  "job_id": "analysis_result_id",
-  "status": "pending",
-  "message": "Pipeline started"
-}
-```
-
-**Akış:**
-1. Request al
-2. `AIAnalysisResult` kaydı oluştur (status='pending')
-3. Background task başlat
-4. AutoGen pipeline çalıştır
-5. Sonuçları `ai_analysis_results` tablosuna yaz
-6. Log'ları `analysis_logs` tablosuna yaz
-
-### Background Task
-
-**İlk Aşama:** FastAPI `BackgroundTasks`
-```python
-from fastapi import BackgroundTasks
-
-@router.post("/run")
-async def run_pipeline(..., background_tasks: BackgroundTasks):
-    # Create analysis_result record
-    analysis_result = create_analysis_result(...)
-    
-    # Start background task
-    background_tasks.add_task(run_pipeline_task, analysis_result.id, ...)
-    
-    return {"job_id": analysis_result.id, "status": "pending"}
-```
-
-**Sonra:** Celery/RQ/Arq queue (TODO)
-
-### Log Streaming
-
-**Endpoint:** `GET /api/analysis/{analysis_result_id}/logs`
-
-**Response:**
-```json
-{
-  "logs": [
-    {"step": "document_processing", "level": "INFO", "message": "...", "timestamp": "..."},
-    ...
-  ],
-  "total": 42
-}
-```
-
-**React:** Polling ile log'ları çek (her 2 saniyede bir)
+### Production Readiness
+- [ ] Cloud Run deployment config update
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] Monitoring / structured logging
 
 ---
 
-## 🎨 React API Entegrasyonu
-
-### API Client Standardizasyonu
-
-**Dosya:** `frontend/src/api/client.ts`
-
-```typescript
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
-
-export const api = {
-  opportunities: {
-    list: (params) => axios.get(`${API_BASE}/opportunities`, {params}),
-    get: (id) => axios.get(`${API_BASE}/opportunities/${id}`),
-    sync: (params) => axios.post(`${API_BASE}/opportunities/sync`, null, {params}),
-  },
-  attachments: {
-    list: (opportunityId) => axios.get(`${API_BASE}/opportunities/${opportunityId}/attachments`),
-    download: (opportunityId) => axios.post(`${API_BASE}/opportunities/${opportunityId}/download-attachments`),
-  },
-  pipeline: {
-    run: (data) => axios.post(`${API_BASE}/pipeline/run`, data),
-  },
-  analysis: {
-    get: (id) => axios.get(`${API_BASE}/analysis/${id}`),
-    logs: (id) => axios.get(`${API_BASE}/analysis/${id}/logs`),
-    byOpportunity: (opportunityId) => axios.get(`${API_BASE}/analysis/opportunity/${opportunityId}`),
-  },
-  dashboard: {
-    stats: () => axios.get(`${API_BASE}/dashboard/stats`),
-    recentActivities: (limit) => axios.get(`${API_BASE}/dashboard/recent-activities`, {params: {limit}}),
-  },
-}
-```
-
-### OpportunityCenter Butonları
-
-1. **"SAM'den Sync"**
-   ```typescript
-   await api.opportunities.sync({naics: '721110', days_back: 30})
-   // Refresh list
-   await loadOpportunities()
-   ```
-
-2. **"Dokümanları İndir"**
-   ```typescript
-   await api.attachments.download(opportunityId)
-   // Show success message
-   ```
-
-3. **"Analizi Başlat"**
-   ```typescript
-   const {job_id} = await api.pipeline.run({
-     opportunity_id: opportunityId,
-     selected_documents: [...],
-   })
-   // Navigate to GuidedAnalysis with job_id
-   ```
-
-### GuidedAnalysis Gerçek Durum
-
-```typescript
-useEffect(() => {
-  // Poll analysis status
-  const interval = setInterval(async () => {
-    const analysis = await api.analysis.get(jobId)
-    setStatus(analysis.status)
-    setProgress(analysis.progress)
-    
-    if (analysis.status === 'completed') {
-      clearInterval(interval)
-      // Navigate to Results
-    }
-  }, 2000)
-  
-  // Poll logs
-  const logInterval = setInterval(async () => {
-    const {logs} = await api.analysis.logs(jobId)
-    setLogs(logs)
-  }, 2000)
-}, [jobId])
-```
-
-### Results Gerçek Veri
-
-```typescript
-const analysis = await api.analysis.get(analysisResultId)
-
-// Display:
-// - analysis.result_json (structured data)
-// - analysis.pdf_path (download link)
-// - analysis.json_path (download link)
-```
-
----
-
-## 📁 Dosya Sistemi Yapısı
+## Architecture Diagram
 
 ```
-/data/
-  /opportunities/
-    /{notice_id}/
-      /attachments/
-        - file1.pdf
-        - file2.docx
-      /outputs/
-        - sow.pdf
-        - analysis.json
-        - summary.md
+┌─────────────────────────────────────────────────┐
+│                   Frontend                       │
+│              React / Vite / nginx                │
+│             localhost:3000 → :80                  │
+└──────────────────┬──────────────────────────────┘
+                   │ HTTP (axios)
+                   ▼
+┌─────────────────────────────────────────────────┐
+│                   Backend                        │
+│              FastAPI / Uvicorn                    │
+│             localhost:8000 → :8080                │
+│                                                  │
+│  Routes: opportunities, pipeline, dashboard,     │
+│          jobs, proxy, communications             │
+│  Services: SAM sync, pipeline, PDF gen,          │
+│            mail, RAG, hotel matcher              │
+│  Agents: SOW analyzer, reviewer, hotel matcher   │
+│  Auth: HTTP Basic (2-user)                       │
+└──────────────────┬──────────────────────────────┘
+                   │ SQLAlchemy
+                   ▼
+┌─────────────────────────────────────────────────┐
+│                  Database                        │
+│          PostgreSQL 15 + pgvector                │
+│             localhost:5432                        │
+│                                                  │
+│  20+ tables: opportunities, attachments,         │
+│  analysis_results, hotels, documents,            │
+│  vector_chunks (RAG), agent_runs, ...            │
+└─────────────────────────────────────────────────┘
 ```
-
-**FastAPI Static Mount:**
-```python
-from fastapi.staticfiles import StaticFiles
-
-app.mount("/files", StaticFiles(directory="data"), name="files")
-```
-
-**DB'deki path:** `/files/opportunities/{notice_id}/outputs/sow.pdf`
-
----
-
-## 🧪 E2E Test Senaryosu
-
-1. ✅ `/api/opportunities/sync` çağrılır → DB'ye yeni kayıtlar düşer
-2. ✅ React Dashboard'da yeni fırsatlar görünür
-3. ✅ Bir fırsat seçilir → "Dokümanları İndir" → attachments download
-4. ✅ "Analizi Başlat" → pipeline run, React'te log'lar akar
-5. ✅ Analiz tamamlanınca Results ekranı: JSON özet + PDF indirme linki
-
----
-
-## 📝 Yapılacaklar Öncelik Sırası
-
-### Faz 1: Temel Altyapı (Hemen)
-1. ✅ Unified model oluştur (`models_unified.py`)
-2. ⏳ Migration hazırla
-3. ⏳ Attachment modeli ve servisi
-4. ⏳ SAM sync'i attachment kaydetmeye genişlet
-
-### Faz 2: Pipeline Entegrasyonu (Bu Hafta)
-5. ⏳ D:/RFQ bağımlılığını çöz
-6. ⏳ `/api/pipeline/run` gerçek pipeline'a bağla
-7. ⏳ Background task sistemi
-8. ⏳ Log toplama ve endpoint
-
-### Faz 3: React Entegrasyonu (Sonraki Hafta)
-9. ⏳ API client standardizasyonu
-10. ⏳ OpportunityCenter butonları
-11. ⏳ GuidedAnalysis gerçek durum
-12. ⏳ Results gerçek veri
-
-### Faz 4: Streamlit Sadeleştirme (Son)
-13. ⏳ Streamlit'teki direkt SAM çağrılarını kaldır
-14. ⏳ Sadece backend API kullan
-

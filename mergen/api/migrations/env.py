@@ -21,6 +21,7 @@ from app.models.db_models import (  # noqa: F401  (needed for Alembic autogenera
     AgentRun,
     AgentMessage,
     Document,
+    Hotel,
     LLMCall,
     EmailLog,
     DecisionCache,

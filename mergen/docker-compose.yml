@@ -1,70 +1,46 @@
-version: "3.9"
+# ============================================================================
+# MergenLite (mergen/) — Development Docker Compose
+# ============================================================================
+# This file is for running the mergen/ sub-project independently.
+# For full-stack (frontend + backend + db), use the root docker-compose.yml.
+# ============================================================================
+
 services:
   db:
-    image: postgres:16
+    image: pgvector/pgvector:pg15
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports: ["${POSTGRES_PORT}:5432"]
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-mergenlite}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 20
 
-  redis:
-    image: redis:7
-    ports: ["6379:6379"]
-
   api:
     build: ./api
     env_file: .env
-    depends_on: 
+    restart: unless-stopped
+    depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      - ./samples:/app/samples
-    ports: ["${API_PORT}:8000"]
-    command: bash -c "python -m alembic upgrade head || true && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
-
-  worker:
-    build: ./worker
-    env_file: .env
-    depends_on: [api, redis, db]
-
-  # web:  # Opsiyonel - Next.js component'leri eksik, şimdilik devre dışı
-  #   build: ./web
-  #   env_file: .env
-  #   depends_on: [api]
-  #   ports: ["3000:3000"]
-
-  streamlit:
-    build:
-      context: ..
-      dockerfile: mergen/streamlit.Dockerfile
-    env_file: .env
-    depends_on: 
-      api:
-        condition: service_started
     environment:
-      PROXY_API_URL: "http://api:8000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mergenlite}
     volumes:
-      - ../downloads:/app/downloads
-      - ../samples:/app/samples
-      - ../.cache:/app/.cache
-    ports: ["8501:8501"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - ./api/app:/app/app
+      - ./samples:/app/samples
+      - ./Data:/app/data
+    ports:
+      - "${API_PORT:-8000}:8080"
+    command: >
+      bash -c "python -m alembic upgrade head || true &&
+               python -m uvicorn app.main:app --host 0.0.0.0 --port 8080"
 
 volumes:
   dbdata:
-

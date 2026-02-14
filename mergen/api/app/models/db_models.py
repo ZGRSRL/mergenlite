@@ -1,7 +1,21 @@
 """
-SQLAlchemy models for the FastAPI backend.
-Unified schema for opportunities, attachments, analysis results, and job tracking tables.
+MergenLite — Unified Database Models  (Single Source of Truth)
+================================================================
+All table definitions live here.  Other files (models_unified.py,
+mergenlite_models.py) are DEPRECATED and will be removed.
+
+Tables:
+  Core      : opportunities, opportunity_attachments
+  Analysis  : ai_analysis_results, analysis_logs
+  Jobs      : sync_jobs, sync_logs, download_jobs, download_logs
+  Hotel     : hotels, email_log
+  Agents    : agent_runs, agent_messages, llm_calls
+  Documents : documents, requirements, evidence,
+              facility_features, pricing_items, past_performance, clauses
+  RAG       : vector_chunks (pgvector)
+  Meta      : opportunity_history, decision_cache, training_examples
 """
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -15,6 +29,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
+# pgvector — graceful fallback if extension not available
+try:
+    from pgvector.sqlalchemy import Vector as PgVector
+
+    VECTOR_TYPE = PgVector(1536)  # OpenAI embedding dimension
+except ImportError:
+    PgVector = None
+    VECTOR_TYPE = JSON  # fallback: store as plain JSON array
 
 from app.db import Base
 
@@ -541,16 +564,17 @@ class Clause(Base):
 
 
 class VectorChunk(Base):
-    """Vectorized chunks used for semantic search / RAG."""
+    """Vectorized chunks used for semantic search / RAG via pgvector."""
 
     __tablename__ = "vector_chunks"
 
     id = Column(Integer, primary_key=True, index=True)
     document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
     chunk = Column(Text, nullable=False)
-    embedding = Column(JSON, nullable=True)
-    chunk_type = Column(String(50), nullable=True)
+    embedding = Column(VECTOR_TYPE, nullable=True)  # pgvector native or JSON fallback
+    chunk_type = Column(String(50), nullable=True)   # 'summary', 'paragraph', 'table', etc.
     page_number = Column(Integer, nullable=True)
+    token_count = Column(Integer, nullable=True)      # for cost tracking
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     document = relationship("Document", back_populates="vector_chunks")

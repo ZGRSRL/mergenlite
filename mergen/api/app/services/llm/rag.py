@@ -1,200 +1,289 @@
-import numpy as np
-from typing import List, Dict, Any, Optional
-from sqlalchemy.orm import Session
-from ...models import VectorChunk, Document
-from sentence_transformers import SentenceTransformer
+"""
+MergenLite — RAG Service (pgvector-backed)
+============================================
+Retrieval-Augmented Generation service that:
+  1. Splits documents into chunks
+  2. Generates embeddings via OpenAI (text-embedding-3-small)
+  3. Stores embeddings in PostgreSQL using pgvector
+  4. Performs semantic search with cosine distance
+
+Falls back to in-process sentence-transformers when OpenAI key is absent.
+"""
+
+import hashlib
 import logging
+import os
+import re
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from ...models import Document, VectorChunk
 
 logger = logging.getLogger(__name__)
 
-# Global model instance
-_model = None
+# ---------------------------------------------------------------------------
+# Embedding backends
+# ---------------------------------------------------------------------------
+_OPENAI_DIMENSION = 1536
+_LOCAL_DIMENSION = 384  # all-MiniLM-L6-v2
+_local_model = None
 
 
-def get_embedding_model():
-    """Get or create the embedding model"""
-    global _model
-    if _model is None:
-        _model = SentenceTransformer('all-MiniLM-L6-v2')
-    return _model
+def _openai_embed(texts: List[str]) -> List[List[float]]:
+    """Call OpenAI embeddings API."""
+    import openai
+
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    resp = client.embeddings.create(
+        input=texts,
+        model="text-embedding-3-small",
+    )
+    return [d.embedding for d in resp.data]
 
 
-def create_embeddings(texts: List[str]) -> np.ndarray:
-    """Create embeddings for a list of texts"""
-    model = get_embedding_model()
-    return model.encode(texts)
+def _local_embed(texts: List[str]) -> List[List[float]]:
+    """Fallback: sentence-transformers (CPU-only, no API key needed)."""
+    global _local_model
+    if _local_model is None:
+        from sentence_transformers import SentenceTransformer
+
+        _local_model = SentenceTransformer("all-MiniLM-L6-v2")
+    vecs = _local_model.encode(texts)
+    return [v.tolist() for v in vecs]
 
 
+def create_embeddings(texts: List[str]) -> List[List[float]]:
+    """Create embeddings — OpenAI when available, else local model."""
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            return _openai_embed(texts)
+        except Exception as exc:
+            logger.warning("OpenAI embedding failed, falling back to local: %s", exc)
+    return _local_embed(texts)
+
+
+# ---------------------------------------------------------------------------
+# Chunking
+# ---------------------------------------------------------------------------
+def chunk_text(
+    text_content: str,
+    max_tokens: int = 500,
+    overlap: int = 50,
+) -> List[Dict[str, Any]]:
+    """
+    Split *text_content* into overlapping chunks of roughly *max_tokens* words.
+    Returns a list of dicts: {"text": ..., "token_count": ...}
+    """
+    words = text_content.split()
+    chunks: List[Dict[str, Any]] = []
+    start = 0
+    while start < len(words):
+        end = start + max_tokens
+        chunk_words = words[start:end]
+        chunk_str = " ".join(chunk_words)
+        if chunk_str.strip():
+            chunks.append({
+                "text": chunk_str,
+                "token_count": len(chunk_words),
+            })
+        start += max_tokens - overlap
+    return chunks
+
+
+# ---------------------------------------------------------------------------
+# Ingest: chunk → embed → store
+# ---------------------------------------------------------------------------
+def ingest_document(
+    db: Session,
+    document_id: int,
+    raw_text: str,
+    chunk_type: str = "paragraph",
+    page_number: Optional[int] = None,
+) -> int:
+    """
+    Split *raw_text* into chunks, embed them, and INSERT into vector_chunks.
+    Returns the number of chunks created.
+    """
+    chunks = chunk_text(raw_text)
+    if not chunks:
+        return 0
+
+    texts = [c["text"] for c in chunks]
+    embeddings = create_embeddings(texts)
+
+    count = 0
+    for chunk_info, emb in zip(chunks, embeddings):
+        vc = VectorChunk(
+            document_id=document_id,
+            chunk=chunk_info["text"],
+            embedding=emb,
+            chunk_type=chunk_type,
+            page_number=page_number,
+            token_count=chunk_info["token_count"],
+        )
+        db.add(vc)
+        count += 1
+
+    db.commit()
+    logger.info("Ingested %d chunks for document_id=%d", count, document_id)
+    return count
+
+
+# ---------------------------------------------------------------------------
+# Search (pgvector cosine distance)
+# ---------------------------------------------------------------------------
 def search_documents(
     db: Session,
     query: str,
     document_type: Optional[str] = None,
-    limit: int = 10
+    limit: int = 10,
 ) -> List[Dict[str, Any]]:
-    """Search documents using RAG"""
-    logger.info(f"Searching documents with query: {query}")
-    
-    # Create query embedding
-    query_embedding = create_embeddings([query])[0]
-    
-    # Build query
-    query_builder = db.query(VectorChunk)
-    
+    """
+    Semantic search using pgvector's `<=>` (cosine distance) operator.
+    Falls back to in-memory numpy cosine similarity when pgvector is not available.
+    """
+    query_emb = create_embeddings([query])[0]
+
+    # Try native pgvector query first
+    try:
+        return _pgvector_search(db, query_emb, document_type, limit)
+    except Exception:
+        logger.debug("pgvector native query unavailable, falling back to numpy")
+        return _numpy_search(db, query_emb, document_type, limit)
+
+
+def _pgvector_search(
+    db: Session,
+    query_emb: List[float],
+    document_type: Optional[str],
+    limit: int,
+) -> List[Dict[str, Any]]:
+    """Use pgvector `<=>` operator for fast cosine-distance search."""
+    emb_str = "[" + ",".join(str(v) for v in query_emb) + "]"
+
+    sql = """
+        SELECT vc.id, vc.document_id, vc.chunk, vc.chunk_type, vc.page_number,
+               1 - (vc.embedding <=> :emb::vector) AS similarity
+        FROM vector_chunks vc
+    """
     if document_type:
-        query_builder = query_builder.join(Document).filter(
-            Document.kind == document_type
-        )
-    
-    # Get all chunks
-    chunks = query_builder.all()
-    
+        sql += " JOIN documents d ON d.id = vc.document_id WHERE d.kind = :kind"
+    sql += " ORDER BY vc.embedding <=> :emb::vector LIMIT :lim"
+
+    params: dict = {"emb": emb_str, "lim": limit}
+    if document_type:
+        params["kind"] = document_type
+
+    rows = db.execute(text(sql), params).fetchall()
+    return [
+        {
+            "chunk_id": r[0],
+            "document_id": r[1],
+            "text": r[2],
+            "chunk_type": r[3],
+            "page_number": r[4],
+            "similarity": float(r[5]),
+        }
+        for r in rows
+    ]
+
+
+def _numpy_search(
+    db: Session,
+    query_emb: List[float],
+    document_type: Optional[str],
+    limit: int,
+) -> List[Dict[str, Any]]:
+    """Fallback: fetch all chunks and compute cosine similarity in Python."""
+    q = db.query(VectorChunk)
+    if document_type:
+        q = q.join(Document).filter(Document.kind == document_type)
+    chunks = q.all()
+
     if not chunks:
         return []
-    
-    # Calculate similarities
-    similarities = []
+
+    query_vec = np.array(query_emb)
+    scored = []
     for chunk in chunks:
-        if chunk.embedding:
-            # Convert embedding to numpy array if it's stored as list
-            if isinstance(chunk.embedding, list):
-                chunk_embedding = np.array(chunk.embedding)
-            else:
-                chunk_embedding = chunk.embedding
-            
-            # Calculate cosine similarity
-            similarity = np.dot(query_embedding, chunk_embedding) / (
-                np.linalg.norm(query_embedding) * np.linalg.norm(chunk_embedding)
-            )
-            similarities.append((chunk, similarity))
-    
-    # Sort by similarity and return top results
-    similarities.sort(key=lambda x: x[1], reverse=True)
-    
-    results = []
-    for chunk, similarity in similarities[:limit]:
-        results.append({
-            "chunk_id": chunk.id,
-            "document_id": chunk.document_id,
-            "text": chunk.chunk,
-            "similarity": float(similarity),
-            "chunk_type": chunk.chunk_type,
-            "page_number": chunk.page_number
-        })
-    
-    return results
+        if chunk.embedding is None:
+            continue
+        emb_arr = np.array(chunk.embedding) if isinstance(chunk.embedding, list) else chunk.embedding
+        sim = float(np.dot(query_vec, emb_arr) / (np.linalg.norm(query_vec) * np.linalg.norm(emb_arr) + 1e-9))
+        scored.append((chunk, sim))
+
+    scored.sort(key=lambda x: x[1], reverse=True)
+
+    return [
+        {
+            "chunk_id": c.id,
+            "document_id": c.document_id,
+            "text": c.chunk,
+            "chunk_type": c.chunk_type,
+            "page_number": c.page_number,
+            "similarity": sim,
+        }
+        for c, sim in scored[:limit]
+    ]
 
 
+# ---------------------------------------------------------------------------
+# Higher-level helpers
+# ---------------------------------------------------------------------------
 def retrieve_context(
     db: Session,
     query: str,
     document_types: Optional[List[str]] = None,
-    limit: int = 5
+    limit: int = 5,
 ) -> str:
-    """Retrieve context for a query using RAG"""
+    """Retrieve and concatenate the top-k relevant chunks as context string."""
     results = search_documents(db, query, None, limit)
-    
     if not results:
         return "No relevant context found."
-    
-    # Combine results into context
-    context_parts = []
-    for result in results:
-        context_parts.append(f"Document {result['document_id']}: {result['text']}")
-    
-    return "\n\n".join(context_parts)
+    return "\n\n".join(
+        f"[Doc {r['document_id']}] {r['text']}" for r in results
+    )
 
 
 def find_similar_chunks(
     db: Session,
     chunk_id: int,
-    limit: int = 5
+    limit: int = 5,
 ) -> List[Dict[str, Any]]:
-    """Find similar chunks to a specific chunk"""
-    # Get the source chunk
-    source_chunk = db.query(VectorChunk).filter(VectorChunk.id == chunk_id).first()
-    
-    if not source_chunk or not source_chunk.embedding:
+    """Find chunks similar to a given chunk."""
+    source = db.query(VectorChunk).filter(VectorChunk.id == chunk_id).first()
+    if not source or source.embedding is None:
         return []
-    
-    # Convert embedding to numpy array
-    if isinstance(source_chunk.embedding, list):
-        source_embedding = np.array(source_chunk.embedding)
-    else:
-        source_embedding = source_chunk.embedding
-    
-    # Get all other chunks
-    other_chunks = db.query(VectorChunk).filter(
-        VectorChunk.id != chunk_id,
-        VectorChunk.embedding.isnot(None)
-    ).all()
-    
-    # Calculate similarities
-    similarities = []
-    for chunk in other_chunks:
-        if isinstance(chunk.embedding, list):
-            chunk_embedding = np.array(chunk.embedding)
-        else:
-            chunk_embedding = chunk.embedding
-        
-        similarity = np.dot(source_embedding, chunk_embedding) / (
-            np.linalg.norm(source_embedding) * np.linalg.norm(chunk_embedding)
-        )
-        similarities.append((chunk, similarity))
-    
-    # Sort by similarity and return top results
-    similarities.sort(key=lambda x: x[1], reverse=True)
-    
-    results = []
-    for chunk, similarity in similarities[:limit]:
-        results.append({
-            "chunk_id": chunk.id,
-            "document_id": chunk.document_id,
-            "text": chunk.chunk,
-            "similarity": float(similarity),
-            "chunk_type": chunk.chunk_type,
-            "page_number": chunk.page_number
-        })
-    
-    return results
+
+    emb = source.embedding if isinstance(source.embedding, list) else list(source.embedding)
+    try:
+        return _pgvector_search(db, emb, None, limit + 1)
+    except Exception:
+        return _numpy_search(db, emb, None, limit + 1)
 
 
 def build_context_for_requirement(
     db: Session,
     requirement_text: str,
-    rfq_id: int
+    rfq_id: int,
 ) -> str:
-    """Build context for a specific requirement"""
-    # Search for relevant evidence
-    evidence_results = search_documents(
-        db, requirement_text, None, limit=5
-    )
-    
-    # Search for facility features
-    facility_results = search_documents(
-        db, "facility features shuttle wifi parking", "facility", limit=3
-    )
-    
-    # Search for past performance
-    past_perf_results = search_documents(
-        db, "past performance similar project", "past_performance", limit=3
-    )
-    
-    # Combine results
-    context_parts = []
-    
-    if evidence_results:
-        context_parts.append("Evidence:")
-        for result in evidence_results:
-            context_parts.append(f"- {result['text']}")
-    
-    if facility_results:
-        context_parts.append("\nFacility Features:")
-        for result in facility_results:
-            context_parts.append(f"- {result['text']}")
-    
-    if past_perf_results:
-        context_parts.append("\nPast Performance:")
-        for result in past_perf_results:
-            context_parts.append(f"- {result['text']}")
-    
-    return "\n".join(context_parts) if context_parts else "No relevant context found."
+    """Build a structured context block for a specific RFQ requirement."""
+    evidence = search_documents(db, requirement_text, None, limit=5)
+    facility = search_documents(db, "facility features shuttle wifi parking", "facility", limit=3)
+    past_perf = search_documents(db, "past performance similar project", "past_performance", limit=3)
+
+    parts: List[str] = []
+    if evidence:
+        parts.append("Evidence:")
+        parts.extend(f"- {r['text']}" for r in evidence)
+    if facility:
+        parts.append("\nFacility Features:")
+        parts.extend(f"- {r['text']}" for r in facility)
+    if past_perf:
+        parts.append("\nPast Performance:")
+        parts.extend(f"- {r['text']}" for r in past_perf)
+
+    return "\n".join(parts) if parts else "No relevant context found."
