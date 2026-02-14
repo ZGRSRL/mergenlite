@@ -93,6 +93,14 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
+# Global Exception Handler
+# ---------------------------------------------------------------------------
+from .middleware import ExceptionHandlerMiddleware  # noqa: E402
+
+app.add_middleware(ExceptionHandlerMiddleware)
+logger.info("[main] Global exception handler middleware registered ✓")
+
+# ---------------------------------------------------------------------------
 # Static file mount for generated outputs
 # ---------------------------------------------------------------------------
 _data_dir = Path("data")
@@ -149,6 +157,7 @@ async def startup_event():
     """
     1. Run Alembic migrations
     2. Enable pgvector extension
+    3. Send Telegram "system up" notification
     """
     logger.info("[startup] Application starting …")
 
@@ -169,5 +178,16 @@ async def startup_event():
 
     # 2. pgvector
     init_pgvector()
+
+    # 3. Startup notification
+    from .services.notifications import notify_info
+    await notify_info(
+        "MergenLite v2.0 started successfully ✅",
+        {
+            "environment": settings.env,
+            "database": settings.database_url[:40] + "...",
+            "monitoring": "active" if settings.telegram_enabled else "disabled",
+        },
+    )
 
     logger.info("[startup] Application ready ✓")

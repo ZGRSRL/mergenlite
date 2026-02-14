@@ -81,6 +81,11 @@ class Settings(BaseSettings):
     smtp_from_email: str = os.getenv("SMTP_FROM_EMAIL", "noreply@mergenlite.com")
     pipeline_notification_email: Optional[str] = os.getenv("PIPELINE_NOTIFICATION_EMAIL")
 
+    # -- Telegram Notifications -----------------------------------------------
+    telegram_bot_token: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")
+    telegram_chat_id: Optional[str] = os.getenv("TELEGRAM_CHAT_ID")
+    telegram_enabled: bool = os.getenv("TELEGRAM_ENABLED", "false").lower() == "true"
+
     # -- Feature flags --------------------------------------------------------
     hotel_match_use_autogen: bool = os.getenv("HOTEL_MATCH_USE_AUTOGEN", "false").lower() == "true"
 
