@@ -1,0 +1,471 @@
+{
+  "timestamp": "2025-12-10T11:27:15.315623",
+  "results": [
+    {
+      "opportunityId": "74d686a0177b4e91b9aa0ae6edc9ce36",
+      "noticeId": "74d686a0177b4e91b9aa0ae6edc9ce36",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/74d686a0177b4e91b9aa0ae6edc9ce36/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=74d686a0177b4e91b9aa0ae6edc9ce36",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "74d686a0177b4e91b9aa0ae6edc9ce36",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-09",
+          "number": "W911SA26AA004",
+          "amount": "7500000",
+          "awardee": {
+            "name": "PARLIAMENT LLC",
+            "location": {
+              "streetAddress": "2427 BRENTWOOD RD",
+              "city": {
+                "code": "4500",
+                "name": "Beachwood"
+              },
+              "state": {
+                "code": "OH",
+                "name": "Ohio"
+              },
+              "zip": "44122",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "DMEAS1ZSTVY8",
+            "cageCode": "6XL51"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=74d686a0177b4e91b9aa0ae6edc9ce36",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/74d686a0177b4e91b9aa0ae6edc9ce36/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=74d686a0177b4e91b9aa0ae6edc9ce36&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "6141ecaa82ed411bbe7ca3557912c90a",
+      "noticeId": "6141ecaa82ed411bbe7ca3557912c90a",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/6141ecaa82ed411bbe7ca3557912c90a/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6141ecaa82ed411bbe7ca3557912c90a",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "6141ecaa82ed411bbe7ca3557912c90a",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-09",
+          "number": "W911SA26AA002",
+          "amount": "7500000",
+          "awardee": {
+            "name": "LIFE SAFETY GROUP, LLC",
+            "location": {
+              "streetAddress": "12512 KNIGHTSBRIDGE CT",
+              "city": {
+                "code": "67675",
+                "name": "Rockville"
+              },
+              "state": {
+                "code": "MD",
+                "name": "Maryland"
+              },
+              "zip": "20850",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "W3WWDTKBJUC1",
+            "cageCode": "5TWB2"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6141ecaa82ed411bbe7ca3557912c90a",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/6141ecaa82ed411bbe7ca3557912c90a/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=6141ecaa82ed411bbe7ca3557912c90a&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "1cecc185879743c18d8083c985f7f60d",
+      "noticeId": "1cecc185879743c18d8083c985f7f60d",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/1cecc185879743c18d8083c985f7f60d/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=1cecc185879743c18d8083c985f7f60d",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "1cecc185879743c18d8083c985f7f60d",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-08",
+          "number": "W911SA26AA001",
+          "amount": "7500000",
+          "awardee": {
+            "name": "IP TECHNOLOGY LLC",
+            "location": {
+              "streetAddress": "26 MIDDLESEX CIRCLE APARTMENT 15",
+              "city": {
+                "name": "WALTHAM"
+              },
+              "state": {
+                "name": "MA"
+              },
+              "zip": "02452",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "JZWKRBJKZ856",
+            "cageCode": "9GNH4"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=1cecc185879743c18d8083c985f7f60d",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/1cecc185879743c18d8083c985f7f60d/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=1cecc185879743c18d8083c985f7f60d&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "0ebab1c9117f45538c05d4eb5a955892",
+      "noticeId": "0ebab1c9117f45538c05d4eb5a955892",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/0ebab1c9117f45538c05d4eb5a955892/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=0ebab1c9117f45538c05d4eb5a955892",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "0ebab1c9117f45538c05d4eb5a955892",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-09",
+          "number": "W911SA26AA003",
+          "amount": "7500000",
+          "awardee": {
+            "name": "C2 Worldwide LLC",
+            "location": {
+              "streetAddress": "5457 TWIN KNOLLS RD STE 300",
+              "city": {
+                "code": "19125",
+                "name": "Columbia"
+              },
+              "state": {
+                "code": "MD",
+                "name": "Maryland"
+              },
+              "zip": "21045",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "J1R5YXE51US5",
+            "cageCode": "9ME01"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=0ebab1c9117f45538c05d4eb5a955892",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/0ebab1c9117f45538c05d4eb5a955892/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=0ebab1c9117f45538c05d4eb5a955892&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "09916b0e3f7d450584ff10bfa5befdee",
+      "noticeId": "09916b0e3f7d450584ff10bfa5befdee",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/09916b0e3f7d450584ff10bfa5befdee/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=09916b0e3f7d450584ff10bfa5befdee",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "09916b0e3f7d450584ff10bfa5befdee",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-09",
+          "number": "W911SA26AA005",
+          "amount": "7500000",
+          "awardee": {
+            "name": "TRAVEL LODGING GROUP USA INC",
+            "location": {
+              "streetAddress": "32 PUMPKIN HILL RD",
+              "city": {
+                "name": "LEVITTOWN"
+              },
+              "state": {
+                "name": "PA"
+              },
+              "zip": "19056",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "VL5EDRYPJLM6",
+            "cageCode": "122P7"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=09916b0e3f7d450584ff10bfa5befdee",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/09916b0e3f7d450584ff10bfa5befdee/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=09916b0e3f7d450584ff10bfa5befdee&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    }
+  ]
+}

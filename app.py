@@ -1380,10 +1380,12 @@ def render_opportunity_center():
     # Sıralama: En fazla gün kalan üstte, 0 gün kalan altta (azalan sırada)
     opportunities = sorted(formatted_opportunities, key=lambda x: x['daysLeft'], reverse=True)
     
-    # Fırsatları göster
-    st.markdown(f"### 📋 Toplam {len(opportunities)} Fırsat Bulundu")
+    # Filtreleme: Aktif ve Arşivlenmiş (Süresi dolan)
+    active_ops = [op for op in opportunities if op['daysLeft'] > 0]
+    expired_ops = [op for op in opportunities if op['daysLeft'] <= 0]
     
-    for idx, opp in enumerate(opportunities):
+    # Helper func to render card (Dry Principle)
+    def render_opp_card(opp, idx, is_archived=False):
         # Risk seviyesi ve renkler
         risk_level = opp.get('risk', 'low')
         if not opp.get('analyzed'): risk_level = 'unknown'
@@ -1404,14 +1406,15 @@ def render_opportunity_center():
         sam_link_html = f'<a href="{sam_url}" target="_blank" style="color:var(--blue-400);text-decoration:none;font-weight:600;">🔗 SAM.gov</a>' if sam_url else ""
         
         # Ana Kart
-        # Opportunity ID ve butonlar için - benzersiz key oluştur
         opp_id = opp.get('opportunityId') or opp.get('noticeId') or 'unknown'
         opportunity_code = opp_id if len(str(opp_id)) == 32 else (opp.get('noticeId') or opp.get('solicitationNumber') or opp_id)
-        # Döngü indeksini ekleyerek benzersiz key oluştur
-        unique_key_suffix = f"{opp_id}_{idx}"
+        # Unique key suffix
+        unique_key_suffix = f"{opportunity_code}_{idx}_{'archived' if is_archived else 'active'}"
+
+        opacity_style = "opacity: 0.7;" if is_archived else ""
 
         st.markdown(f"""
-        <div class="op-card" style="margin-bottom: 16px;">
+        <div class="op-card" style="margin-bottom: 16px; {opacity_style}">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-300);">{opp.get('opportunityId') or opp.get('noticeId')}</span>
@@ -1429,15 +1432,13 @@ def render_opportunity_center():
         </div>
         """, unsafe_allow_html=True)
         
-        # Action Buttons & Expanders (Container içinde değil ayrı, görsel olarak bütünleşik)
-        
         # Açıklama
         description = opp.get('description') or opp.get('summary') or ''
         if description:
             with st.expander("📄 Fırsat Detayları ve Açıklama"):
                 st.markdown(description, unsafe_allow_html=True)
         
-        # Butonlar kartın hemen altında (görsel olarak kart içinde görünecek)
+        # Butonlar kartın hemen altında
         st.markdown("""
         <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-800); border-top: none; border-radius: 0 0 8px 8px; padding: 16px; margin-top: 8px; margin-bottom: 16px;">
         """, unsafe_allow_html=True)
@@ -1446,18 +1447,15 @@ def render_opportunity_center():
         
         with btn_col1:
             if st.button("▶ Analizi Başlat", key=f"analyze_{unique_key_suffix}", use_container_width=True):
-                # Otomatik doküman indirme ve analiz başlatma
                 with st.spinner("📥 Dokümanlar indiriliyor ve analiz başlatılıyor..."):
                     try:
                         from pathlib import Path
                         from opportunity_runner import download_from_sam
                         
-                        # Klasör oluştur
                         safe_notice_id = "".join(c for c in str(opportunity_code).strip() if c.isalnum() or c in ("_", "-"))
                         folder = Path(".") / "opportunities" / safe_notice_id
                         folder.mkdir(parents=True, exist_ok=True)
                         
-                        # DB'den resourceLinks ile otomatik indir
                         notice_id = opp.get('noticeId') or opp.get('solicitationNumber') or opp.get('opportunityId', '')
                         opportunity_id = opp.get('opportunityId', '')
                         
@@ -1472,13 +1470,10 @@ def render_opportunity_center():
                         else:
                             st.info("ℹ️ Döküman bulunamadı veya zaten mevcut. Analiz devam ediyor...")
                         
-                        # Analiz için hazırla
                         st.session_state.selected_opportunity = opp
                         st.session_state.current_page = 'GUIDED_ANALYSIS'
                         st.session_state.analysis_stage = 1
                         st.session_state.analysis_data = {}
-                        
-                        # Analiz otomatik başlatılacak (guided_analysis.py'de)
                         st.rerun()
                     except Exception as e:
                         logger.error(f"Otomatik doküman indirme hatası: {e}", exc_info=True)
@@ -1488,34 +1483,27 @@ def render_opportunity_center():
                         st.rerun()
         
         with btn_col2:
-            if st.button("📤 Döküman Yükle", key=f"upload_{opp_id}", use_container_width=True):
-                st.session_state[f'upload_mode_{opp_id}'] = True
+            if st.button("📤 Döküman Yükle", key=f"upload_{unique_key_suffix}", use_container_width=True):
+                st.session_state[f'upload_mode_{unique_key_suffix}'] = True
                 st.session_state.selected_opportunity = opp
                 st.rerun()
         
         with btn_col3:
-            if st.button("📁 Klasörü Aç", key=f"folder_{opp_id}", use_container_width=True):
+            if st.button("📁 Klasörü Aç", key=f"folder_{unique_key_suffix}", use_container_width=True):
                 folder_path = open_opportunity_folder(opportunity_code)
                 if folder_path:
                     st.success(f"✅ Klasör açıldı: {folder_path}")
         
         with btn_col4:
-            if st.button("📥 Döküman İndir", key=f"download_{opp_id}", use_container_width=True):
+            if st.button("📥 Döküman İndir", key=f"download_{unique_key_suffix}", use_container_width=True):
                 notice_id = opp.get('noticeId') or opp.get('solicitationNumber') or opp.get('opportunityId', '')
                 if notice_id:
-                    # Notice ID ile klasör oluştur
                     from pathlib import Path
-                    # Notice ID'yi temizle (güvenli klasör adı için)
                     safe_notice_id = "".join(c for c in str(notice_id).strip() if c.isalnum() or c in ("_", "-"))
                     folder = Path(".") / "opportunities" / safe_notice_id
                     folder.mkdir(parents=True, exist_ok=True)
                     folder_path = str(folder.absolute())
-                    
-                    # Klasörü aç
                     open_opportunity_folder(safe_notice_id)
-                    st.success(f"✅ Klasör oluşturuldu ve açıldı: {folder_path}")
-                    
-                    # SAM.gov'dan dökümanları indir
                     with st.spinner(f"📥 Dökümanlar indiriliyor: {notice_id}..."):
                         try:
                             from opportunity_runner import download_from_sam
@@ -1529,14 +1517,13 @@ def render_opportunity_center():
                             else:
                                 st.warning("⚠️ Döküman bulunamadı veya indirilemedi.")
                         except Exception as e:
-                            logger.error(f"Döküman indirme hatası: {e}", exc_info=True)
                             st.error(f"❌ Döküman indirme hatası: {str(e)}")
                 else:
                     st.warning("⚠️ Notice ID bulunamadı.")
         
-        # Upload mode kontrolü
-        if st.session_state.get(f'upload_mode_{opp_id}', False):
-            st.markdown("</div>", unsafe_allow_html=True)
+        # Upload mode UI
+        if st.session_state.get(f'upload_mode_{unique_key_suffix}', False):
+            st.markdown("</div>", unsafe_allow_html=True) # Close the button container
             st.markdown("---")
             st.markdown("### 📤 Döküman Yükleme ve Seçme")
             
@@ -1566,7 +1553,7 @@ def render_opportunity_center():
                     "Analiz için kullanılacak dosyaları seçin:",
                     options=list(file_dict.keys()),
                     default=list(file_dict.keys()),  # Tümünü varsayılan olarak seç
-                    key=f"select_existing_{opp_id}",
+                    key=f"select_existing_{unique_key_suffix}",
                     help="Klasördeki mevcut dosyalardan analiz için kullanmak istediklerinizi seçin."
                 )
                 
@@ -1577,9 +1564,9 @@ def render_opportunity_center():
                         size_kb = file_path.stat().st_size / 1024
                         st.markdown(f"  - `{filename}` ({size_kb:.1f} KB)")
                     
-                    if st.button("🚀 Seçili Dosyalarla Analiz Başlat", key=f"analyze_selected_{opp_id}", type="primary", use_container_width=True):
+                    if st.button("🚀 Seçili Dosyalarla Analiz Başlat", key=f"analyze_selected_{unique_key_suffix}", type="primary", use_container_width=True):
                         # Upload mode'u kapat
-                        st.session_state[f'upload_mode_{opp_id}'] = False
+                        st.session_state[f'upload_mode_{unique_key_suffix}'] = False
                         # Fırsatı seç ve analiz sayfasına yönlendir
                         st.session_state.selected_opportunity = opp
                         st.session_state.current_page = 'GUIDED_ANALYSIS'
@@ -1634,6 +1621,10 @@ def render_opportunity_center():
 
 def render_results_page():
     """Results page - Veritabanından gerçek verilerle"""
+    # Initialize session state for this page
+    if 'selected_analysis_data' not in st.session_state:
+        st.session_state.selected_analysis_data = None
+
     # Analiz Geçmişi - Veritabanından çek
     st.markdown("### 📊 Analiz Geçmişi")
     
@@ -1644,18 +1635,14 @@ def render_results_page():
             db = get_db_session()
             if db:
                 from mergenlite_models import AIAnalysisResult, Opportunity
-                from sqlalchemy import or_
+                from sqlalchemy import or_, cast, String
                 import json
                 
-                # Optimized: Single query that returns both models (no re-query in loop)
-                # Note: opportunity_id FK değil, manuel join
-                # Opportunity ID veya Notice ID ile eşleştir (her ikisi de olabilir)
+                # Optimized: Single query that returns both models
+                # Fix: Join on Integer Primary Key (Opportunity.id)
                 analyses = db.query(AIAnalysisResult, Opportunity).outerjoin(
                     Opportunity, 
-                    or_(
-                        AIAnalysisResult.opportunity_id == Opportunity.opportunity_id,
-                        AIAnalysisResult.opportunity_id == Opportunity.notice_id
-                    )
+                    AIAnalysisResult.opportunity_id == Opportunity.id
                 ).order_by(AIAnalysisResult.timestamp.desc()).limit(50).all()
                 
                 for analysis, opp in analyses:
@@ -1753,14 +1740,14 @@ def render_results_page():
                     
                     analysis_history.append({
                         "analizId": f"AN-{analysis.id}",
-                        "noticeId": opp.notice_id if opp and opp.notice_id else analysis.opportunity_id[:20],
+                        "noticeId": opp.notice_id if opp and opp.notice_id else str(analysis.opportunity_id),
                         "title": opp.title if opp else "Başlık Yok",
                         "tarih": analysis.timestamp.strftime("%Y-%m-%d %H:%M") if analysis.timestamp else "N/A",
                         "sure": sure,
                         "skor": skor,
                         "skorClass": skor_class,
                         "analysis_id": str(analysis.id),
-                        "opportunity_id": analysis.opportunity_id,
+                        "opportunity_id": opp.opportunity_id if opp else str(analysis.opportunity_id),
                         "status": analysis.analysis_type,  # analysis_type -> status
                         "consolidated_output": result_data  # result -> consolidated_output (UI uyumluluğu için)
                     })
@@ -2876,11 +2863,52 @@ def main():
                         st.error(f"Analiz sayfası yüklenemedi: {str(e)}")
                         logger.error(f"Analiz sayfası hatası: {e}", exc_info=True)
                 else:
-                    st.warning("⚠️ Lütfen önce bir ilan seçin.")
-                    if st.button("← İlan Merkezine Dön", key="analysis_back_btn"):
-                        st.session_state.current_page = 'OPPORTUNITY_CENTER'
-                        st.rerun()
-            elif st.session_state.current_page == 'RESULTS':
+                    # AI Analysis Tab - Selection Screen
+                    st.markdown("""
+                    <div style="text-align: center; margin-bottom: 32px;">
+                        <h1 style="font-size: 28px; margin-bottom: 8px;">🤖 AI Destekli Analiz Merkezi</h1>
+                        <p style="color: var(--text-400);">Analize başlamak için aşağıdaki listeden bir fırsat seçin.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Load active opportunities
+                    opportunities = load_opportunities_from_db()
+                    # Show all opportunities that are not archives (or just all for now to ensure visibility)
+                    active_ops = opportunities
+                    
+                    if not active_ops:
+                        st.info("⚠️ Analiz edilecek aktif fırsat bulunamadı. Lütfen önce veri çekin.")
+                    else:
+                        st.markdown(f"### 📋 Analiz İçin Uygun Fırsatlar ({len(active_ops)})")
+                        
+                        # Create a nice layout for the list
+                        for opp in active_ops:
+                            opp_id = opp.get('opportunityId') or opp.get('noticeId')
+                            days = opp.get('daysLeft')
+                            analyzed = opp.get('analyzed', False)
+                            
+                            col1, col2, col3 = st.columns([4, 2, 1])
+                            
+                            with col1:
+                                st.markdown(f"**{opp.get('title')}**")
+                                st.caption(f"ID: {opp_id} • Bitiş: {opp.get('responseDeadline', 'N/A')}")
+                            
+                            with col2:
+                                if days is None:
+                                     st.markdown(f"❓ <span style='color:var(--text-400)'>Tarih Yok</span>", unsafe_allow_html=True)
+                                elif days <= 5:
+                                    st.markdown(f"🔥 <span style='color:#ef4444'>{days} gün kaldı</span>", unsafe_allow_html=True)
+                                else:
+                                    st.markdown(f"⏱️ <span style='color:#10b981'>{days} gün kaldı</span>", unsafe_allow_html=True)
+                                    
+                            with col3:
+                                if st.button("▶ Seç", key=f"sel_ai_{opp_id}", use_container_width=True):
+                                    st.session_state.selected_opportunity = opp
+                                    st.session_state.analysis_stage = 1
+                                    st.session_state.analysis_data = {}
+                                    st.rerun()
+                            
+                            st.markdown("---")
                 render_results_page()
             elif st.session_state.current_page == 'MAIL_DASHBOARD':
                 render_mail_dashboard()

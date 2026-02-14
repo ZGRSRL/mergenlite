@@ -1,0 +1,27 @@
+{
+  "opportunity": {
+    "id": 2,
+    "notice_id": "TEST-a7fa5e50",
+    "title": "E2E Test Opportunity - Catering Services",
+    "agency": "Test Agency",
+    "naics_code": null
+  },
+  "analysis_type": "sow_draft",
+  "pipeline_version": "v1",
+  "options": {
+    "max_text_length": 120000
+  },
+  "attachment_count": 0,
+  "attachments": [],
+  "analyzed_documents": [],
+  "document_analysis": {
+    "total_text_length": 0,
+    "total_word_count": 0,
+    "total_tables": 0,
+    "documents_analyzed": 0,
+    "combined_text_preview": ""
+  },
+  "sow_analysis": null,
+  "generated_at": "2025-12-10T07:58:38.970350",
+  "notes": "No documents analyzed. Text extracted: 0 chars. Please ensure attachments are downloaded and files exist on disk."
+}

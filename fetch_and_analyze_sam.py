@@ -54,15 +54,16 @@ def main():
     print("\n[2] Fetching opportunities (Limit: 5)...")
     opportunities = []
     try:
-        # opportunities = sam.fetch_opportunities(
-        #     naics_codes=['721110'], 
-        #     days_back=30, 
-        #     limit=5
-        # )
-        print("    [NOTE] Skipping API call due to known Rate Limit (429).")
-        opportunities = []
+        # Try to fetch real data
+        opportunities = sam.fetch_opportunities(
+            naics_codes=['721110'], 
+            days_back=30, 
+            limit=5
+        )
     except Exception as e:
         print(f"Error fetching opportunities: {e}")
+        print("    [NOTE] API call failed (likely Rate Limit 429). Switching to MOCK data.")
+        opportunities = []
 
     # Mock Data Fallback if API blocked
     if not opportunities:

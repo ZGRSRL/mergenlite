@@ -1,0 +1,2611 @@
+{
+  "timestamp": "2025-12-10T12:34:48.492636",
+  "results": [
+    {
+      "opportunityId": "74d686a0177b4e91b9aa0ae6edc9ce36",
+      "noticeId": "74d686a0177b4e91b9aa0ae6edc9ce36",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/74d686a0177b4e91b9aa0ae6edc9ce36/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=74d686a0177b4e91b9aa0ae6edc9ce36",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "74d686a0177b4e91b9aa0ae6edc9ce36",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-09",
+          "number": "W911SA26AA004",
+          "amount": "7500000",
+          "awardee": {
+            "name": "PARLIAMENT LLC",
+            "location": {
+              "streetAddress": "2427 BRENTWOOD RD",
+              "city": {
+                "code": "4500",
+                "name": "Beachwood"
+              },
+              "state": {
+                "code": "OH",
+                "name": "Ohio"
+              },
+              "zip": "44122",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "DMEAS1ZSTVY8",
+            "cageCode": "6XL51"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=74d686a0177b4e91b9aa0ae6edc9ce36",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/74d686a0177b4e91b9aa0ae6edc9ce36/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=74d686a0177b4e91b9aa0ae6edc9ce36&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "6141ecaa82ed411bbe7ca3557912c90a",
+      "noticeId": "6141ecaa82ed411bbe7ca3557912c90a",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/6141ecaa82ed411bbe7ca3557912c90a/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6141ecaa82ed411bbe7ca3557912c90a",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "6141ecaa82ed411bbe7ca3557912c90a",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-09",
+          "number": "W911SA26AA002",
+          "amount": "7500000",
+          "awardee": {
+            "name": "LIFE SAFETY GROUP, LLC",
+            "location": {
+              "streetAddress": "12512 KNIGHTSBRIDGE CT",
+              "city": {
+                "code": "67675",
+                "name": "Rockville"
+              },
+              "state": {
+                "code": "MD",
+                "name": "Maryland"
+              },
+              "zip": "20850",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "W3WWDTKBJUC1",
+            "cageCode": "5TWB2"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6141ecaa82ed411bbe7ca3557912c90a",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/6141ecaa82ed411bbe7ca3557912c90a/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=6141ecaa82ed411bbe7ca3557912c90a&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "1cecc185879743c18d8083c985f7f60d",
+      "noticeId": "1cecc185879743c18d8083c985f7f60d",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/1cecc185879743c18d8083c985f7f60d/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=1cecc185879743c18d8083c985f7f60d",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "1cecc185879743c18d8083c985f7f60d",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-08",
+          "number": "W911SA26AA001",
+          "amount": "7500000",
+          "awardee": {
+            "name": "IP TECHNOLOGY LLC",
+            "location": {
+              "streetAddress": "26 MIDDLESEX CIRCLE APARTMENT 15",
+              "city": {
+                "name": "WALTHAM"
+              },
+              "state": {
+                "name": "MA"
+              },
+              "zip": "02452",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "JZWKRBJKZ856",
+            "cageCode": "9GNH4"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=1cecc185879743c18d8083c985f7f60d",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/1cecc185879743c18d8083c985f7f60d/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=1cecc185879743c18d8083c985f7f60d&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "0ebab1c9117f45538c05d4eb5a955892",
+      "noticeId": "0ebab1c9117f45538c05d4eb5a955892",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/0ebab1c9117f45538c05d4eb5a955892/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=0ebab1c9117f45538c05d4eb5a955892",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "0ebab1c9117f45538c05d4eb5a955892",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-09",
+          "number": "W911SA26AA003",
+          "amount": "7500000",
+          "awardee": {
+            "name": "C2 Worldwide LLC",
+            "location": {
+              "streetAddress": "5457 TWIN KNOLLS RD STE 300",
+              "city": {
+                "code": "19125",
+                "name": "Columbia"
+              },
+              "state": {
+                "code": "MD",
+                "name": "Maryland"
+              },
+              "zip": "21045",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "J1R5YXE51US5",
+            "cageCode": "9ME01"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=0ebab1c9117f45538c05d4eb5a955892",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/0ebab1c9117f45538c05d4eb5a955892/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=0ebab1c9117f45538c05d4eb5a955892&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "09916b0e3f7d450584ff10bfa5befdee",
+      "noticeId": "09916b0e3f7d450584ff10bfa5befdee",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/09916b0e3f7d450584ff10bfa5befdee/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-12-09",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=09916b0e3f7d450584ff10bfa5befdee",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "09916b0e3f7d450584ff10bfa5befdee",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-12-09",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-12-09",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-09",
+          "number": "W911SA26AA005",
+          "amount": "7500000",
+          "awardee": {
+            "name": "TRAVEL LODGING GROUP USA INC",
+            "location": {
+              "streetAddress": "32 PUMPKIN HILL RD",
+              "city": {
+                "name": "LEVITTOWN"
+              },
+              "state": {
+                "name": "PA"
+              },
+              "zip": "19056",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "VL5EDRYPJLM6",
+            "cageCode": "122P7"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=09916b0e3f7d450584ff10bfa5befdee",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/09916b0e3f7d450584ff10bfa5befdee/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=09916b0e3f7d450584ff10bfa5befdee&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "863f431b514d4770903d78b647f0e322",
+      "noticeId": "863f431b514d4770903d78b647f0e322",
+      "solicitationNumber": "PANMCC25P0000031507",
+      "samGovLink": "https://sam.gov/opp/863f431b514d4770903d78b647f0e322/view",
+      "title": "Establish a Blanket Purchase Agreement to Support Fort Sill Overflow Off-Post Lodging/Hotel",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.FDO EUSTIS.W6QM MICC-FT SILL",
+      "postedDate": "2025-12-08",
+      "responseDeadLine": "2025-12-23T14:00:00-06:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=863f431b514d4770903d78b647f0e322",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "863f431b514d4770903d78b647f0e322",
+        "title": "Establish a Blanket Purchase Agreement to Support Fort Sill Overflow Off-Post Lodging/Hotel",
+        "solicitationNumber": "PANMCC25P0000031507",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.FDO EUSTIS.W6QM MICC-FT SILL",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.FDO EUSTIS.W9124L",
+        "postedDate": "2025-12-08",
+        "type": "Sources Sought",
+        "baseType": "Sources Sought",
+        "archiveType": "auto15",
+        "archiveDate": "2026-01-07",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": "2025-12-23T14:00:00-06:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "brandi.l.odaniel.civ@army.mil",
+            "phone": "5209441791",
+            "title": null,
+            "fullName": "Brandi O'Daniel"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "SOMMER.P.ROACH.CIV@ARMY.MIL",
+            "phone": "5207184787",
+            "title": null,
+            "fullName": "Sommer Roach"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=863f431b514d4770903d78b647f0e322",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "73503-0501",
+          "city": "FORT SILL",
+          "countryCode": "USA",
+          "state": "OK"
+        },
+        "placeOfPerformance": {
+          "state": {
+            "code": "OK",
+            "name": "Oklahoma"
+          },
+          "zip": "73503",
+          "country": {
+            "code": "USA",
+            "name": "UNITED STATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/863f431b514d4770903d78b647f0e322/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=863f431b514d4770903d78b647f0e322&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "41f1e5c9d9474eafa199f6c32d8a72a4",
+      "noticeId": "41f1e5c9d9474eafa199f6c32d8a72a4",
+      "solicitationNumber": "FA441826Q0004",
+      "samGovLink": "https://sam.gov/opp/41f1e5c9d9474eafa199f6c32d8a72a4/view",
+      "title": "Lodging Support-PALMETTO REACH Saipan/Palau",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE AIR FORCE.AIR MOBILITY COMMAND.FA4418  628 CONS PK",
+      "postedDate": "2025-12-05",
+      "responseDeadLine": "2025-12-15T12:00:00-05:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=41f1e5c9d9474eafa199f6c32d8a72a4",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "41f1e5c9d9474eafa199f6c32d8a72a4",
+        "title": "Lodging Support-PALMETTO REACH Saipan/Palau",
+        "solicitationNumber": "FA441826Q0004",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE AIR FORCE.AIR MOBILITY COMMAND.FA4418  628 CONS PK",
+        "fullParentPathCode": "057.5700.AMC.FA4418",
+        "postedDate": "2025-12-05",
+        "type": "Combined Synopsis/Solicitation",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-30",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": "2025-12-15T12:00:00-05:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "levi.mowrey@us.af.mil",
+            "phone": "8439634541",
+            "title": null,
+            "fullName": "Levi Mowrey"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "patrick.thomas.30@us.af.mil",
+            "phone": "8439634485",
+            "title": null,
+            "fullName": "TSgt Patrick Thomas"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=41f1e5c9d9474eafa199f6c32d8a72a4",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "29404-5021",
+          "city": "JOINT BASE CHARLESTON",
+          "countryCode": "USA",
+          "state": "SC"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "Palau International Airport",
+            "name": "Palau International Airport"
+          },
+          "state": {
+            "code": "PW-150",
+            "name": "Koror"
+          },
+          "country": {
+            "code": "PLW",
+            "name": "PALAU"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/41f1e5c9d9474eafa199f6c32d8a72a4/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=41f1e5c9d9474eafa199f6c32d8a72a4&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/3205b741589140ffb2b0bbe2d680ac75/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/7f7e6df0e05b43caaf5d209946309e11/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c88c8f657f2f4e56808f6ea6293729b6/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/db1a54f3fcd8408fa6fa5fb13e4e5daf/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "27e23e6232f1475d9c4c4d1de73bb4f5",
+      "noticeId": "27e23e6232f1475d9c4c4d1de73bb4f5",
+      "solicitationNumber": "19EN1026D0001",
+      "samGovLink": "https://sam.gov/opp/27e23e6232f1475d9c4c4d1de73bb4f5/view",
+      "title": "Hotel lodging services for the Baltic Computer Forensics Training Program (BCFT) 2025-2028",
+      "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY TALLINN",
+      "postedDate": "2025-12-05",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=27e23e6232f1475d9c4c4d1de73bb4f5",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "27e23e6232f1475d9c4c4d1de73bb4f5",
+        "title": "Hotel lodging services for the Baltic Computer Forensics Training Program (BCFT) 2025-2028",
+        "solicitationNumber": "19EN1026D0001",
+        "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY TALLINN",
+        "fullParentPathCode": "019.1900.19EN10",
+        "postedDate": "2025-12-05",
+        "type": "Award Notice",
+        "baseType": "Award Notice",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-20",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-12-05",
+          "number": "19EN1026D0001",
+          "amount": "363000.00",
+          "awardee": {
+            "name": "FORTUNA TRAVEL OU",
+            "location": {
+              "city": {
+                "name": "Tallinn"
+              },
+              "state": {
+                "code": ""
+              },
+              "zip": "10147",
+              "country": {
+                "code": "EST",
+                "name": "ESTONIA"
+              }
+            },
+            "ueiSAM": "HD57SJJ7NBN5",
+            "cageCode": "0070J"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "TaziH@state.gov",
+            "phone": "3726688154",
+            "title": null,
+            "fullName": "Hind Tazi"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=27e23e6232f1475d9c4c4d1de73bb4f5",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "20520",
+          "city": "WASHINGTON",
+          "countryCode": "USA",
+          "state": "DC"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "Tallinn",
+            "name": "Tallinn"
+          },
+          "zip": "15099",
+          "country": {
+            "code": "EST",
+            "name": "ESTONIA"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/27e23e6232f1475d9c4c4d1de73bb4f5/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=27e23e6232f1475d9c4c4d1de73bb4f5&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "7e2cc9eec3004fc8968df9cf25974d20",
+      "noticeId": "7e2cc9eec3004fc8968df9cf25974d20",
+      "solicitationNumber": "W50S6U26QA011",
+      "samGovLink": "https://sam.gov/opp/7e2cc9eec3004fc8968df9cf25974d20/view",
+      "title": "195 Wing Commercial Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO CA.USPFO CA PROCUREMENT.W7MX USPFO ACTIVITY CAANG 195",
+      "postedDate": "2025-12-04",
+      "responseDeadLine": "2025-12-10T10:00:00-08:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=7e2cc9eec3004fc8968df9cf25974d20",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "7e2cc9eec3004fc8968df9cf25974d20",
+        "title": "195 Wing Commercial Lodging",
+        "solicitationNumber": "W50S6U26QA011",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO CA.USPFO CA PROCUREMENT.W7MX USPFO ACTIVITY CAANG 195",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO CA.USPFO CA PROC.W50S6U",
+        "postedDate": "2025-12-04",
+        "type": "Solicitation",
+        "baseType": "Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2025-12-18",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": "2025-12-10T10:00:00-08:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "carmen.ridener@us.af.mil",
+            "phone": "5307908944",
+            "title": null,
+            "fullName": "Carmen Ridener"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=7e2cc9eec3004fc8968df9cf25974d20",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "95903-2180",
+          "city": "BEALE AFB",
+          "countryCode": "USA",
+          "state": "CA"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "Region 1 17840 13th St. Bldg. 2180, Beale AFB, CA 95903 Region 2 Mather Field, 10616 Superfortress Ave, Mather, CA 95655 Region 3 Vandenberg Space Force Base, CA 93437 Region 4 15900 Victory Blvd., Van Nuys, CA 91406 Region 5 4622 Constitution Ave Bldg. 7, JFTB Los Alamitos, CA 90720 Region 6 7288 Convoy Terrace, San Diego, CA 92111",
+          "zip": "95903"
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/7e2cc9eec3004fc8968df9cf25974d20/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=7e2cc9eec3004fc8968df9cf25974d20&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/adbbddeb4c824fa583f5dbd2a98ad237/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "6b0c809fcb2e43f1bd433a718135aff3",
+      "noticeId": "6b0c809fcb2e43f1bd433a718135aff3",
+      "solicitationNumber": "W50S8C26QA001",
+      "samGovLink": "https://sam.gov/opp/6b0c809fcb2e43f1bd433a718135aff3/view",
+      "title": "NVANG UTA LODGING JANUARY 2025 - DECEMBER 2026",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO NV.USPFO NV PROCUREMENT.W7NM USPFO ACTIVITY NVANG 152",
+      "postedDate": "2025-12-04",
+      "responseDeadLine": "2025-12-17T10:00:00-08:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6b0c809fcb2e43f1bd433a718135aff3",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "6b0c809fcb2e43f1bd433a718135aff3",
+        "title": "NVANG UTA LODGING JANUARY 2025 - DECEMBER 2026",
+        "solicitationNumber": "W50S8C26QA001",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO NV.USPFO NV PROCUREMENT.W7NM USPFO ACTIVITY NVANG 152",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO NV.USPFO NV PROC.W50S8C",
+        "postedDate": "2025-12-04",
+        "type": "Combined Synopsis/Solicitation",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2025-12-31",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": "2025-12-17T10:00:00-08:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "keith.trimble.1@us.af.mil",
+            "phone": "7757884662",
+            "title": null,
+            "fullName": "Keith Trimble"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6b0c809fcb2e43f1bd433a718135aff3",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "89501-4494",
+          "city": "RENO",
+          "countryCode": "USA",
+          "state": "NV"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "152 Force Support Squadron. 1776 National Guard Way. Reno, NV 89502",
+          "zip": "89502"
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/6b0c809fcb2e43f1bd433a718135aff3/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=6b0c809fcb2e43f1bd433a718135aff3&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "658e0e8b11d64cda9e9a309f16613e21",
+      "noticeId": "658e0e8b11d64cda9e9a309f16613e21",
+      "solicitationNumber": "PANMCC25P0000023841",
+      "samGovLink": "https://sam.gov/opp/658e0e8b11d64cda9e9a309f16613e21/view",
+      "title": "Atlanta Hotels Holiday Block Leave FY26",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.FDO EUSTIS.W6QM MICC-FT BENNING",
+      "postedDate": "2025-12-03",
+      "responseDeadLine": "2025-12-05T17:00:00-05:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=658e0e8b11d64cda9e9a309f16613e21",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "658e0e8b11d64cda9e9a309f16613e21",
+        "title": "Atlanta Hotels Holiday Block Leave FY26",
+        "solicitationNumber": "PANMCC25P0000023841",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.FDO EUSTIS.W6QM MICC-FT BENNING",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.FDO EUSTIS.W911SF",
+        "postedDate": "2025-12-03",
+        "type": "Combined Synopsis/Solicitation",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-20",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": "2025-12-05T17:00:00-05:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "christopher.l.kimble.civ@army.mil",
+            "phone": "",
+            "title": null,
+            "fullName": "Christopher Kimble"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "stacia.m.rivers.civ@army.mil",
+            "phone": "",
+            "title": null,
+            "fullName": "Stacia M. Rivers"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=658e0e8b11d64cda9e9a309f16613e21",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "31905-5182",
+          "city": "FORT BENNING",
+          "countryCode": "USA",
+          "state": "GA"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "4000",
+            "name": "Atlanta"
+          },
+          "state": {
+            "code": "GA",
+            "name": "Georgia"
+          },
+          "zip": "30320",
+          "country": {
+            "code": "USA",
+            "name": "UNITED STATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/658e0e8b11d64cda9e9a309f16613e21/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=658e0e8b11d64cda9e9a309f16613e21&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/012e9c2b41b345f7abd237da05ee8947/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2b215381ad2645fba6e86a68fa8ef210/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/443b5870aa4b4ecaa94340b43df7e37f/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/7b34f60dabaa495a8e1a44382a86f274/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/7bfed4159c9643ee9607a95e7446bb57/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9310ac090062490d9339756d9c4ce188/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/b0ddd053009b439f843b95deb50f19d1/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d607bd369a9b4f3ca97a7d7c9943405c/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/df2974b1e14e451789aff15b202edd93/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "0217bbe536c843f2aaf164de30b7313e",
+      "noticeId": "0217bbe536c843f2aaf164de30b7313e",
+      "solicitationNumber": "W912LN26PA001",
+      "samGovLink": "https://sam.gov/opp/0217bbe536c843f2aaf164de30b7313e/view",
+      "title": "Vermont National Guard Yellow Ribbone Event",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO VT.USPFO VT PROCUREMENT.W7N4 USPFO ACTIVITY VT ARNG",
+      "postedDate": "2025-12-03",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=0217bbe536c843f2aaf164de30b7313e",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "0217bbe536c843f2aaf164de30b7313e",
+        "title": "Vermont National Guard Yellow Ribbone Event",
+        "solicitationNumber": "W912LN26PA001",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO VT.USPFO VT PROCUREMENT.W7N4 USPFO ACTIVITY VT ARNG",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO VT.USPFO VT PROC.W912LN",
+        "postedDate": "2025-12-03",
+        "type": "Award Notice",
+        "baseType": "Award Notice",
+        "archiveType": "autocustom",
+        "archiveDate": "2025-12-18",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "X1AB",
+        "active": "Yes",
+        "award": {
+          "date": "2025-11-25",
+          "number": "W912LN26PA001",
+          "amount": "26060.61",
+          "awardee": {
+            "name": "PROSPERITY SISTERS LLC",
+            "location": {
+              "streetAddress": "21892 COSALA",
+              "city": {
+                "name": "MISSION VIEJO"
+              },
+              "state": {
+                "name": "CA"
+              },
+              "zip": "92691",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "K2W8QT1VMHR3",
+            "cageCode": "9XB62"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "joel.m.greer.civ@army.mil",
+            "phone": "8023383190",
+            "title": null,
+            "fullName": "Joel Greer"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=0217bbe536c843f2aaf164de30b7313e",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "05446-3099",
+          "city": "COLCHESTER",
+          "countryCode": "USA",
+          "state": "VT"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "60 Battery Street, Burlington, VT 04401",
+          "zip": "04401"
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/0217bbe536c843f2aaf164de30b7313e/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=0217bbe536c843f2aaf164de30b7313e&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "4bf3f597812644c5bd5cc7810f6f6766",
+      "noticeId": "4bf3f597812644c5bd5cc7810f6f6766",
+      "solicitationNumber": "FA481426Q0003",
+      "samGovLink": "https://sam.gov/opp/4bf3f597812644c5bd5cc7810f6f6766/view",
+      "title": "BPA for Lodging MacDill AFB, FL (6 ARW and 927th ARW)",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE AIR FORCE.AIR MOBILITY COMMAND.FA4814 6 CONS PK",
+      "postedDate": "2025-12-02",
+      "responseDeadLine": "2025-12-02T12:00:00-05:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=4bf3f597812644c5bd5cc7810f6f6766",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "4bf3f597812644c5bd5cc7810f6f6766",
+        "title": "BPA for Lodging MacDill AFB, FL (6 ARW and 927th ARW)",
+        "solicitationNumber": "FA481426Q0003",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE AIR FORCE.AIR MOBILITY COMMAND.FA4814 6 CONS PK",
+        "fullParentPathCode": "057.5700.AMC.FA4814",
+        "postedDate": "2025-12-02",
+        "type": "Solicitation",
+        "baseType": "Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-17",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": "2025-12-02T12:00:00-05:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "X1FC",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "owen.harris.2@us.af.mil",
+            "phone": "813-828-3222",
+            "title": null,
+            "fullName": "Owen Harris"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "melissa.biggar@us.af.mil",
+            "phone": "8138287492",
+            "title": null,
+            "fullName": "Melissa Biggar"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=4bf3f597812644c5bd5cc7810f6f6766",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "33621-5119",
+          "city": "TAMPA",
+          "countryCode": "USA",
+          "state": "FL"
+        },
+        "placeOfPerformance": {
+          "state": {
+            "code": "FL",
+            "name": "Florida"
+          },
+          "zip": "33621",
+          "country": {
+            "code": "USA",
+            "name": "UNITED STATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/4bf3f597812644c5bd5cc7810f6f6766/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=4bf3f597812644c5bd5cc7810f6f6766&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2335ca418aac48bfa9a74d789911f3ea/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/7e6b7b9b2e5342fb9568b7aa4771f504/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/85c6d2199ec542d387a2aebe21475ad6/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/dc5f057c66f14ba5ab51b96ea0112ccb/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/dffd9b13a80841cb88c584d3bfebc655/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ef90d680da4a4d29910f483d293ce080/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f79a7b5ab8b54899936b9dbc980ce8c9/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "415f747bde894ea296ffadc9c36d2ced",
+      "noticeId": "415f747bde894ea296ffadc9c36d2ced",
+      "solicitationNumber": "W912L2-26-P-A001",
+      "samGovLink": "https://sam.gov/opp/415f747bde894ea296ffadc9c36d2ced/view",
+      "title": "Yellow Ribbon Event - December",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO AZ.USPFO AZ PROCUREMENT.W7MV USPFO ACTIVITY AZ ARNG",
+      "postedDate": "2025-12-01",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=415f747bde894ea296ffadc9c36d2ced",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "415f747bde894ea296ffadc9c36d2ced",
+        "title": "Yellow Ribbon Event - December",
+        "solicitationNumber": "W912L2-26-P-A001",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO AZ.USPFO AZ PROCUREMENT.W7MV USPFO ACTIVITY AZ ARNG",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO AZ.USPFO AZ PROC.W912L2",
+        "postedDate": "2025-12-01",
+        "type": "Award Notice",
+        "baseType": "Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2026-12-16",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2026-12-01",
+          "number": "W912L226PA001",
+          "amount": "45096.04",
+          "awardee": {
+            "name": "CGD TEMPE, L.P.",
+            "location": {
+              "city": {
+                "code": "73000",
+                "name": "Tempe"
+              },
+              "state": {
+                "code": "AZ",
+                "name": "Arizona"
+              },
+              "zip": "85282",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "PTNVQD5CADL8",
+            "cageCode": "3ECU0"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "ng.az.azarng.list.az-purchasing-and-contracting@army.mil",
+            "phone": "6022672196",
+            "title": null,
+            "fullName": "Sabreana M Williams"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "ng.az.azarng.list.az-purchasing-and-contracting@army.mil",
+            "phone": "6026294403",
+            "title": null,
+            "fullName": "Vasile Insuratelu"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=415f747bde894ea296ffadc9c36d2ced",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "85008-3442",
+          "city": "PHOENIX",
+          "countryCode": "USA",
+          "state": "AZ"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "55000",
+            "name": "Phoenix"
+          },
+          "state": {
+            "code": "AZ",
+            "name": "Arizona"
+          },
+          "zip": "85008",
+          "country": {
+            "code": "USA",
+            "name": "UNITED STATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/415f747bde894ea296ffadc9c36d2ced/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=415f747bde894ea296ffadc9c36d2ced&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "090555f06d5f425584a5a174d46f5cac",
+      "noticeId": "090555f06d5f425584a5a174d46f5cac",
+      "solicitationNumber": "19BA3026Q0001",
+      "samGovLink": "https://sam.gov/opp/090555f06d5f425584a5a174d46f5cac/view",
+      "title": "U.S. National Day Venue and Catering - 2026",
+      "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY MANAMA",
+      "postedDate": "2025-12-01",
+      "responseDeadLine": "2025-12-22T16:00:00+03:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=090555f06d5f425584a5a174d46f5cac",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "090555f06d5f425584a5a174d46f5cac",
+        "title": "U.S. National Day Venue and Catering - 2026",
+        "solicitationNumber": "19BA3026Q0001",
+        "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY MANAMA",
+        "fullParentPathCode": "019.1900.19BA30",
+        "postedDate": "2025-12-01",
+        "type": "Combined Synopsis/Solicitation",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2026-01-06",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": "2025-12-22T16:00:00+03:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": null,
+            "type": "primary",
+            "email": "danielss@state.gov",
+            "phone": "+973 1724-2839",
+            "title": null,
+            "fullName": "Sean Daniels"
+          },
+          {
+            "fax": "97317242464",
+            "type": "secondary",
+            "email": "josephg@state.gov",
+            "phone": "97317242724",
+            "title": null,
+            "fullName": "Geji Joseph"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=090555f06d5f425584a5a174d46f5cac",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "20520",
+          "city": "WASHINGTON",
+          "countryCode": "USA",
+          "state": "DC"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "Manama",
+            "name": "Manama"
+          },
+          "country": {
+            "code": "BHR",
+            "name": "BAHRAIN"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/090555f06d5f425584a5a174d46f5cac/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=090555f06d5f425584a5a174d46f5cac&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a13294743a694da89f9e84dd9ed42e14/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f84fc00be8024b3b94d852a3bd6c37e9/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "cc1007e64d9f4bbcbc27a5a5cbab2713",
+      "noticeId": "cc1007e64d9f4bbcbc27a5a5cbab2713",
+      "solicitationNumber": "19EN1026D0003",
+      "samGovLink": "https://sam.gov/opp/cc1007e64d9f4bbcbc27a5a5cbab2713/view",
+      "title": "Hotel lodging services for the Baltic Computer Forensics Training Program (CFTP) 2025-2028",
+      "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY TALLINN",
+      "postedDate": "2025-11-26",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=cc1007e64d9f4bbcbc27a5a5cbab2713",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "cc1007e64d9f4bbcbc27a5a5cbab2713",
+        "title": "Hotel lodging services for the Baltic Computer Forensics Training Program (CFTP) 2025-2028",
+        "solicitationNumber": "19EN1026D0003",
+        "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY TALLINN",
+        "fullParentPathCode": "019.1900.19EN10",
+        "postedDate": "2025-11-26",
+        "type": "Award Notice",
+        "baseType": "Award Notice",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-11",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-11-26",
+          "number": "19EN1026D0003",
+          "amount": "204405.00",
+          "awardee": {
+            "name": "GVP INVEST ESTONIA OÜ",
+            "location": {
+              "city": {
+                "name": "Tallinn"
+              },
+              "state": {
+                "code": ""
+              },
+              "zip": "10115",
+              "country": {
+                "code": "EST",
+                "name": "ESTONIA"
+              }
+            },
+            "ueiSAM": "QAJ2F5G7ZCR2"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "TaziH@state.gov",
+            "phone": "3726688154",
+            "title": null,
+            "fullName": "Hind Tazi"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=cc1007e64d9f4bbcbc27a5a5cbab2713",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "20520",
+          "city": "WASHINGTON",
+          "countryCode": "USA",
+          "state": "DC"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "Tallinn",
+            "name": "Tallinn"
+          },
+          "state": {
+            "code": "EE-39",
+            "name": "Hiiumaa"
+          },
+          "country": {
+            "code": "EST",
+            "name": "ESTONIA"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/cc1007e64d9f4bbcbc27a5a5cbab2713/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=cc1007e64d9f4bbcbc27a5a5cbab2713&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "6bf0eb1452c141a9b6829d93b61f3c7b",
+      "noticeId": "6bf0eb1452c141a9b6829d93b61f3c7b",
+      "solicitationNumber": "70LGLY25QGLB00090",
+      "samGovLink": "https://sam.gov/opp/6bf0eb1452c141a9b6829d93b61f3c7b/view",
+      "title": "Off Center Lodging October 28, 2025 - March 31, 2026",
+      "fullParentPathName": "HOMELAND SECURITY, DEPARTMENT OF.FEDERAL LAW ENFORCEMENT TRAINING CENTER.FLETC GLYNCO PROCUREMENT OFFICE",
+      "postedDate": "2025-11-26",
+      "responseDeadLine": "2025-10-07T13:00:00-04:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6bf0eb1452c141a9b6829d93b61f3c7b",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "6bf0eb1452c141a9b6829d93b61f3c7b",
+        "title": "Off Center Lodging October 28, 2025 - March 31, 2026",
+        "solicitationNumber": "70LGLY25QGLB00090",
+        "fullParentPathName": "HOMELAND SECURITY, DEPARTMENT OF.FEDERAL LAW ENFORCEMENT TRAINING CENTER.FLETC GLYNCO PROCUREMENT OFFICE",
+        "fullParentPathCode": "070.7015.70LGLY",
+        "postedDate": "2025-11-26",
+        "type": "Combined Synopsis/Solicitation",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-04-28",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": "2025-10-07T13:00:00-04:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "9122673132",
+            "type": "primary",
+            "email": "erin.johnson@fletc.dhs.gov",
+            "phone": "9122673297",
+            "title": null,
+            "fullName": "Erin Johnson"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6bf0eb1452c141a9b6829d93b61f3c7b",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "31524",
+          "city": "Brunswick",
+          "countryCode": "USA",
+          "state": "GA"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "11560",
+            "name": "Brunswick"
+          },
+          "state": {
+            "code": "GA",
+            "name": "Georgia"
+          },
+          "country": {
+            "code": "USA",
+            "name": "UNITED STATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/6bf0eb1452c141a9b6829d93b61f3c7b/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=6bf0eb1452c141a9b6829d93b61f3c7b&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4121bd115a3547969712e8f2a8a1485a/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/890fd9f4208c4a0f8ba6fd015ddfd978/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f19fa3ec1284476496ef17c6fb773eaa/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "7ba5801eae694e17bd87241ac5eb9788",
+      "noticeId": "7ba5801eae694e17bd87241ac5eb9788",
+      "solicitationNumber": "W50S8R26Q0003B",
+      "samGovLink": "https://sam.gov/opp/7ba5801eae694e17bd87241ac5eb9788/view",
+      "title": "179 CW Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO OH.USPFO OH PROCUREMENT.W7NU USPFO ACTIVITY OHANG 179",
+      "postedDate": "2025-11-25",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=7ba5801eae694e17bd87241ac5eb9788",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "7ba5801eae694e17bd87241ac5eb9788",
+        "title": "179 CW Lodging",
+        "solicitationNumber": "W50S8R26Q0003B",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO OH.USPFO OH PROCUREMENT.W7NU USPFO ACTIVITY OHANG 179",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO OH.USPFO OH PROC.W50S8R",
+        "postedDate": "2025-11-25",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-10",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-11-25",
+          "number": "W50S8R26PA002",
+          "amount": "30436.00",
+          "awardee": {
+            "name": "S365 INC",
+            "location": {
+              "city": {
+                "code": "34615",
+                "name": "Norfolk"
+              },
+              "state": {
+                "code": "NE",
+                "name": "Nebraska"
+              },
+              "zip": "68701",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            }
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "jeffrey.snyder.20@us.af.mil",
+            "phone": "4195206542",
+            "title": null,
+            "fullName": "Jeffrey Snyder"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=7ba5801eae694e17bd87241ac5eb9788",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "44903-8049",
+          "city": "MANSFIELD",
+          "countryCode": "USA",
+          "state": "OH"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "47138",
+            "name": "Mansfield"
+          },
+          "state": {
+            "code": "OH",
+            "name": "Ohio"
+          },
+          "zip": "44903",
+          "country": {
+            "code": "USA",
+            "name": "UNITED STATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/7ba5801eae694e17bd87241ac5eb9788/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=7ba5801eae694e17bd87241ac5eb9788&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "26ddbcff7d0b4998bcff962d4b46c18d",
+      "noticeId": "26ddbcff7d0b4998bcff962d4b46c18d",
+      "solicitationNumber": "W50S8R26Q0003A",
+      "samGovLink": "https://sam.gov/opp/26ddbcff7d0b4998bcff962d4b46c18d/view",
+      "title": "179 CW Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO OH.USPFO OH PROCUREMENT.W7NU USPFO ACTIVITY OHANG 179",
+      "postedDate": "2025-11-25",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=26ddbcff7d0b4998bcff962d4b46c18d",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "26ddbcff7d0b4998bcff962d4b46c18d",
+        "title": "179 CW Lodging",
+        "solicitationNumber": "W50S8R26Q0003A",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO OH.USPFO OH PROCUREMENT.W7NU USPFO ACTIVITY OHANG 179",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO OH.USPFO OH PROC.W50S8R",
+        "postedDate": "2025-11-25",
+        "type": "Award Notice",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-10",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-11-25",
+          "number": "W50S8R26PA001",
+          "amount": "54800.00",
+          "awardee": {
+            "name": "FIVE STAR SURYA HOSPITALITY LLC",
+            "location": {
+              "city": {
+                "code": "47138",
+                "name": "Mansfield"
+              },
+              "state": {
+                "code": "OH",
+                "name": "Ohio"
+              },
+              "zip": "44903",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            }
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "jeffrey.snyder.20@us.af.mil",
+            "phone": "4195206542",
+            "title": null,
+            "fullName": "Jeffrey Snyder"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=26ddbcff7d0b4998bcff962d4b46c18d",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "44903-8049",
+          "city": "MANSFIELD",
+          "countryCode": "USA",
+          "state": "OH"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "47138",
+            "name": "Mansfield"
+          },
+          "state": {
+            "code": "OH",
+            "name": "Ohio"
+          },
+          "zip": "44903",
+          "country": {
+            "code": "USA",
+            "name": "UNITED STATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/26ddbcff7d0b4998bcff962d4b46c18d/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=26ddbcff7d0b4998bcff962d4b46c18d&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "fcc987f95a95446abb2ddf3a60dc20f2",
+      "noticeId": "fcc987f95a95446abb2ddf3a60dc20f2",
+      "solicitationNumber": "19AR2026Q0006",
+      "samGovLink": "https://sam.gov/opp/fcc987f95a95446abb2ddf3a60dc20f2/view",
+      "title": "Conference and accommodation  Services in Buenos Aires Argentina",
+      "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY BUENOS AIRES",
+      "postedDate": "2025-11-21",
+      "responseDeadLine": "2026-11-28T00:00:00-03:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=fcc987f95a95446abb2ddf3a60dc20f2",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "fcc987f95a95446abb2ddf3a60dc20f2",
+        "title": "Conference and accommodation  Services in Buenos Aires Argentina",
+        "solicitationNumber": "19AR2026Q0006",
+        "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY BUENOS AIRES",
+        "fullParentPathCode": "019.1900.19AR20",
+        "postedDate": "2025-11-21",
+        "type": "Solicitation",
+        "baseType": "Presolicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2026-12-13",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": "2026-11-28T00:00:00-03:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "BNS-Procurement@state.gov",
+            "phone": "541157774291",
+            "title": null,
+            "fullName": "Timothy P. Dougherty"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "BNS-Procurement@state.gov",
+            "phone": "",
+            "title": null,
+            "fullName": "Marisol Pacheco"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=fcc987f95a95446abb2ddf3a60dc20f2",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "20520",
+          "city": "WASHINGTON",
+          "countryCode": "USA",
+          "state": "DC"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "Buenos Aires",
+            "name": "Buenos Aires"
+          },
+          "state": {
+            "code": "AR-C",
+            "name": "Buenos Aires, Ciudad Autónoma de"
+          },
+          "country": {
+            "code": "ARG",
+            "name": "ARGENTINA"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/fcc987f95a95446abb2ddf3a60dc20f2/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=fcc987f95a95446abb2ddf3a60dc20f2&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/5c4dddef112c4a779494deac294137ed/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "77811a6eb68a4d558eae1c1a91a2b8c7",
+      "noticeId": "77811a6eb68a4d558eae1c1a91a2b8c7",
+      "solicitationNumber": "19PL9026Q0007",
+      "samGovLink": "https://sam.gov/opp/77811a6eb68a4d558eae1c1a91a2b8c7/view",
+      "title": "Request for Quotations for lodging and conference package in Warsaw, Poland 4/10/26-4/19/26",
+      "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY WARSAW",
+      "postedDate": "2025-11-20",
+      "responseDeadLine": "2025-12-08T17:00:00+01:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=77811a6eb68a4d558eae1c1a91a2b8c7",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "77811a6eb68a4d558eae1c1a91a2b8c7",
+        "title": "Request for Quotations for lodging and conference package in Warsaw, Poland 4/10/26-4/19/26",
+        "solicitationNumber": "19PL9026Q0007",
+        "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY WARSAW",
+        "fullParentPathCode": "019.1900.19PL90",
+        "postedDate": "2025-11-20",
+        "type": "Solicitation",
+        "baseType": "Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-23",
+        "typeOfSetAsideDescription": "No Set aside used",
+        "typeOfSetAside": "NONE",
+        "responseDeadLine": "2025-12-08T17:00:00+01:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "X1AB",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "48225042000",
+            "type": "primary",
+            "email": "warsawproc@state.gov",
+            "phone": "48225042470",
+            "title": null,
+            "fullName": "M. Brandon Rigby"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=77811a6eb68a4d558eae1c1a91a2b8c7",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "20520",
+          "city": "WASHINGTON",
+          "countryCode": "USA",
+          "state": "DC"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "Warsaw",
+            "name": "Warsaw"
+          },
+          "state": {
+            "code": "PL-MZ",
+            "name": "Mazowieckie"
+          },
+          "zip": "00-540",
+          "country": {
+            "code": "POL",
+            "name": "POLAND"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/77811a6eb68a4d558eae1c1a91a2b8c7/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=77811a6eb68a4d558eae1c1a91a2b8c7&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/5a748c89e424438098d8e75032bdaffb/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "6b975417d0f44a0c959a5c08d25dc18b",
+      "noticeId": "6b975417d0f44a0c959a5c08d25dc18b",
+      "solicitationNumber": "19MY3026D0003",
+      "samGovLink": "https://sam.gov/opp/6b975417d0f44a0c959a5c08d25dc18b/view",
+      "title": "Hotel Accommodation",
+      "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY KUALA LUMPUR",
+      "postedDate": "2025-11-18",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6b975417d0f44a0c959a5c08d25dc18b",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "6b975417d0f44a0c959a5c08d25dc18b",
+        "title": "Hotel Accommodation",
+        "solicitationNumber": "19MY3026D0003",
+        "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY KUALA LUMPUR",
+        "fullParentPathCode": "019.1900.19MY30",
+        "postedDate": "2025-11-18",
+        "type": "Justification",
+        "baseType": "Justification",
+        "archiveType": "auto30",
+        "archiveDate": "2025-12-18",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-10-08",
+          "number": "19MY3026D0003"
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "epsteinsi@state.gov",
+            "phone": "",
+            "title": null,
+            "fullName": "Sara Epstein, Contracting Officer"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "ratnasingamp@state.gov",
+            "phone": "",
+            "title": null,
+            "fullName": "Punitha Ratnasingam, Procurement Supervisor"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=6b975417d0f44a0c959a5c08d25dc18b",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "20520",
+          "city": "WASHINGTON",
+          "countryCode": "USA",
+          "state": "DC"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "Kuala Lumpur",
+            "name": "Kuala Lumpur"
+          },
+          "state": {
+            "code": "MY-14",
+            "name": "Kuala Lumpur"
+          },
+          "country": {
+            "code": "MYS",
+            "name": "MALAYSIA"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/6b975417d0f44a0c959a5c08d25dc18b/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=6b975417d0f44a0c959a5c08d25dc18b&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/18bf1d14e29e471082f1011a7292a0d9/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "5ca3fe5726774a5e99ce9f8d31e56d2e",
+      "noticeId": "5ca3fe5726774a5e99ce9f8d31e56d2e",
+      "solicitationNumber": "W911SA25QA235",
+      "samGovLink": "https://sam.gov/opp/5ca3fe5726774a5e99ce9f8d31e56d2e/view",
+      "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+      "postedDate": "2025-11-18",
+      "responseDeadLine": "2025-12-01T10:00:00-05:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=5ca3fe5726774a5e99ce9f8d31e56d2e",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "5ca3fe5726774a5e99ce9f8d31e56d2e",
+        "title": "Blanket Purchase Agreement for the United States Army Reserve within the Continental United States for Short Term Lodging",
+        "solicitationNumber": "W911SA25QA235",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.AMC.ACC.MISSION INSTALLATION CONTRACTING COMMAND.419TH CSB.W6QM MICC FT MCCOY (RC)",
+        "fullParentPathCode": "021.2100.AMC.ACC.MICC.419TH CSB.W911SA",
+        "postedDate": "2025-11-18",
+        "type": "Combined Synopsis/Solicitation",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-11-18",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": "2025-12-01T10:00:00-05:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "tyler.j.adams2.civ@army.mil",
+            "phone": "5028984824",
+            "title": null,
+            "fullName": "Tyler Adams"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=5ca3fe5726774a5e99ce9f8d31e56d2e",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "54656-5142",
+          "city": "FORT MCCOY",
+          "countryCode": "USA",
+          "state": "WI"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/5ca3fe5726774a5e99ce9f8d31e56d2e/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=5ca3fe5726774a5e99ce9f8d31e56d2e&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "43a957e4e545470daefefe8358783ce3",
+      "noticeId": "43a957e4e545470daefefe8358783ce3",
+      "solicitationNumber": "W50S9126QA002",
+      "samGovLink": "https://sam.gov/opp/43a957e4e545470daefefe8358783ce3/view",
+      "title": "171st Air Refueling Wing Lodging Services",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO PA.USPFO PA PROCUREMENT.W7NX USPFO ACTIVITY PAANG 171",
+      "postedDate": "2025-11-18",
+      "responseDeadLine": "2025-11-25T09:00:00-05:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=43a957e4e545470daefefe8358783ce3",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "43a957e4e545470daefefe8358783ce3",
+        "title": "171st Air Refueling Wing Lodging Services",
+        "solicitationNumber": "W50S9126QA002",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO PA.USPFO PA PROCUREMENT.W7NX USPFO ACTIVITY PAANG 171",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO PA.USPFO PA PROC.W50S91",
+        "postedDate": "2025-11-18",
+        "type": "Solicitation",
+        "baseType": "Solicitation",
+        "archiveType": "auto15",
+        "archiveDate": "2025-12-10",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": "2025-11-25T09:00:00-05:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "kaitlynn.fuga@us.af.mil",
+            "phone": "4127767455",
+            "title": null,
+            "fullName": "Kaity Fuga"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "steven.sisneros.2@us.af.mil",
+            "phone": "4127767387",
+            "title": null,
+            "fullName": "Steve Sisneros"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=43a957e4e545470daefefe8358783ce3",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "15108-4805",
+          "city": "CORAOPOLIS",
+          "countryCode": "USA",
+          "state": "PA"
+        },
+        "placeOfPerformance": {
+          "city": {
+            "code": "16144",
+            "name": "Coraopolis"
+          },
+          "state": {
+            "code": "PA",
+            "name": "Pennsylvania"
+          },
+          "zip": "15108",
+          "country": {
+            "code": "USA",
+            "name": "UNITED STATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/43a957e4e545470daefefe8358783ce3/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=43a957e4e545470daefefe8358783ce3&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e51b2f23aa614b479af2ff16726fe8aa/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f4f3596c542a4c9ea29f78c6d2789be9/download",
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f6b6c7108f194001b32a0b608faa2b0c/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "c4f1986d6b0245eba0a30b50027c6a02",
+      "noticeId": "c4f1986d6b0245eba0a30b50027c6a02",
+      "solicitationNumber": "W912L126QA002",
+      "samGovLink": "https://sam.gov/opp/c4f1986d6b0245eba0a30b50027c6a02/view",
+      "title": "Texas Army National Guard: Yellow Ribbon Reintegration Program Events",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO TX.USPFO TX PROCUREMENT.W7N2 USPFO ACTIVITY TX ARNG",
+      "postedDate": "2025-11-14",
+      "responseDeadLine": "2025-11-24T10:00:00-06:00",
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=c4f1986d6b0245eba0a30b50027c6a02",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "c4f1986d6b0245eba0a30b50027c6a02",
+        "title": "Texas Army National Guard: Yellow Ribbon Reintegration Program Events",
+        "solicitationNumber": "W912L126QA002",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO TX.USPFO TX PROCUREMENT.W7N2 USPFO ACTIVITY TX ARNG",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO TX.USPFO TX PROC.W912L1",
+        "postedDate": "2025-11-14",
+        "type": "Combined Synopsis/Solicitation",
+        "baseType": "Combined Synopsis/Solicitation",
+        "archiveType": "autocustom",
+        "archiveDate": "2025-12-12",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": "2025-11-24T10:00:00-06:00",
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "R699",
+        "active": "Yes",
+        "award": null,
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "natalie.j.rodriguez9.civ@army.mil",
+            "phone": "5127825529",
+            "title": null,
+            "fullName": "Natalie Rodriguez"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=c4f1986d6b0245eba0a30b50027c6a02",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "78763-5218",
+          "city": "AUSTIN",
+          "countryCode": "USA",
+          "state": "TX"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "Various Austin, Houston and Fort Worth, Texas",
+          "zip": "78703"
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/c4f1986d6b0245eba0a30b50027c6a02/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=c4f1986d6b0245eba0a30b50027c6a02&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "d66b7f24fcfc4add93f3cf7d4d397786",
+      "noticeId": "d66b7f24fcfc4add93f3cf7d4d397786",
+      "solicitationNumber": "W911YN26PA003",
+      "samGovLink": "https://sam.gov/opp/d66b7f24fcfc4add93f3cf7d4d397786/view",
+      "title": "Yellow Ribbon Event for KFOR 6 DEC 2025",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO FL.USPFO FL PROCUREMENT.W7M2 USPFO ACTIVITY FL ARNG",
+      "postedDate": "2025-11-13",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=d66b7f24fcfc4add93f3cf7d4d397786",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "d66b7f24fcfc4add93f3cf7d4d397786",
+        "title": "Yellow Ribbon Event for KFOR 6 DEC 2025",
+        "solicitationNumber": "W911YN26PA003",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO FL.USPFO FL PROCUREMENT.W7M2 USPFO ACTIVITY FL ARNG",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO FL.USPFO FL PROC.W911YN",
+        "postedDate": "2025-11-13",
+        "type": "Award Notice",
+        "baseType": "Award Notice",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-11-13",
+        "typeOfSetAsideDescription": "Total Small Business Set-Aside (FAR 19.5)",
+        "typeOfSetAside": "SBA",
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-11-13",
+          "number": "W911YN26PA003",
+          "amount": "29364",
+          "awardee": {
+            "name": "QII SOLUTIONS LLC",
+            "location": {
+              "streetAddress": "1057 WALNUT CREEK DR",
+              "city": {
+                "code": "84176",
+                "name": "Woodstock"
+              },
+              "state": {
+                "code": "GA",
+                "name": "Georgia"
+              },
+              "zip": "30188",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "VJQ3C7Y8KNX5",
+            "cageCode": "8RWA1"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "thomas.p.fazio.civ@army.mil",
+            "phone": "9048230551",
+            "title": null,
+            "fullName": "Thomas Fazio"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=d66b7f24fcfc4add93f3cf7d4d397786",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "32085-1008",
+          "city": "ST AUGUSTINE",
+          "countryCode": "USA",
+          "state": "FL"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/d66b7f24fcfc4add93f3cf7d4d397786/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=d66b7f24fcfc4add93f3cf7d4d397786&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "9c63466555c147d5acf4e13ed34e2006",
+      "noticeId": "9c63466555c147d5acf4e13ed34e2006",
+      "solicitationNumber": "19TC1026P0030",
+      "samGovLink": "https://sam.gov/opp/9c63466555c147d5acf4e13ed34e2006/view",
+      "title": "Hotel Rooms for the VIP Visit",
+      "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY ABU DHABI",
+      "postedDate": "2025-11-13",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=9c63466555c147d5acf4e13ed34e2006",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "9c63466555c147d5acf4e13ed34e2006",
+        "title": "Hotel Rooms for the VIP Visit",
+        "solicitationNumber": "19TC1026P0030",
+        "fullParentPathName": "STATE, DEPARTMENT OF.STATE, DEPARTMENT OF.US EMBASSY ABU DHABI",
+        "fullParentPathCode": "019.1900.19TC10",
+        "postedDate": "2025-11-13",
+        "type": "Justification",
+        "baseType": "Justification",
+        "archiveType": "auto30",
+        "archiveDate": "2025-12-13",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-10-28",
+          "number": "19TC1026P0030"
+        },
+        "pointOfContact": [
+          {
+            "fax": "97124142696",
+            "type": "primary",
+            "email": "AbuDhabiContracts@state.gov",
+            "phone": "97124142200",
+            "title": null,
+            "fullName": "Gregory Stoneberg"
+          },
+          {
+            "fax": "",
+            "type": "secondary",
+            "email": "Bactadma@state.gov",
+            "phone": "4142200",
+            "title": null,
+            "fullName": "Bactad , May Ace"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=9c63466555c147d5acf4e13ed34e2006",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "20520",
+          "city": "WASHINGTON",
+          "countryCode": "USA",
+          "state": "DC"
+        },
+        "placeOfPerformance": {
+          "country": {
+            "code": "ARE",
+            "name": "UNITED ARAB EMIRATES"
+          }
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/9c63466555c147d5acf4e13ed34e2006/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=9c63466555c147d5acf4e13ed34e2006&limit=1"
+          }
+        ],
+        "resourceLinks": [
+          "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ad4ab41bc47d4b3798844699898a6199/download"
+        ]
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "9499e420a9784292b39944e6335c124f",
+      "noticeId": "9499e420a9784292b39944e6335c124f",
+      "solicitationNumber": "W911YN26PA001",
+      "samGovLink": "https://sam.gov/opp/9499e420a9784292b39944e6335c124f/view",
+      "title": "Yellow Ribbon for 1-153 CAV 15 NOV 2025",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO FL.USPFO FL PROCUREMENT.W7M2 USPFO ACTIVITY FL ARNG",
+      "postedDate": "2025-11-13",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=9499e420a9784292b39944e6335c124f",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "9499e420a9784292b39944e6335c124f",
+        "title": "Yellow Ribbon for 1-153 CAV 15 NOV 2025",
+        "solicitationNumber": "W911YN26PA001",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO FL.USPFO FL PROCUREMENT.W7M2 USPFO ACTIVITY FL ARNG",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO FL.USPFO FL PROC.W911YN",
+        "postedDate": "2025-11-13",
+        "type": "Award Notice",
+        "baseType": "Award Notice",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-11-13",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-11-07",
+          "number": "W911YN26PA001",
+          "amount": "38525",
+          "awardee": {
+            "name": "QII SOLUTIONS LLC",
+            "location": {
+              "streetAddress": "1057 WALNUT CREEK DR",
+              "city": {
+                "code": "84176",
+                "name": "Woodstock"
+              },
+              "state": {
+                "code": "GA",
+                "name": "Georgia"
+              },
+              "zip": "30188",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "VJQ3C7Y8KNX5",
+            "cageCode": "8RWA1"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "thomas.p.fazio.civ@army.mil",
+            "phone": "9048230551",
+            "title": null,
+            "fullName": "Thomas Fazio"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=9499e420a9784292b39944e6335c124f",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "32085-1008",
+          "city": "ST AUGUSTINE",
+          "countryCode": "USA",
+          "state": "FL"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/9499e420a9784292b39944e6335c124f/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=9499e420a9784292b39944e6335c124f&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    },
+    {
+      "opportunityId": "00988be44b354a30ab4aa7b493ae5fd0",
+      "noticeId": "00988be44b354a30ab4aa7b493ae5fd0",
+      "solicitationNumber": "W911YN26PA002",
+      "samGovLink": "https://sam.gov/opp/00988be44b354a30ab4aa7b493ae5fd0/view",
+      "title": "Yellow Ribbon for 1-265 ADA 7 Dec 2025",
+      "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO FL.USPFO FL PROCUREMENT.W7M2 USPFO ACTIVITY FL ARNG",
+      "postedDate": "2025-11-13",
+      "responseDeadLine": null,
+      "updatedDate": "",
+      "noticeType": "",
+      "naicsCode": "721110",
+      "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=00988be44b354a30ab4aa7b493ae5fd0",
+      "attachments": [],
+      "raw_data": {
+        "noticeId": "00988be44b354a30ab4aa7b493ae5fd0",
+        "title": "Yellow Ribbon for 1-265 ADA 7 Dec 2025",
+        "solicitationNumber": "W911YN26PA002",
+        "fullParentPathName": "DEPT OF DEFENSE.DEPT OF THE ARMY.NATIONAL GUARD BUREAU.JFHQ USPFO FL.USPFO FL PROCUREMENT.W7M2 USPFO ACTIVITY FL ARNG",
+        "fullParentPathCode": "021.2100.NGB.JFHQ USPFO FL.USPFO FL PROC.W911YN",
+        "postedDate": "2025-11-13",
+        "type": "Award Notice",
+        "baseType": "Award Notice",
+        "archiveType": "autocustom",
+        "archiveDate": "2026-11-13",
+        "typeOfSetAsideDescription": null,
+        "typeOfSetAside": null,
+        "responseDeadLine": null,
+        "naicsCode": "721110",
+        "naicsCodes": [
+          "721110"
+        ],
+        "classificationCode": "V231",
+        "active": "Yes",
+        "award": {
+          "date": "2025-11-13",
+          "number": "W911YN26PA002",
+          "amount": "45752",
+          "awardee": {
+            "name": "PRO-IMPACT SOLUTIONS INC.",
+            "location": {
+              "streetAddress": "220 GRANGER LN",
+              "city": {
+                "code": "45488",
+                "name": "Lawrenceville"
+              },
+              "state": {
+                "code": "GA",
+                "name": "Georgia"
+              },
+              "zip": "30044",
+              "country": {
+                "code": "USA",
+                "name": "UNITED STATES"
+              }
+            },
+            "ueiSAM": "P4J3FJ3JF3X5",
+            "cageCode": "90Z18"
+          }
+        },
+        "pointOfContact": [
+          {
+            "fax": "",
+            "type": "primary",
+            "email": "thomas.p.fazio.civ@army.mil",
+            "phone": "9048230551",
+            "title": null,
+            "fullName": "Thomas Fazio"
+          }
+        ],
+        "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=00988be44b354a30ab4aa7b493ae5fd0",
+        "organizationType": "OFFICE",
+        "officeAddress": {
+          "zipcode": "32085-1008",
+          "city": "ST AUGUSTINE",
+          "countryCode": "USA",
+          "state": "FL"
+        },
+        "placeOfPerformance": {
+          "streetAddress": "",
+          "zip": ""
+        },
+        "additionalInfoLink": null,
+        "uiLink": "https://sam.gov/workspace/contract/opp/00988be44b354a30ab4aa7b493ae5fd0/view",
+        "links": [
+          {
+            "rel": "self",
+            "href": "https://api.sam.gov/prod/opportunities/v2/search?noticeid=00988be44b354a30ab4aa7b493ae5fd0&limit=1"
+          }
+        ],
+        "resourceLinks": null
+      },
+      "source": "sam_live"
+    }
+  ]
+}

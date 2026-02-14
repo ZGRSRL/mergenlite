@@ -42,8 +42,24 @@ if len(sys.argv) > 1:
             print(f"      Title: {opp_title}")
             print()
         else:
-            print(f"   [ERROR] Opportunity not found with notice_id: {search_id}")
-            sys.exit(1)
+            # Fallback: Try searching by opportunity_id
+             resp_opp = requests.get(f"{API_BASE}/api/opportunities", params={"opportunity_id": search_id})
+             if resp_opp.status_code == 200:
+                 opportunities = resp_opp.json()
+                 if opportunities and len(opportunities) > 0:
+                     opp = opportunities[0]
+                     opp_db_id = opp.get('id')
+                     opp_title = opp.get('title', 'N/A')
+                     print(f"   [OK] Opportunity found (via opportunity_id):")
+                     print(f"      Database ID: {opp_db_id}")
+                     print(f"      Title: {opp_title}")
+                     print()
+                 else:
+                     print(f"   [ERROR] Opportunity not found with ID: {search_id}")
+                     sys.exit(1)
+             else:
+                 print(f"   [ERROR] Opportunity not found with notice_id: {search_id}")
+                 sys.exit(1)
     else:
         print(f"   [ERROR] API request failed: {resp.status_code}")
         sys.exit(1)
@@ -116,13 +132,13 @@ for i in range(max_wait_sow):
             print(f"      Documents analyzed: {doc_analysis.get('documents_analyzed', 0)}")
             print(f"      Total text length: {doc_analysis.get('total_text_length', 0)}")
             
-            if sow_analysis and 'error' not in sow_analysis:
+            if sow_analysis and isinstance(sow_analysis, dict) and 'error' not in sow_analysis:
                 print(f"      SOW analysis: OK")
                 sow_keys = list(sow_analysis.keys())[:5]
                 print(f"      SOW keys: {sow_keys}")
             else:
                 print(f"      [WARNING] SOW analysis boş veya hatalı!")
-                if 'error' in sow_analysis:
+                if sow_analysis and isinstance(sow_analysis, dict) and 'error' in sow_analysis:
                     print(f"      Error: {sow_analysis.get('error')}")
             
             # Check PDF

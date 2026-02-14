@@ -93,6 +93,7 @@ router = APIRouter(prefix="/api/opportunities", tags=["opportunities"])
 @router.get("", response_model=List[OpportunityRead])
 async def get_opportunities(
     notice_id: Optional[str] = Query(None, description="Filter by notice ID"),
+    opportunity_id: Optional[str] = Query(None, description="Filter by opportunity ID (UUID string)"),
     naics_code: Optional[str] = Query(None, description="Filter by NAICS code"),
     keyword: Optional[str] = Query(None, description="Search in title/description"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -127,6 +128,10 @@ async def get_opportunities(
         # Filter by notice_id if provided
         if notice_id:
             opportunities = [opp for opp in opportunities if notice_id.lower() in (opp.notice_id or "").lower()]
+            
+        # Filter by opportunity_id if provided (Exact match usually)
+        if opportunity_id:
+            opportunities = [opp for opp in opportunities if str(opp.opportunity_id) == str(opportunity_id)]
         
         # Pydantic response_model handles serialization automatically
         return opportunities

@@ -24,7 +24,7 @@ class HealthResponse(BaseModel):
 
 
 class OpportunityBase(BaseModel):
-    notice_id: str
+    notice_id: Optional[str] = None
     title: str
     posted_date: Optional[datetime] = None
     response_deadline: Optional[datetime] = None

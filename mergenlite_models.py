@@ -80,20 +80,23 @@ class AIAnalysisResult(Base):
     __tablename__ = "ai_analysis_results"
     
     # Veritabanındaki gerçek şema
+    # Veritabanındaki gerçek şema (inspect results)
     id = Column(Integer, primary_key=True, autoincrement=True)
-    opportunity_id = Column(String(255), nullable=False)  # Foreign key olarak tanımlanmamış (veritabanında FK yok)
+    opportunity_id = Column(Integer, nullable=False)  # FK to opportunities.id (Integer)
     analysis_type = Column(String(100), nullable=False)
-    result = Column(JSONB, nullable=False)  # consolidated_output yerine result
-    confidence = Column(Numeric)  # DOUBLE PRECISION -> Numeric
-    timestamp = Column(TIMESTAMP, nullable=False)
-    agent_name = Column(String(100), nullable=False)
+    
+    # Mapped columns
+    result = Column(JSONB, name='consolidated_output', nullable=True)  # Map 'result' attr to 'consolidated_output' column
+    confidence = Column(Float)  # DOUBLE PRECISION
+    
+    # Timestamp mappings
+    timestamp = Column(TIMESTAMP, name='completed_at', nullable=True) # Map 'timestamp' to 'completed_at'
     created_at = Column(TIMESTAMP, server_default=func.now())
     
-    # Relationships - opportunity_id FK değil, manuel join yapılacak
-    # opportunity = relationship("Opportunity", back_populates="analyses", foreign_keys=[opportunity_id])
+    agent_name = Column(String(100), nullable=True)
     
     def __repr__(self):
-        return f"<AIAnalysisResult(id={self.id}, opportunity_id='{self.opportunity_id}', analysis_type='{self.analysis_type}')>"
+        return f"<AIAnalysisResult(id={self.id}, opportunity_id={self.opportunity_id}, type='{self.analysis_type}')>"
 
 
 class SystemSession(Base):
